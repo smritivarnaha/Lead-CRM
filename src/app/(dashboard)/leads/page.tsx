@@ -6,6 +6,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, MessageSquare, Phone, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getLeads, updateLeadStatus } from "@/actions/leads";
+import { createClient } from "@supabase/supabase-js";
+
+// Initialize Supabase Client for Realtime WebSockets
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 type Lead = {
   id: string;
@@ -22,30 +29,11 @@ type Columns = {
   };
 };
 
-const initialData: Columns = {
-  NEW: {
-    name: "New Leads",
-    items: [
-      { id: "lead_1", name: "Sarah Connor", source: "Google Ads", time: "10 mins ago", priority: "HIGH" },
-      { id: "lead_2", name: "John Smith", source: "Website Form", time: "2 hours ago", priority: "NORMAL" },
-    ],
-  },
-  CONTACTED: {
-    name: "Contacted",
-    items: [
-      { id: "lead_3", name: "Emily Davis", source: "Facebook Ads", time: "Yesterday", priority: "NORMAL" },
-    ],
-  },
-  FOLLOW_UP: {
-    name: "Follow Up",
-    items: [],
-  },
-  CONVERTED: {
-    name: "Converted",
-    items: [
-      { id: "lead_4", name: "Michael Scott", source: "Referral", time: "2 days ago", priority: "HIGH" },
-    ],
-  },
+const emptyData: Columns = {
+  NEW: { name: "New Leads", items: [] },
+  CONTACTED: { name: "Contacted", items: [] },
+  FOLLOW_UP: { name: "Follow Up", items: [] },
+  CONVERTED: { name: "Converted", items: [] },
 };
 
 const priorityColors = {
@@ -55,12 +43,58 @@ const priorityColors = {
 };
 
 export default function LeadsKanbanPage() {
-  const [columns, setColumns] = useState<Columns>({});
+  const [columns, setColumns] = useState<Columns>(emptyData);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
-    setColumns(initialData);
+    
+    // 1. Fetch existing real leads from the database
+    const loadLeads = async () => {
+      const res = await getLeads();
+      if (res.success && res.leads) {
+        const newCols = { ...emptyData };
+        res.leads.forEach((l: any) => {
+          const status = l.status || "NEW";
+          if (newCols[status]) {
+            newCols[status].items.push({
+              id: l.id,
+              name: l.fullName || "Unknown",
+              source: l.source || "Website Form",
+              time: new Date(l.createdAt).toLocaleDateString(),
+              priority: "NORMAL",
+            });
+          }
+        });
+        setColumns(newCols);
+      }
+    };
+    
+    loadLeads();
+
+    // 2. Setup Supabase Realtime WebSocket Listener
+    const channel = supabase.channel('leads-channel');
+    
+    channel.on('broadcast', { event: 'new-lead' }, (payload) => {
+      console.log('Realtime Lead Received!', payload);
+      const newLead = payload.payload;
+      
+      setColumns((prev) => {
+        const updated = { ...prev };
+        updated.NEW.items = [{
+          id: newLead.id,
+          name: newLead.fullName || "Unknown",
+          source: newLead.source || "Website Form",
+          time: "Just now",
+          priority: "NORMAL"
+        }, ...updated.NEW.items];
+        return updated;
+      });
+    }).subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const onDragEnd = (result: DropResult) => {
@@ -80,6 +114,9 @@ export default function LeadsKanbanPage() {
         [source.droppableId]: { ...sourceColumn, items: sourceItems },
         [destination.droppableId]: { ...destColumn, items: destItems },
       });
+      
+      // Update Database
+      updateLeadStatus(removed.id, destination.droppableId);
     } else {
       const column = columns[source.droppableId];
       const copiedItems = [...column.items];

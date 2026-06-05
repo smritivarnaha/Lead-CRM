@@ -29,6 +29,37 @@ export async function POST(
       createdAt: new Date().toISOString(),
     };
 
+    // Save to Database
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+    
+    // Check if website exists, if not create a fallback (or fail, but for now we want robust tracking)
+    const existingSite = await prisma.website.findUnique({ where: { id: websiteId }});
+    if (!existingSite) {
+        await prisma.website.create({
+            data: {
+                id: websiteId,
+                name: "Auto-created Site",
+                domain: "unknown",
+                workspaceId: "mock_workspace_id"
+            }
+        });
+    }
+
+    await prisma.lead.create({
+      data: {
+        id: leadData.id,
+        fullName: leadData.fullName,
+        email: leadData.email,
+        phone: leadData.phone,
+        message: leadData.message,
+        source: leadData.source,
+        status: leadData.status,
+        websiteId: leadData.websiteId,
+        workspaceId: leadData.workspaceId,
+      }
+    });
+
     // 4. Trigger the Lead Routing Logic & WebSockets (Phase 3)
     // Broadcast the new lead to the specific client's website channel
     const channelName = `website-${websiteId}`;
