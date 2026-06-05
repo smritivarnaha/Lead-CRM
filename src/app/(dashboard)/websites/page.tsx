@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Globe, Copy, CheckCircle2, MoreVertical } from "lucide-react";
-import { useState } from "lucide-react";
+import { useState } from "react";
 
 const websites = [
   {

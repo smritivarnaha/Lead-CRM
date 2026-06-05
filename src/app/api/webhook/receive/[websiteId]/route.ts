@@ -8,10 +8,10 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export async function POST(
   request: Request,
-  { params }: { params: { websiteId: string } }
+  { params }: { params: Promise<{ websiteId: string }> }
 ) {
   try {
-    const { websiteId } = params;
+    const { websiteId } = await params;
     const body = await request.json();
 
     console.log(`[WEBHOOK RECEIVED] Website: ${websiteId}`);
