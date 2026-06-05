@@ -101,9 +101,19 @@ export default function WebsitesPage() {
                   {site.lastLead}
                 </TableCell>
                 <TableCell className="text-right">
-                  <button className="text-slate-400 hover:text-slate-900 p-2">
-                    <MoreVertical className="h-4 w-4" />
-                  </button>
+                  <div className="flex items-center justify-end gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-xs"
+                      onClick={() => alert(`Creating login for ${site.name}. In production, this calls /api/websites/${site.id}/users with an auto-generated password.`)}
+                    >
+                      Create Login
+                    </Button>
+                    <button className="text-slate-400 hover:text-slate-900 p-2">
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

@@ -28,6 +28,9 @@ model User {
 
   workspaceId String?
   workspace   Workspace? @relation(fields: [workspaceId], references: [id])
+  
+  websiteId   String?
+  website     Website?   @relation(fields: [websiteId], references: [id])
 
   assignedLeads Lead[] @relation("AssignedTo")
 }
@@ -46,6 +49,7 @@ model Website {
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
   leads       Lead[]
+  users       User[]
 }
 
 model Lead {

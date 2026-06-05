@@ -5,13 +5,23 @@ import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { useUser } from "@clerk/nextjs";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
+  const { user } = useUser();
+
   useEffect(() => {
-    // Listen to the "leads-channel" for any broadcast messages
-    const channel = supabase.channel('leads-channel')
+    if (!user) return;
+
+    const role = user.publicMetadata?.role as string | undefined;
+    const websiteId = user.publicMetadata?.websiteId as string | undefined;
+
+    // If CLIENT, subscribe to their specific website channel. Otherwise, global channel.
+    const targetChannel = (role === "CLIENT" && websiteId) ? `website-${websiteId}` : 'leads-channel';
+
+    const channel = supabase.channel(targetChannel)
       .on('broadcast', { event: 'new-lead' }, (payload) => {
-        console.log('Realtime Lead Received:', payload);
+        console.log(`Realtime Lead Received on ${targetChannel}:`, payload);
         const lead = payload.payload;
         toast.success(`New Lead Captured!`, {
           description: `${lead.fullName} from ${lead.source}`,
@@ -19,7 +29,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         });
       })
       .on('broadcast', { event: 'lead-escalated' }, (payload) => {
-        console.log('Lead Escalated:', payload);
+        console.log(`Lead Escalated on ${targetChannel}:`, payload);
         const lead = payload.payload;
         toast.error(`ESCALATION ALERT!`, {
           description: `Lead ${lead.fullName} has been waiting too long!`,
@@ -31,7 +41,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [user]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">

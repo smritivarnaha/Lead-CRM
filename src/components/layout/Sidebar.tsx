@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import {
   Activity,
@@ -25,21 +26,36 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user } = useUser();
+  
+  // If user is a CLIENT, hide Workspaces, Websites, and Settings
+  const role = user?.publicMetadata?.role as string | undefined;
+  const isClient = role === "CLIENT";
+
+  const visibleNavItems = navItems.filter(item => {
+    if (isClient && (item.name === "Websites" || item.name === "Workspaces" || item.name === "Settings")) {
+      return false;
+    }
+    return true;
+  });
 
   return (
-    <div className="flex h-screen w-64 flex-col border-r bg-white px-4 py-6">
-      <div className="flex items-center gap-2 px-2 mb-10">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white">
-          <Activity className="h-5 w-5" />
+    <div className="flex h-full w-64 flex-col border-r bg-white">
+      <div className="flex h-20 items-center justify-center border-b px-6">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white font-bold">
+            LF
+          </div>
+          <span className="text-xl font-bold tracking-tight text-slate-900">LeadFlow</span>
         </div>
-        <span className="text-xl font-bold tracking-tight text-slate-900">
-          LeadFlow
-        </span>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-1">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+      <nav className="flex-1 space-y-1.5 p-4 overflow-y-auto">
+        <div className="mb-4 px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          Main Menu
+        </div>
+        {visibleNavItems.map((item) => {
+          const isActive = pathname === item.href;
           return (
             <Link
               key={item.name}

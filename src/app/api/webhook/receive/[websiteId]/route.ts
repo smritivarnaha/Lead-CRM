@@ -30,7 +30,15 @@ export async function POST(
     };
 
     // 4. Trigger the Lead Routing Logic & WebSockets (Phase 3)
-    // Broadcast the new lead to all connected clients in the workspace!
+    // Broadcast the new lead to the specific client's website channel
+    const channelName = `website-${websiteId}`;
+    await supabase.channel(channelName).send({
+      type: 'broadcast',
+      event: 'new-lead',
+      payload: leadData,
+    });
+    
+    // Also broadcast to the global agency channel so the Agency sees all leads
     await supabase.channel('leads-channel').send({
       type: 'broadcast',
       event: 'new-lead',
