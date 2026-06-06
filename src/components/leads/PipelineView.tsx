@@ -69,10 +69,18 @@ function getScore(lead: Lead) {
   return 24;
 }
 
-export function PipelineTable() {
+import { KanbanBoard } from "./KanbanBoard";
+
+export function PipelineView() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [inspectLead, setInspectLead] = useState<Lead | null>(null);
+  
+  // View Toggle State
+  const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
+
+  // Bulk Selection State
+  const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(new Set());
 
   // Workable Columns State
   const [cols, setCols] = useState({
@@ -103,10 +111,24 @@ export function PipelineTable() {
     }
   };
 
+  const toggleSelection = (id: string) => {
+    setSelectedLeadIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) newSet.delete(id);
+      else newSet.add(id);
+      return newSet;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selectedLeadIds.size === leads.length) setSelectedLeadIds(new Set());
+    else setSelectedLeadIds(new Set(leads.map(l => l.id)));
+  };
+
   const borderClass = "border-[#E5E7EB]";
 
   return (
-    <div className="flex flex-col h-full w-full bg-white">
+    <div className="flex flex-col h-full w-full bg-white relative overflow-hidden">
       {/* ─── TOOLBAR ─── */}
       <div 
         className="flex items-center justify-between px-8 py-3 bg-white border-b"
@@ -166,17 +188,35 @@ export function PipelineTable() {
               <DropdownMenuItem className="text-[13px]">Comfortable</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1.5 hover:text-[#1A1523] transition-colors py-1 px-2 rounded hover:bg-slate-50 outline-none">
+              <LayoutGrid className="h-4 w-4" strokeWidth={1.75} /> Layout
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-40">
+              <DropdownMenuItem className={`text-[13px] ${viewMode === 'table' ? 'font-medium bg-slate-50' : ''}`} onClick={() => setViewMode('table')}>Table View</DropdownMenuItem>
+              <DropdownMenuItem className={`text-[13px] ${viewMode === 'kanban' ? 'font-medium bg-slate-50' : ''}`} onClick={() => setViewMode('kanban')}>Kanban Board</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
-      {/* ─── TABLE ─── */}
+      {/* ─── CONTENT ─── */}
       <div className="flex-1 overflow-auto bg-white relative">
-        <table className="w-full text-left border-collapse" style={{ tableLayout: "fixed" }}>
+        {viewMode === "kanban" ? (
+          <KanbanBoard leads={leads} onStatusChange={handleStatusChange} onInspect={setInspectLead} />
+        ) : (
+          <table className="w-full text-left border-collapse" style={{ tableLayout: "fixed" }}>
           {/* HEADERS */}
           <thead className={`sticky top-0 bg-white z-10 border-b shadow-[0_1px_0_#E5E7EB]`}>
             <tr className="h-[48px] text-[11.5px] font-semibold text-[#6B7280] uppercase tracking-wider">
               <th className={`w-[56px] px-6 py-0 border-r ${borderClass} text-center font-normal`}>
-                <input type="checkbox" className="rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED]" />
+                <input 
+                  type="checkbox" 
+                  checked={leads.length > 0 && selectedLeadIds.size === leads.length}
+                  onChange={toggleAll}
+                  className="rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED]" 
+                />
               </th>
               {cols.name && (
                 <th className={`w-[260px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
@@ -237,7 +277,12 @@ export function PipelineTable() {
                 >
                   {/* Checkbox */}
                   <td className={`px-6 py-0 border-r text-center ${borderClass}`}>
-                    <input type="checkbox" className="rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED]" />
+                    <input 
+                      type="checkbox" 
+                      checked={selectedLeadIds.has(lead.id)}
+                      onChange={() => toggleSelection(lead.id)}
+                      className="rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED] cursor-pointer" 
+                    />
                   </td>
 
                   {/* Name */}
@@ -352,7 +397,52 @@ export function PipelineTable() {
             })}
           </tbody>
         </table>
+        )}
       </div>
+
+      {/* ─── BULK ACTIONS BAR ─── */}
+      {selectedLeadIds.size > 0 && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-[#1A1523] text-white px-5 py-3 rounded-full shadow-2xl flex items-center gap-6 z-50 border border-white/10 animate-in slide-in-from-bottom-10 fade-in duration-200">
+          <div className="flex items-center gap-2 border-r border-white/20 pr-6">
+            <span className="flex items-center justify-center bg-[#7C3AED] text-white text-xs font-bold w-5 h-5 rounded-full">{selectedLeadIds.size}</span>
+            <span className="text-[13px] font-medium">selected</span>
+          </div>
+          
+          <div className="flex items-center gap-1 text-[13px] font-medium">
+            <button className="flex items-center gap-2 hover:bg-white/10 px-3 py-1.5 rounded transition-colors text-gray-200 hover:text-white" onClick={() => toast("Bulk Email feature coming soon!")}>
+              <Mail className="h-4 w-4" /> Email All
+            </button>
+            <button className="flex items-center gap-2 hover:bg-white/10 px-3 py-1.5 rounded transition-colors text-gray-200 hover:text-white" onClick={() => toast("Bulk SMS feature coming soon!")}>
+              <Phone className="h-4 w-4" /> SMS All
+            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-2 hover:bg-white/10 px-3 py-1.5 rounded transition-colors text-gray-200 hover:text-white outline-none">
+                <ChevronDown className="h-4 w-4" /> Update Status
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="w-48 bg-[#1A1523] text-white border-white/10">
+                <DropdownMenuLabel className="text-xs text-gray-400">Set Status For {selectedLeadIds.size} Leads</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-white/10" />
+                {Object.entries(STAGE_STYLE).map(([statusKey, config]) => (
+                  <DropdownMenuItem 
+                    key={statusKey} 
+                    onClick={() => {
+                      selectedLeadIds.forEach(id => handleStatusChange(id, statusKey));
+                      setSelectedLeadIds(new Set());
+                    }}
+                    className="text-[13px] flex items-center gap-2 cursor-pointer focus:bg-white/10 focus:text-white"
+                  >
+                    <div className={`h-2.5 w-2.5 rounded-full ${config.fill === 'bg-transparent' ? config.ring + ' border' : config.fill}`} />
+                    {config.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <button className="flex items-center gap-2 hover:bg-red-500/20 px-3 py-1.5 rounded transition-colors text-red-400 hover:text-red-300 ml-2" onClick={() => toast("Bulk Delete feature coming soon!")}>
+              <XCircle className="h-4 w-4" /> Delete
+            </button>
+          </div>
+        </div>
+      )}
 
       {inspectLead && (
         <LeadDetailsModal lead={inspectLead} onClose={() => setInspectLead(null)} />

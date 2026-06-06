@@ -1,7 +1,7 @@
 "use client";
 
-import { PipelineTable } from "@/components/leads/PipelineTable";
+import { PipelineView } from "@/components/leads/PipelineView";
 
 export default function LeadsPage() {
-  return <PipelineTable />;
+  return <PipelineView />;
 }
