@@ -21,7 +21,7 @@ export type PushPayload = {
   badge?: string;
   data?: any;
   /** Action buttons shown in the notification */
-  actions?: { action: string; title: string }[];
+  actions?: { action: string; title: string; url?: string }[];
 };
 
 /**

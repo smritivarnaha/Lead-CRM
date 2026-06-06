@@ -39,6 +39,7 @@ export async function getLeads() {
         rawFields: true,
         smsSent: true,
         pushSent: true,
+        callNotes: true,
         website: { select: { id: true, name: true, domain: true } },
       },
     });
@@ -94,5 +95,26 @@ export async function deleteLead(leadId: string) {
   } catch (error) {
     console.error("Error deleting lead:", error);
     return { success: false, error: "Failed to delete lead" };
+  }
+}
+
+export async function logCallAction(leadId: string, status: string, callNotes?: string, followUpAt?: Date | null) {
+  try {
+    const user = await currentUser();
+    if (!user) return { success: false, error: "Unauthorized" };
+
+    const dataToUpdate: any = { status };
+    if (callNotes !== undefined) dataToUpdate.callNotes = callNotes;
+    if (followUpAt !== undefined) dataToUpdate.followUpAt = followUpAt;
+
+    const updatedLead = await prisma.lead.update({
+      where: { id: leadId },
+      data: dataToUpdate,
+    });
+
+    return { success: true, lead: JSON.parse(JSON.stringify(updatedLead)) };
+  } catch (error) {
+    console.error("Error logging call:", error);
+    return { success: false, error: "Failed to log call" };
   }
 }

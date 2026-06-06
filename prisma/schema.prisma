@@ -107,16 +107,16 @@ model Lead {
   priority    String   @default("NORMAL") // HIGH, NORMAL, LOW
   temperature String   @default("COLD") // HOT, WARM, COLD
   status      String   @default("NEW") // NEW, CONTACTED, NO_RESPONSE, FOLLOW_UP, CONVERTED, LOST
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  followUpAt  DateTime?
+  assignedToId String?
+  callNotes    String?   @db.Text
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  followUpAt   DateTime?
 
   // Notification Status Tracking
   smsSent     Boolean  @default(false)
   pushSent    Boolean  @default(false)
 
-  assignedToId String?
   assignedTo   User?    @relation("AssignedTo", fields: [assignedToId], references: [id])
 
   notes       Note[]

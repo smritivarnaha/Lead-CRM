@@ -22,10 +22,10 @@ type Lead = {
 const STAGE_CONFIG: Record<string, { label: string; ring: string; fill: string; icon: any, bg: string }> = {
   NEW:         { label: "New Lead",      ring: "border-blue-500",   fill: "bg-transparent",  icon: HelpCircle,   bg: "bg-blue-50" },
   CONTACTED:   { label: "Contacted",     ring: "border-amber-500",  fill: "bg-transparent",  icon: Clock,        bg: "bg-amber-50" }, 
-  FOLLOW_UP:   { label: "Follow Up",     ring: "border-orange-500", fill: "bg-transparent",  icon: ArrowRight,   bg: "bg-orange-50" },
+  BUSY:        { label: "Busy / No Answer", ring: "border-slate-500", fill: "bg-transparent", icon: HelpCircle, bg: "bg-slate-50" },
+  FOLLOW_UP:   { label: "Follow Up Later", ring: "border-orange-500", fill: "bg-transparent",  icon: ArrowRight,   bg: "bg-orange-50" },
   CONVERTED:   { label: "Converted",     ring: "border-green-500",  fill: "bg-green-500",    icon: CheckCircle2, bg: "bg-green-50" },
   LOST:        { label: "Junk / Lost",   ring: "border-red-500",    fill: "bg-red-500",      icon: XCircle,      bg: "bg-red-50" },
-  NO_RESPONSE: { label: "No response",   ring: "border-slate-400",  fill: "bg-transparent",  icon: HelpCircle,   bg: "bg-slate-50" },
 };
 
 // Determine score/heat like in Table
@@ -42,7 +42,7 @@ const HEAT_STYLE: Record<string, { dot: string }> = {
   COLD: { dot: "bg-[#EF4444]" }, 
 };
 
-export function KanbanBoard({ leads, onStatusChange, onInspect }: { leads: Lead[], onStatusChange: (id: string, status: string) => void, onInspect: (lead: Lead) => void }) {
+export function KanbanBoard({ leads, onStatusChange, onInspect, onCallLog }: { leads: Lead[], onStatusChange: (id: string, status: string) => void, onInspect: (lead: Lead) => void, onCallLog?: (lead: Lead) => void }) {
   // @hello-pangea/dnd requires disabling strict mode rendering initially to avoid hydration mismatch
   const [isBrowser, setIsBrowser] = useState(false);
   useEffect(() => setIsBrowser(true), []);
@@ -130,7 +130,9 @@ export function KanbanBoard({ leads, onStatusChange, onInspect }: { leads: Lead[
                             <div className="flex flex-col gap-2 mb-4">
                               {lead.phone && (
                                 <div className="flex items-center gap-2 text-[12.5px] text-[#4B5563]">
-                                  <Phone className="h-3.5 w-3.5 text-[#9CA3AF]" /> {lead.phone}
+                                  <a href={`tel:${lead.phone}`} onClick={() => onCallLog && onCallLog(lead)} className="flex items-center gap-2 hover:text-[#7C3AED]">
+                                    <Phone className="h-3.5 w-3.5 text-[#9CA3AF]" /> {lead.phone}
+                                  </a>
                                 </div>
                               )}
                               {lead.email && (

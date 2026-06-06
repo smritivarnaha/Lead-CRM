@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getLeads, updateLeadStatus } from "@/actions/leads";
+import { getLeads, updateLeadStatus, logCallAction } from "@/actions/leads";
 import { LeadDetailsModal } from "@/components/leads/LeadDetailsModal";
+import { CallLogModal } from "@/components/leads/CallLogModal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,14 +49,13 @@ type Lead = {
   pushSent?: boolean;
 };
 
-// ─── STAGE CONFIG ───
 const STAGE_STYLE: Record<string, { label: string; ring: string; fill: string; icon: any }> = {
   NEW:         { label: "New Lead",      ring: "border-blue-500",   fill: "bg-transparent",  icon: HelpCircle },
   CONTACTED:   { label: "Contacted",     ring: "border-amber-500",  fill: "bg-transparent",  icon: Clock }, 
-  FOLLOW_UP:   { label: "Follow Up",     ring: "border-orange-500", fill: "bg-transparent",  icon: ArrowRight },
+  BUSY:        { label: "Busy / No Answer", ring: "border-slate-500", fill: "bg-transparent", icon: HelpCircle },
+  FOLLOW_UP:   { label: "Follow Up Later", ring: "border-orange-500", fill: "bg-transparent",  icon: ArrowRight },
   CONVERTED:   { label: "Converted",     ring: "border-green-500",  fill: "bg-green-500",    icon: CheckCircle2 },
   LOST:        { label: "Junk / Lost",   ring: "border-red-500",    fill: "bg-red-500",      icon: XCircle },
-  NO_RESPONSE: { label: "No response",   ring: "border-slate-400",  fill: "bg-transparent",  icon: HelpCircle },
 };
 
 // ─── HEAT/OHS CONFIG ───
@@ -78,6 +78,7 @@ export function PipelineView() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [inspectLead, setInspectLead] = useState<Lead | null>(null);
+  const [callLogLead, setCallLogLead] = useState<Lead | null>(null);
   
   // View Toggle State
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
@@ -108,6 +109,13 @@ export function PipelineView() {
     return true;
   });
 
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  
+  const upcomingFollowUps = leads.filter(l => 
+    l.status === 'FOLLOW_UP' && l.followUpAt && new Date(l.followUpAt) <= today
+  ).sort((a, b) => new Date(a.followUpAt!).getTime() - new Date(b.followUpAt!).getTime());
+
   useEffect(() => {
     getLeads().then((res) => {
       if (res.success && res.leads) setLeads(res.leads);
@@ -124,6 +132,23 @@ export function PipelineView() {
     } else {
       toast.error("Failed to update status");
       // Revert if needed (omitted for brevity)
+    }
+  };
+
+  const handleCallLogSubmit = async (status: string, notes: string, followUpAt: Date | null) => {
+    if (!callLogLead) return;
+    const leadId = callLogLead.id;
+    setCallLogLead(null);
+    
+    // Optimistic update
+    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status } : l));
+    
+    const res = await logCallAction(leadId, status, notes, followUpAt);
+    if (res.success) {
+      toast.success("Call logged successfully!");
+      setLeads(prev => prev.map(l => l.id === leadId ? res.lead : l));
+    } else {
+      toast.error("Failed to log call");
     }
   };
 
@@ -145,12 +170,51 @@ export function PipelineView() {
 
   return (
     <div className="flex flex-col h-full w-full bg-white relative overflow-hidden">
+      {/* ─── FOLLOW UPS BANNER ─── */}
+      {upcomingFollowUps.length > 0 && (
+        <div className="bg-orange-50 border-b border-orange-200 px-4 sm:px-8 py-3 flex items-start sm:items-center justify-between flex-col sm:flex-row gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 flex-shrink-0">
+              <Clock className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="text-[14px] font-bold text-orange-900 leading-tight">
+                {upcomingFollowUps.length} {upcomingFollowUps.length === 1 ? 'lead needs' : 'leads need'} follow-up today
+              </h3>
+              <p className="text-[12px] text-orange-700">Don't lose these gems! Give them a quick call.</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto pb-1 sm:pb-0">
+            {upcomingFollowUps.slice(0, 3).map(lead => (
+              <button 
+                key={lead.id} 
+                onClick={() => setCallLogLead(lead)}
+                className="flex items-center gap-2 bg-white border border-orange-200 hover:border-orange-400 px-3 py-1.5 rounded-lg transition-colors flex-shrink-0 group shadow-sm"
+              >
+                <div className="flex items-center justify-center h-5 w-5 rounded-md bg-orange-100 text-[10px] font-bold text-orange-700">
+                  {lead.fullName.charAt(0).toUpperCase()}
+                </div>
+                <div className="text-left">
+                  <div className="text-[12px] font-bold text-orange-900 group-hover:text-orange-700 leading-tight truncate max-w-[100px]">{lead.fullName}</div>
+                  <div className="text-[10px] text-orange-600 font-medium">
+                    {new Date(lead.followUpAt!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+              </button>
+            ))}
+            {upcomingFollowUps.length > 3 && (
+              <div className="text-[12px] font-bold text-orange-700 px-2">+{upcomingFollowUps.length - 3} more</div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ─── TOOLBAR ─── */}
       <div 
         className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-8 py-3 bg-white border-b gap-3 sm:gap-0"
         style={{ borderColor: "#E5E7EB", flexShrink: 0 }}
       >
-        <div className="flex items-center gap-3 w-full sm:w-auto overflow-x-auto no-scrollbar pb-1 sm:pb-0">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto pb-1 sm:pb-0">
           <button className="flex items-center justify-center w-7 h-7 text-[#9CA3AF] hover:text-[#1A1523] hover:bg-slate-100 rounded transition-colors">
             <ArrowRightToLine className="h-4 w-4" strokeWidth={2} />
           </button>
@@ -234,7 +298,7 @@ export function PipelineView() {
       {/* ─── CONTENT ─── */}
       <div className="flex-1 overflow-auto bg-white relative">
         {viewMode === "kanban" ? (
-          <KanbanBoard leads={filteredLeads} onStatusChange={handleStatusChange} onInspect={setInspectLead} />
+          <KanbanBoard leads={filteredLeads} onStatusChange={handleStatusChange} onInspect={setInspectLead} onCallLog={setCallLogLead} />
         ) : (
           <table className="w-full text-left border-collapse" style={{ tableLayout: "fixed" }}>
           {/* HEADERS */}
@@ -423,7 +487,7 @@ export function PipelineView() {
                       )}
                       
                       {lead.phone ? (
-                        <a href={`tel:${lead.phone}`} className="w-8 h-8 rounded-lg bg-white border border-[#E5E7EB] hover:bg-[#ECFDF5] hover:border-[#10B981] hover:text-[#10B981] flex items-center justify-center transition-all text-[#6B7280] shadow-sm" title="Call Contact">
+                        <a href={`tel:${lead.phone}`} onClick={() => setCallLogLead(lead)} className="w-8 h-8 rounded-lg bg-white border border-[#E5E7EB] hover:bg-[#ECFDF5] hover:border-[#10B981] hover:text-[#10B981] flex items-center justify-center transition-all text-[#6B7280] shadow-sm" title="Call Contact">
                           <Phone className="h-3.5 w-3.5" />
                         </a>
                       ) : (
@@ -489,6 +553,14 @@ export function PipelineView() {
 
       {inspectLead && (
         <LeadDetailsModal lead={inspectLead} onClose={() => setInspectLead(null)} />
+      )}
+      
+      {callLogLead && (
+        <CallLogModal 
+          leadName={callLogLead.fullName}
+          onClose={() => setCallLogLead(null)}
+          onSubmit={handleCallLogSubmit}
+        />
       )}
     </div>
   );
