@@ -67,7 +67,7 @@ export default function WebsitesPage() {
       }
     } catch (e) {
       console.error("Create exception:", e);
-      alert("A critical error occurred while contacting the server.");
+      alert(`A critical error occurred while contacting the server: ${(e as Error).message}. This might be a database connection timeout on Vercel.`);
     } finally {
       setIsSubmitting(false);
     }

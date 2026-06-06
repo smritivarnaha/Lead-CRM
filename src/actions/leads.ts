@@ -35,7 +35,10 @@ export async function getLeads() {
       });
     }
 
-    return { success: true, leads };
+    // Convert to plain objects
+    const plainLeads = leads.map(lead => ({ ...lead }));
+
+    return { success: true, leads: plainLeads };
   } catch (error) {
     console.error("Error fetching leads:", error);
     return { success: false, error: "Failed to fetch leads" };
@@ -52,7 +55,9 @@ export async function updateLeadStatus(leadId: string, status: string) {
       data: { status },
     });
 
-    return { success: true, lead: updatedLead };
+    const plainLead = { ...updatedLead };
+
+    return { success: true, lead: plainLead };
   } catch (error) {
     console.error("Error updating lead:", error);
     return { success: false, error: "Failed to update lead" };

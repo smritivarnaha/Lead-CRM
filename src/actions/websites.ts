@@ -27,7 +27,10 @@ export async function getWebsites() {
       },
     });
 
-    return { success: true, websites };
+    // Convert Prisma objects to plain JS objects to avoid Next.js RSC serialization errors
+    const plainWebsites = websites.map(site => ({ ...site }));
+
+    return { success: true, websites: plainWebsites };
   } catch (error) {
     console.error("Error fetching websites:", error);
     return { success: false, error: "Failed to fetch websites" };
@@ -61,8 +64,10 @@ export async function createWebsite(data: { name: string; domain: string }) {
       },
     });
 
+    const plainSite = { ...newSite };
+
     revalidatePath("/websites");
-    return { success: true, website: newSite };
+    return { success: true, website: plainSite };
   } catch (error) {
     console.error("Error creating website:", error);
     return { success: false, error: "Failed to create website" };
