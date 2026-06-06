@@ -10,9 +10,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Globe, Copy, CheckCircle2, MoreVertical, X } from "lucide-react";
+import { Globe, Copy, CheckCircle2, X, UserPlus, KeyRound } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getWebsites, createWebsite } from "@/actions/websites";
+import { getWebsites, createWebsite, createClientLogin } from "@/actions/websites";
 
 type Website = {
   id: string;
@@ -26,9 +26,18 @@ export default function WebsitesPage() {
   const [websites, setWebsites] = useState<Website[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [selectedSite, setSelectedSite] = useState<Website | null>(null);
   const [newSiteName, setNewSiteName] = useState("");
   const [newSiteDomain, setNewSiteDomain] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Create login form state
+  const [clientEmail, setClientEmail] = useState("");
+  const [clientFirstName, setClientFirstName] = useState("");
+  const [clientLastName, setClientLastName] = useState("");
+  const [isCreatingLogin, setIsCreatingLogin] = useState(false);
+  const [createdCredentials, setCreatedCredentials] = useState<{ email: string; password: string } | null>(null);
 
   const fetchSites = async () => {
     setIsLoading(true);
@@ -36,8 +45,6 @@ export default function WebsitesPage() {
       const res = await getWebsites();
       if (res?.success && res.websites) {
         setWebsites(res.websites);
-      } else {
-        console.error("Failed to fetch sites:", res?.error);
       }
     } catch (e) {
       console.error("Server Action Exception:", e);
@@ -54,23 +61,64 @@ export default function WebsitesPage() {
     e.preventDefault();
     if (!newSiteName || !newSiteDomain) return;
     setIsSubmitting(true);
-    
     try {
       const res = await createWebsite({ name: newSiteName, domain: newSiteDomain });
       if (res?.success) {
         setNewSiteName("");
         setNewSiteDomain("");
         setIsModalOpen(false);
-        fetchSites(); // Refresh list
+        fetchSites();
       } else {
-        alert(res?.error || "Failed to create website. Please check database connection.");
+        alert(res?.error || "Failed to create website.");
       }
     } catch (e) {
       console.error("Create exception:", e);
-      alert(`A critical error occurred while contacting the server: ${(e as Error).message}. This might be a database connection timeout on Vercel.`);
+      alert("Failed to contact the server. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const openLoginModal = (site: Website) => {
+    setSelectedSite(site);
+    setClientEmail("");
+    setClientFirstName("");
+    setClientLastName("");
+    setCreatedCredentials(null);
+    setIsLoginModalOpen(true);
+  };
+
+  const handleCreateLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSite || !clientEmail || !clientFirstName) return;
+    setIsCreatingLogin(true);
+    try {
+      const res = await createClientLogin({
+        email: clientEmail,
+        firstName: clientFirstName,
+        lastName: clientLastName,
+        websiteId: selectedSite.id,
+        websiteName: selectedSite.name,
+      });
+      if (res?.success && res.tempPassword) {
+        setCreatedCredentials({ email: clientEmail, password: res.tempPassword });
+      } else {
+        alert(res?.error || "Failed to create client login.");
+      }
+    } catch (e) {
+      console.error("Login create exception:", e);
+      alert("Failed to create client login. Please try again.");
+    } finally {
+      setIsCreatingLogin(false);
+    }
+  };
+
+  const copyCredentials = () => {
+    if (!createdCredentials) return;
+    navigator.clipboard.writeText(
+      `Login URL: https://lead-crmsss.vercel.app/sign-in\nEmail: ${createdCredentials.email}\nPassword: ${createdCredentials.password}`
+    );
+    alert("Credentials copied to clipboard!");
   };
 
   const copyWebhook = (id: string) => {
@@ -93,7 +141,7 @@ export default function WebsitesPage() {
         <Table>
           <TableHeader className="bg-slate-50/50">
             <TableRow>
-              <TableHead className="w-[300px] font-semibold">Website Name</TableHead>
+              <TableHead className="w-[280px] font-semibold">Website Name</TableHead>
               <TableHead className="font-semibold">Webhook URL</TableHead>
               <TableHead className="font-semibold">Status</TableHead>
               <TableHead className="text-right font-semibold">Actions</TableHead>
@@ -117,7 +165,7 @@ export default function WebsitesPage() {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <code className="bg-slate-100 text-slate-800 px-2 py-1 rounded text-xs truncate max-w-[250px]">
+                    <code className="bg-slate-100 text-slate-800 px-2 py-1 rounded text-xs truncate max-w-[220px]">
                       https://lead-crmsss.vercel.app/api/webhook/receive/{site.id}
                     </code>
                     <button onClick={() => copyWebhook(site.id)} className="text-slate-400 hover:text-blue-600 transition-colors" title="Copy Webhook URL">
@@ -137,16 +185,14 @@ export default function WebsitesPage() {
                   )}
                 </TableCell>
                 <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="text-xs"
-                      onClick={() => alert(`Creating login for ${site.name}. In production, this generates a Client account.`)}
-                    >
-                      Create Login
-                    </Button>
-                  </div>
+                  <Button
+                    size="sm"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs flex items-center gap-1.5 ml-auto"
+                    onClick={() => openLoginModal(site)}
+                  >
+                    <UserPlus className="h-3.5 w-3.5" />
+                    Create Login
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
@@ -154,9 +200,10 @@ export default function WebsitesPage() {
         </Table>
       </div>
 
+      {/* Add Website Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
             <div className="flex items-center justify-between p-6 border-b border-slate-100">
               <h3 className="text-lg font-bold text-slate-900">Add New Website</h3>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">
@@ -166,26 +213,26 @@ export default function WebsitesPage() {
             <form onSubmit={handleCreate} className="p-6 flex flex-col gap-4">
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium text-slate-700">Website Name</label>
-                <input 
+                <input
                   required
                   placeholder="e.g. Dr. Anurag Clinic"
-                  className="px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  className="px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900"
                   value={newSiteName}
                   onChange={(e) => setNewSiteName(e.target.value)}
                 />
               </div>
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium text-slate-700">Domain Name</label>
-                <input 
+                <input
                   required
                   placeholder="e.g. dranurag.com"
-                  className="px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  className="px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900"
                   value={newSiteDomain}
                   onChange={(e) => setNewSiteDomain(e.target.value)}
                 />
               </div>
               <div className="flex justify-end gap-3 mt-4">
-                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} className="text-slate-700 border-slate-300">
                   Cancel
                 </Button>
                 <Button type="submit" disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700 text-white">
@@ -193,6 +240,100 @@ export default function WebsitesPage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Create Client Login Modal */}
+      {isLoginModalOpen && selectedSite && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-slate-100">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Create Client Login</h3>
+                <p className="text-xs text-slate-500 mt-0.5">For: <span className="font-medium text-slate-700">{selectedSite.name}</span></p>
+              </div>
+              <button onClick={() => setIsLoginModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {createdCredentials ? (
+              /* Success State - Show credentials */
+              <div className="p-6 flex flex-col gap-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <p className="text-sm font-semibold text-green-800 mb-3">✅ Client account created!</p>
+                  <p className="text-xs text-green-700 mb-1">Share these credentials with your client:</p>
+                  <div className="bg-white rounded border border-green-200 p-3 mt-2 font-mono text-xs text-slate-800 space-y-1">
+                    <p><span className="text-slate-500">Login URL:</span> https://lead-crmsss.vercel.app/sign-in</p>
+                    <p><span className="text-slate-500">Email:</span> {createdCredentials.email}</p>
+                    <p><span className="text-slate-500">Password:</span> {createdCredentials.password}</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Button onClick={copyCredentials} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2">
+                    <Copy className="h-4 w-4" /> Copy Credentials
+                  </Button>
+                  <Button variant="outline" onClick={() => setIsLoginModalOpen(false)} className="text-slate-700 border-slate-300">
+                    Done
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              /* Form State */
+              <form onSubmit={handleCreateLogin} className="p-6 flex flex-col gap-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-slate-700">First Name *</label>
+                    <input
+                      required
+                      placeholder="e.g. Dr. Anurag"
+                      className="px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-slate-900"
+                      value={clientFirstName}
+                      onChange={(e) => setClientFirstName(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-slate-700">Last Name</label>
+                    <input
+                      placeholder="e.g. Sharma"
+                      className="px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-slate-900"
+                      value={clientLastName}
+                      onChange={(e) => setClientLastName(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-slate-700">Client Email *</label>
+                  <input
+                    required
+                    type="email"
+                    placeholder="e.g. client@dranurag.com"
+                    className="px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-slate-900"
+                    value={clientEmail}
+                    onChange={(e) => setClientEmail(e.target.value)}
+                  />
+                  <p className="text-xs text-slate-400">A temporary password will be auto-generated. Share it with the client.</p>
+                </div>
+
+                <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-xs text-indigo-700">
+                    <KeyRound className="h-3.5 w-3.5" />
+                    <span>Client will only see leads from <strong>{selectedSite.name}</strong></span>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-2">
+                  <Button type="button" variant="outline" onClick={() => setIsLoginModalOpen(false)} className="text-slate-700 border-slate-300">
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isCreatingLogin} className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2">
+                    <UserPlus className="h-4 w-4" />
+                    {isCreatingLogin ? "Creating..." : "Create Login"}
+                  </Button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

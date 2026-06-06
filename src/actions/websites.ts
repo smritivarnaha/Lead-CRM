@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { currentUser } from "@clerk/nextjs/server";
+import { currentUser, clerkClient } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 
 export async function getWebsites() {
@@ -12,24 +12,13 @@ export async function getWebsites() {
       return { success: false, error: "Unauthorized" };
     }
 
-    const role = user.publicMetadata?.role as string | undefined;
-
-    // Only Agency Owners should see all websites
-    if (role !== "AGENCY_OWNER" && role !== "SUPER_ADMIN" && !role) {
-       // If no role, let's just assume they can see them for now to test, 
-       // but ideally we check workspace
-    }
-
-    // Since we don't have workspaces fully enforced yet, we fetch all sites
     const websites = await prisma.website.findMany({
       orderBy: {
         createdAt: "desc",
       },
     });
 
-    // Convert Prisma objects to plain JS objects using JSON to absolutely guarantee serialization
     const plainWebsites = JSON.parse(JSON.stringify(websites));
-
     return { success: true, websites: plainWebsites };
   } catch (error) {
     console.error("Error fetching websites:", error);
@@ -65,11 +54,75 @@ export async function createWebsite(data: { name: string; domain: string }) {
     });
 
     const plainSite = JSON.parse(JSON.stringify(newSite));
-
     revalidatePath("/websites");
     return { success: true, website: plainSite };
   } catch (error) {
     console.error("Error creating website:", error);
     return { success: false, error: "Failed to create website" };
+  }
+}
+
+export async function createClientLogin(data: { 
+  email: string; 
+  firstName: string;
+  lastName: string;
+  websiteId: string; 
+  websiteName: string; 
+}) {
+  try {
+    const user = await currentUser();
+    if (!user) return { success: false, error: "Unauthorized" };
+
+    const clerk = await clerkClient();
+
+    // Check if user already exists in Clerk
+    const existingUsers = await clerk.users.getUserList({ emailAddress: [data.email] });
+    
+    if (existingUsers.totalCount > 0) {
+      return { success: false, error: `A user with email ${data.email} already exists.` };
+    }
+
+    // Create the Clerk user with a temporary password
+    const tempPassword = `Client@${Math.random().toString(36).slice(2, 10)}!`;
+    
+    const newClerkUser = await clerk.users.createUser({
+      emailAddress: [data.email],
+      firstName: data.firstName,
+      lastName: data.lastName,
+      password: tempPassword,
+      publicMetadata: {
+        role: "CLIENT",
+        websiteId: data.websiteId,
+        websiteName: data.websiteName,
+      },
+    });
+
+    // Also save user to our database
+    await prisma.user.upsert({
+      where: { email: data.email },
+      create: {
+        id: newClerkUser.id,
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        role: "CLIENT",
+        websiteId: data.websiteId,
+        workspaceId: "mock_workspace_id",
+      },
+      update: {
+        websiteId: data.websiteId,
+        role: "CLIENT",
+      },
+    });
+
+    return { 
+      success: true, 
+      tempPassword,
+      message: `Client account created! Share these credentials:\nEmail: ${data.email}\nPassword: ${tempPassword}` 
+    };
+  } catch (error: unknown) {
+    console.error("Error creating client login:", error);
+    const errMsg = (error as { errors?: Array<{ message: string }> })?.errors?.[0]?.message || "Failed to create client login";
+    return { success: false, error: errMsg };
   }
 }
