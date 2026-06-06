@@ -313,210 +313,278 @@ export function PipelineView() {
         {viewMode === "kanban" ? (
           <KanbanBoard leads={filteredLeads} onStatusChange={handleStatusChange} onInspect={setInspectLead} onCallLog={setCallLogLead} />
         ) : (
-          <table className="w-full text-left border-collapse" style={{ tableLayout: "fixed" }}>
-          {/* HEADERS */}
-          <thead className={`sticky top-0 bg-white z-10 border-b shadow-[0_1px_0_#E5E7EB]`}>
-            <tr className="h-[48px] text-[11.5px] font-semibold text-[#6B7280] uppercase tracking-wider">
-              <th className={`w-[56px] px-6 py-0 border-r ${borderClass} text-center font-normal`}>
-                <input 
-                  type="checkbox" 
-                  checked={filteredLeads.length > 0 && selectedLeadIds.size === filteredLeads.length}
-                  onChange={toggleAll}
-                  className="rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED]" 
-                />
-              </th>
-              {cols.name && (
-                <th className={`w-[260px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
-                  <div className="flex items-center justify-between">NAME<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
-                </th>
-              )}
-              {cols.phone && (
-                <th className={`w-[140px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer hidden md:table-cell`}>
-                  <div className="flex items-center justify-between">PHONE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
-                </th>
-              )}
-              {cols.email && (
-                <th className={`w-[200px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer hidden lg:table-cell`}>
-                  <div className="flex items-center justify-between">EMAIL<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
-                </th>
-              )}
-              {cols.ohs && (
-                <th className={`w-[100px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer hidden lg:table-cell`}>
-                  <div className="flex items-center justify-between">OHS<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
-                </th>
-              )}
-              {cols.stage && (
-                <th className={`w-[180px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
-                  <div className="flex items-center justify-between">STAGE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
-                </th>
-              )}
-              {cols.closeDate && (
-                <th className={`w-[120px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer hidden sm:table-cell`}>
-                  <div className="flex items-center justify-between">CLOSE DATE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
-                </th>
-              )}
-              <th className={`w-[140px] px-0 py-0 ${borderClass}`}>
-                <div className="flex items-center justify-center">ACTIONS</div>
-              </th>
-            </tr>
-          </thead>
+          <>
+            {/* ─── DESKTOP TABLE VIEW ─── */}
+            <div className="hidden md:block">
+              <table className="w-full text-left border-collapse" style={{ tableLayout: "fixed" }}>
+                {/* HEADERS */}
+                <thead className={`sticky top-0 bg-white z-10 border-b shadow-[0_1px_0_#E5E7EB]`}>
+                  <tr className="h-[48px] text-[11.5px] font-semibold text-[#6B7280] uppercase tracking-wider">
+                    <th className={`w-[56px] px-6 py-0 border-r ${borderClass} text-center font-normal`}>
+                      <input 
+                        type="checkbox" 
+                        checked={filteredLeads.length > 0 && selectedLeadIds.size === filteredLeads.length}
+                        onChange={toggleAll}
+                        className="rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED]" 
+                      />
+                    </th>
+                    {cols.name && (
+                      <th className={`w-[260px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                        <div className="flex items-center justify-between">NAME<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
+                      </th>
+                    )}
+                    {cols.phone && (
+                      <th className={`w-[140px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                        <div className="flex items-center justify-between">PHONE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
+                      </th>
+                    )}
+                    {cols.email && (
+                      <th className={`w-[200px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer hidden lg:table-cell`}>
+                        <div className="flex items-center justify-between">EMAIL<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
+                      </th>
+                    )}
+                    {cols.ohs && (
+                      <th className={`w-[100px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer hidden lg:table-cell`}>
+                        <div className="flex items-center justify-between">OHS<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
+                      </th>
+                    )}
+                    {cols.stage && (
+                      <th className={`w-[180px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                        <div className="flex items-center justify-between">STAGE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
+                      </th>
+                    )}
+                    {cols.closeDate && (
+                      <th className={`w-[120px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                        <div className="flex items-center justify-between">CLOSE DATE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
+                      </th>
+                    )}
+                    <th className={`w-[140px] px-0 py-0 ${borderClass}`}>
+                      <div className="flex items-center justify-center">ACTIONS</div>
+                    </th>
+                  </tr>
+                </thead>
 
-          {/* BODY */}
-          <tbody className="text-[13px]">
-            {loading ? (
-              <tr><td colSpan={8} className="text-center py-12 text-[#9CA3AF]">Loading data...</td></tr>
-            ) : filteredLeads.length === 0 ? (
-              <tr><td colSpan={8} className="text-center py-12 text-[#9CA3AF]">No leads found.</td></tr>
-            ) : filteredLeads.map((lead) => {
-              const stage = STAGE_STYLE[lead.status] || STAGE_STYLE.NEW;
-              const heat = HEAT_STYLE[lead.temperature] || HEAT_STYLE.WARM;
-              const score = getScore(lead);
-              
-              // App logo generator
-              const colors = ["#FEE2E2", "#FEF3C7", "#D1FAE5", "#DBEAFE", "#EDE9FE"];
-              const char = lead.fullName.charAt(0).toUpperCase();
-              const idx = char.charCodeAt(0) % colors.length;
-              const logoBg = colors[idx];
-              
-              const trHeightClass = rowHeight === "compact" ? "h-[48px]" : rowHeight === "comfortable" ? "h-[80px]" : "h-[64px]";
-              
-              return (
-                <tr 
-                  key={lead.id} 
-                  className={`${trHeightClass} border-b hover:bg-[#F7F5FF] transition-colors`}
-                  style={{ borderColor: "#E5E7EB" }}
-                >
-                  {/* Checkbox */}
-                  <td className={`px-6 py-0 border-r text-center ${borderClass}`}>
-                    <input 
-                      type="checkbox" 
-                      checked={selectedLeadIds.has(lead.id)}
-                      onChange={() => toggleSelection(lead.id)}
-                      className="rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED] cursor-pointer" 
-                    />
-                  </td>
+                {/* BODY */}
+                <tbody className="text-[13px]">
+                  {loading ? (
+                    <tr><td colSpan={8} className="text-center py-12 text-[#9CA3AF]">Loading data...</td></tr>
+                  ) : filteredLeads.length === 0 ? (
+                    <tr><td colSpan={8} className="text-center py-12 text-[#9CA3AF]">No leads found.</td></tr>
+                  ) : filteredLeads.map((lead) => {
+                    const stage = STAGE_STYLE[lead.status] || STAGE_STYLE.NEW;
+                    const heat = HEAT_STYLE[lead.temperature] || HEAT_STYLE.WARM;
+                    const score = getScore(lead);
+                    
+                    const colors = ["#FEE2E2", "#FEF3C7", "#D1FAE5", "#DBEAFE", "#EDE9FE"];
+                    const char = lead.fullName.charAt(0).toUpperCase();
+                    const idx = char.charCodeAt(0) % colors.length;
+                    const logoBg = colors[idx];
+                    
+                    const trHeightClass = rowHeight === "compact" ? "h-[48px]" : rowHeight === "comfortable" ? "h-[80px]" : "h-[64px]";
+                    
+                    return (
+                      <tr 
+                        key={lead.id} 
+                        className={`${trHeightClass} border-b hover:bg-[#F7F5FF] transition-colors`}
+                        style={{ borderColor: "#E5E7EB" }}
+                      >
+                        <td className={`px-6 py-0 border-r text-center ${borderClass}`}>
+                          <input 
+                            type="checkbox" 
+                            checked={selectedLeadIds.has(lead.id)}
+                            onChange={() => toggleSelection(lead.id)}
+                            className="rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED] cursor-pointer" 
+                          />
+                        </td>
+                        {cols.name && (
+                          <td className={`px-5 py-0 border-r truncate ${borderClass} cursor-pointer`} onClick={() => setInspectLead(lead)}>
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center justify-center h-7 w-7 rounded-md text-[12px] font-bold text-[#1A1523] flex-shrink-0 shadow-sm" style={{ background: logoBg }}>
+                                {char}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-semibold text-[#1A1523] hover:text-[#7C3AED] truncate leading-tight">
+                                  {lead.fullName}
+                                </div>
+                                <div className="text-[12px] text-[#6B7280] truncate leading-tight mt-0.5 flex items-center gap-1.5">
+                                  <span>{lead.source || "Website Form"}</span>
+                                  {(lead.smsSent || lead.pushSent) && (
+                                    <>
+                                      <span className="text-gray-300">•</span>
+                                      <div className="flex items-center gap-1 bg-[#F7F5FF] px-1.5 py-0.5 rounded border border-[#E8E4F3]" title="Alerts Sent">
+                                        {lead.smsSent && <Phone className="h-3 w-3 text-indigo-500" />}
+                                        {lead.pushSent && <BellRing className="h-3 w-3 text-indigo-500" />}
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        )}
+                        {cols.phone && (
+                          <td className={`px-5 py-0 border-r ${borderClass}`}>
+                            <div className="font-medium text-[#1A1523] truncate">
+                              {lead.phone ? lead.phone : <span className="text-[#9CA3AF] font-normal italic">No phone</span>}
+                            </div>
+                          </td>
+                        )}
+                        {cols.email && (
+                          <td className={`px-5 py-0 border-r ${borderClass} hidden lg:table-cell`}>
+                            <div className="font-medium text-[#1A1523] truncate">
+                              {lead.email ? lead.email : <span className="text-[#9CA3AF] font-normal italic">No email</span>}
+                            </div>
+                          </td>
+                        )}
+                        {cols.ohs && (
+                          <td className={`px-5 py-0 border-r ${borderClass} hidden lg:table-cell`}>
+                            <div className="flex justify-end pr-3">
+                              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-[#E5E7EB] bg-white shadow-sm">
+                                <span className={`h-1.5 w-1.5 rounded-full ${heat.dot}`} />
+                                <span className="text-[12px] font-bold text-[#1A1523]">{score}</span>
+                              </div>
+                            </div>
+                          </td>
+                        )}
+                        {cols.stage && (
+                          <td className={`px-5 py-0 border-r ${borderClass}`}>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger className="flex items-center gap-2.5 w-full hover:bg-white p-1 rounded outline-none">
+                                <div className={`h-3.5 w-3.5 rounded-full border-2 ${stage.ring} ${stage.fill}`} />
+                                <span className="text-[#1A1523] font-medium truncate flex-1 text-left">{stage.label}</span>
+                                <ChevronDown className="h-3 w-3 text-[#9CA3AF]" />
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="start" className="w-48">
+                                <DropdownMenuLabel className="text-xs">Update Status</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                {Object.entries(STAGE_STYLE).map(([statusKey, config]) => (
+                                  <DropdownMenuItem 
+                                    key={statusKey} 
+                                    onClick={() => handleStatusChange(lead.id, statusKey)}
+                                    className="text-[13px] flex items-center gap-2 cursor-pointer"
+                                  >
+                                    <div className={`h-3 w-3 rounded-full border-2 ${config.ring} ${config.fill}`} />
+                                    {config.label}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </td>
+                        )}
+                        {cols.closeDate && (
+                          <td className={`px-5 py-0 border-r font-medium text-[#1A1523] ${borderClass}`}>
+                            {new Date(lead.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          </td>
+                        )}
+                        <td className="px-5 py-0">
+                          <div className="flex items-center justify-center gap-1.5">
+                            {lead.email ? (
+                              <a href={`mailto:${lead.email}`} className="w-8 h-8 rounded-lg bg-white border border-[#E5E7EB] hover:bg-[#F3F0FF] hover:border-[#7C3AED] hover:text-[#7C3AED] flex items-center justify-center transition-all text-[#6B7280] shadow-sm" title="Send Email">
+                                <Mail className="h-3.5 w-3.5" />
+                              </a>
+                            ) : (
+                              <div className="w-8 h-8 rounded-lg border border-transparent flex items-center justify-center text-gray-200"><Mail className="h-3.5 w-3.5" /></div>
+                            )}
+                            {lead.phone ? (
+                              <a href={`tel:${lead.phone}`} onClick={() => setCallLogLead(lead)} className="w-8 h-8 rounded-lg bg-white border border-[#E5E7EB] hover:bg-[#ECFDF5] hover:border-[#10B981] hover:text-[#10B981] flex items-center justify-center transition-all text-[#6B7280] shadow-sm" title="Call Contact">
+                                <Phone className="h-3.5 w-3.5" />
+                              </a>
+                            ) : (
+                              <div className="w-8 h-8 rounded-lg border border-transparent flex items-center justify-center text-gray-200"><Phone className="h-3.5 w-3.5" /></div>
+                            )}
+                            <button onClick={() => setInspectLead(lead)} className="w-8 h-8 rounded-lg bg-white border border-[#E5E7EB] hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 flex items-center justify-center transition-all text-[#6B7280] shadow-sm" title="View Full Details">
+                              <Eye className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
 
-                  {/* Name */}
-                  {cols.name && (
-                    <td className={`px-5 py-0 border-r truncate ${borderClass} cursor-pointer`} onClick={() => setInspectLead(lead)}>
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center h-7 w-7 rounded-md text-[12px] font-bold text-[#1A1523] flex-shrink-0 shadow-sm" style={{ background: logoBg }}>
+            {/* ─── MOBILE CARD VIEW ─── */}
+            <div className="md:hidden flex flex-col p-3 gap-3 bg-slate-50/50 min-h-full">
+              {loading ? (
+                <div className="text-center py-12 text-[#9CA3AF] text-sm">Loading data...</div>
+              ) : filteredLeads.length === 0 ? (
+                <div className="text-center py-12 text-[#9CA3AF] text-sm">No leads found.</div>
+              ) : filteredLeads.map((lead) => {
+                const stage = STAGE_STYLE[lead.status] || STAGE_STYLE.NEW;
+                const colors = ["#FEE2E2", "#FEF3C7", "#D1FAE5", "#DBEAFE", "#EDE9FE"];
+                const char = lead.fullName.charAt(0).toUpperCase();
+                const idx = char.charCodeAt(0) % colors.length;
+                const logoBg = colors[idx];
+                
+                return (
+                  <div key={lead.id} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col gap-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3" onClick={() => setInspectLead(lead)}>
+                        <div className="flex items-center justify-center h-10 w-10 rounded-lg text-[14px] font-bold text-[#1A1523] flex-shrink-0" style={{ background: logoBg }}>
                           {char}
                         </div>
                         <div className="min-w-0">
-                          <div className="font-semibold text-[#1A1523] hover:text-[#7C3AED] truncate leading-tight">
-                            {lead.fullName}
-                          </div>
-                          <div className="text-[12px] text-[#6B7280] truncate leading-tight mt-0.5 flex items-center gap-1.5">
-                            <span>{lead.source || "Website Form"}</span>
-                            {(lead.smsSent || lead.pushSent) && (
-                              <>
-                                <span className="text-gray-300">•</span>
-                                <div className="flex items-center gap-1 bg-[#F7F5FF] px-1.5 py-0.5 rounded border border-[#E8E4F3]" title="Alerts Sent">
-                                  {lead.smsSent && <Phone className="h-3 w-3 text-indigo-500" />}
-                                  {lead.pushSent && <BellRing className="h-3 w-3 text-indigo-500" />}
-                                </div>
-                              </>
-                            )}
-                          </div>
+                          <div className="font-bold text-[#1A1523] truncate text-[15px]">{lead.fullName}</div>
+                          <div className="text-[12px] text-slate-500 truncate mt-0.5">{lead.phone || lead.email || "No contact info"}</div>
                         </div>
                       </div>
-                    </td>
-                  )}
-
-                  {/* Phone Explicit */}
-                  {cols.phone && (
-                    <td className={`px-5 py-0 border-r ${borderClass} hidden md:table-cell`}>
-                      <div className="font-medium text-[#1A1523] truncate">
-                        {lead.phone ? lead.phone : <span className="text-[#9CA3AF] font-normal italic">No phone</span>}
-                      </div>
-                    </td>
-                  )}
-
-                  {/* Email Explicit */}
-                  {cols.email && (
-                    <td className={`px-5 py-0 border-r ${borderClass} hidden lg:table-cell`}>
-                      <div className="font-medium text-[#1A1523] truncate">
-                        {lead.email ? lead.email : <span className="text-[#9CA3AF] font-normal italic">No email</span>}
-                      </div>
-                    </td>
-                  )}
-
-                  {/* OHS / Heat */}
-                  {cols.ohs && (
-                    <td className={`px-5 py-0 border-r ${borderClass} hidden lg:table-cell`}>
-                      <div className="flex justify-end pr-3">
-                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-[#E5E7EB] bg-white shadow-sm">
-                          <span className={`h-1.5 w-1.5 rounded-full ${heat.dot}`} />
-                          <span className="text-[12px] font-bold text-[#1A1523]">{score}</span>
-                        </div>
-                      </div>
-                    </td>
-                  )}
-
-                  {/* Stage Dropdown inside cell */}
-                  {cols.stage && (
-                    <td className={`px-5 py-0 border-r ${borderClass}`}>
+                      <input 
+                        type="checkbox" 
+                        checked={selectedLeadIds.has(lead.id)}
+                        onChange={() => toggleSelection(lead.id)}
+                        className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600" 
+                      />
+                    </div>
+                    
+                    <div className="flex flex-col gap-2">
                       <DropdownMenu>
-                        <DropdownMenuTrigger className="flex items-center gap-2.5 w-full hover:bg-white p-1 rounded outline-none">
-                          <div className={`h-3.5 w-3.5 rounded-full border-2 ${stage.ring} ${stage.fill}`} />
-                          <span className="text-[#1A1523] font-medium truncate flex-1 text-left">{stage.label}</span>
-                          <ChevronDown className="h-3 w-3 text-[#9CA3AF]" />
+                        <DropdownMenuTrigger className="flex items-center justify-between w-full bg-slate-50 border border-slate-200 hover:bg-slate-100 p-2.5 rounded-lg outline-none transition-colors">
+                          <div className="flex items-center gap-2.5">
+                            <div className={`h-3 w-3 rounded-full border-2 ${stage.ring} ${stage.fill}`} />
+                            <span className="text-[13px] font-semibold text-slate-700">{stage.label}</span>
+                          </div>
+                          <ChevronDown className="h-4 w-4 text-slate-400" />
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="w-48">
+                        <DropdownMenuContent align="start" className="w-[calc(100vw-3rem)]">
                           <DropdownMenuLabel className="text-xs">Update Status</DropdownMenuLabel>
                           <DropdownMenuSeparator />
                           {Object.entries(STAGE_STYLE).map(([statusKey, config]) => (
                             <DropdownMenuItem 
                               key={statusKey} 
                               onClick={() => handleStatusChange(lead.id, statusKey)}
-                              className="text-[13px] flex items-center gap-2 cursor-pointer"
+                              className="text-[13px] flex items-center gap-2 cursor-pointer py-2.5"
                             >
-                              <div className={`h-3 w-3 rounded-full border-2 ${config.ring} ${config.fill}`} />
+                              <div className={`h-3.5 w-3.5 rounded-full border-2 ${config.ring} ${config.fill}`} />
                               {config.label}
                             </DropdownMenuItem>
                           ))}
                         </DropdownMenuContent>
                       </DropdownMenu>
-                    </td>
-                  )}
-
-                  {/* Received / Close Date */}
-                  {cols.closeDate && (
-                    <td className={`px-5 py-0 border-r font-medium text-[#1A1523] ${borderClass} hidden sm:table-cell`}>
-                      {new Date(lead.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                    </td>
-                  )}
-                  
-                  {/* Actions CTA (ALWAYS VISIBLE NOW) */}
-                  <td className="px-5 py-0">
-                    <div className="flex items-center justify-center gap-1.5">
-                      {lead.email ? (
-                        <a href={`mailto:${lead.email}`} className="w-8 h-8 rounded-lg bg-white border border-[#E5E7EB] hover:bg-[#F3F0FF] hover:border-[#7C3AED] hover:text-[#7C3AED] flex items-center justify-center transition-all text-[#6B7280] shadow-sm" title="Send Email">
-                          <Mail className="h-3.5 w-3.5" />
-                        </a>
-                      ) : (
-                        <div className="w-8 h-8 rounded-lg border border-transparent flex items-center justify-center text-gray-200"><Mail className="h-3.5 w-3.5" /></div>
-                      )}
-                      
-                      {lead.phone ? (
-                        <a href={`tel:${lead.phone}`} onClick={() => setCallLogLead(lead)} className="w-8 h-8 rounded-lg bg-white border border-[#E5E7EB] hover:bg-[#ECFDF5] hover:border-[#10B981] hover:text-[#10B981] flex items-center justify-center transition-all text-[#6B7280] shadow-sm" title="Call Contact">
-                          <Phone className="h-3.5 w-3.5" />
-                        </a>
-                      ) : (
-                        <div className="w-8 h-8 rounded-lg border border-transparent flex items-center justify-center text-gray-200"><Phone className="h-3.5 w-3.5" /></div>
-                      )}
-
-                      <button onClick={() => setInspectLead(lead)} className="w-8 h-8 rounded-lg bg-white border border-[#E5E7EB] hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 flex items-center justify-center transition-all text-[#6B7280] shadow-sm" title="View Full Details">
-                        <Eye className="h-3.5 w-3.5" />
-                      </button>
                     </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+
+                    <div className="flex items-center gap-2 pt-1">
+                      <button onClick={() => setInspectLead(lead)} className="flex-1 flex items-center justify-center gap-2 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-slate-700 text-[13px] font-semibold transition-colors">
+                        <Eye className="h-4 w-4" /> View
+                      </button>
+                      {lead.phone && (
+                        <a href={`tel:${lead.phone}`} onClick={() => setCallLogLead(lead)} className="flex-1 flex items-center justify-center gap-2 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-emerald-700 text-[13px] font-semibold transition-colors">
+                          <Phone className="h-4 w-4" /> Call
+                        </a>
+                      )}
+                      {lead.email && !lead.phone && (
+                        <a href={`mailto:${lead.email}`} className="flex-1 flex items-center justify-center gap-2 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-indigo-700 text-[13px] font-semibold transition-colors">
+                          <Mail className="h-4 w-4" /> Email
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {/* Spacer for mobile bottom nav */}
+              <div className="h-20 w-full flex-shrink-0"></div>
+            </div>
+          </>
         )}
       </div>
 
