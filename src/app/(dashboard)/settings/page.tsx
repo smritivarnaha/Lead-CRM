@@ -216,7 +216,7 @@ export default function SettingsPage() {
         <p className="text-sm text-slate-500 mt-1">Configure your CRM preferences and integrations.</p>
       </div>
 
-      <div className="flex gap-4 overflow-x-auto no-scrollbar border-b border-slate-200">
+      <div className="flex flex-wrap gap-2 sm:gap-4 border-b border-slate-200">
         <button 
           onClick={() => setActiveTab("push")}
           className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "push" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
