@@ -32,11 +32,18 @@ export default function WebsitesPage() {
 
   const fetchSites = async () => {
     setIsLoading(true);
-    const res = await getWebsites();
-    if (res.success && res.websites) {
-      setWebsites(res.websites);
+    try {
+      const res = await getWebsites();
+      if (res?.success && res.websites) {
+        setWebsites(res.websites);
+      } else {
+        console.error("Failed to fetch sites:", res?.error);
+      }
+    } catch (e) {
+      console.error("Server Action Exception:", e);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -48,16 +55,22 @@ export default function WebsitesPage() {
     if (!newSiteName || !newSiteDomain) return;
     setIsSubmitting(true);
     
-    const res = await createWebsite({ name: newSiteName, domain: newSiteDomain });
-    if (res?.success) {
-      setNewSiteName("");
-      setNewSiteDomain("");
-      setIsModalOpen(false);
-      fetchSites(); // Refresh list
-    } else {
-      alert(res?.error || "Failed to create website. Please check database connection.");
+    try {
+      const res = await createWebsite({ name: newSiteName, domain: newSiteDomain });
+      if (res?.success) {
+        setNewSiteName("");
+        setNewSiteDomain("");
+        setIsModalOpen(false);
+        fetchSites(); // Refresh list
+      } else {
+        alert(res?.error || "Failed to create website. Please check database connection.");
+      }
+    } catch (e) {
+      console.error("Create exception:", e);
+      alert("A critical error occurred while contacting the server.");
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   const copyWebhook = (id: string) => {
@@ -68,11 +81,9 @@ export default function WebsitesPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Action Bar */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Websites</h2>
-          <p className="text-sm text-slate-500 mt-1">Manage client websites and webhook integrations.</p>
-        </div>
+        <p className="text-sm text-slate-500">Manage client websites and webhook integrations.</p>
         <Button onClick={() => setIsModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
           + Add Website
         </Button>
