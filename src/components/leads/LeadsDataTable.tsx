@@ -68,13 +68,10 @@ export function LeadsDataTable({ leads }: { leads: Lead[] }) {
           Showing {leads.length} leads
         </div>
         
-        {/* Meta Ads Style Column Customizer */}
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="bg-white">
-              <Settings2 className="w-4 h-4 mr-2" />
-              Customize Columns
-            </Button>
+          <DropdownMenuTrigger className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-white shadow-sm hover:bg-slate-100 hover:text-slate-900 h-8 px-3">
+            <Settings2 className="w-4 h-4" />
+            Customize Columns
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
