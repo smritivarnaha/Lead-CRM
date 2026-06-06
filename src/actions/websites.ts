@@ -13,6 +13,12 @@ export async function getWebsites() {
     }
 
     const websites = await prisma.website.findMany({
+      include: {
+        users: {
+          where: { role: "CLIENT" },
+          select: { id: true, email: true, firstName: true, lastName: true },
+        }
+      },
       orderBy: {
         createdAt: "desc",
       },
@@ -124,5 +130,47 @@ export async function createClientLogin(data: {
     console.error("Error creating client login:", error);
     const errMsg = (error as { errors?: Array<{ message: string }> })?.errors?.[0]?.message || "Failed to create client login";
     return { success: false, error: errMsg };
+  }
+}
+
+export async function resetClientPassword(userId: string) {
+  try {
+    const user = await currentUser();
+    if (!user) return { success: false, error: "Unauthorized" };
+
+    const clerk = await clerkClient();
+    const tempPassword = `Client@${Math.random().toString(36).slice(2, 10)}!`;
+    
+    await clerk.users.updateUser(userId, {
+      password: tempPassword
+    });
+
+    return { success: true, tempPassword };
+  } catch (error: unknown) {
+    console.error("Error resetting password:", error);
+    return { success: false, error: "Failed to reset password" };
+  }
+}
+
+export async function deleteClientLogin(userId: string) {
+  try {
+    const user = await currentUser();
+    if (!user) return { success: false, error: "Unauthorized" };
+
+    const clerk = await clerkClient();
+    
+    // Delete from Clerk
+    await clerk.users.deleteUser(userId);
+    
+    // Delete from Prisma
+    await prisma.user.delete({
+      where: { id: userId }
+    });
+
+    revalidatePath("/websites");
+    return { success: true };
+  } catch (error: unknown) {
+    console.error("Error deleting client user:", error);
+    return { success: false, error: "Failed to delete user" };
   }
 }

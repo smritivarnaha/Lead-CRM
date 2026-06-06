@@ -12,7 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Globe, Copy, CheckCircle2, X, UserPlus, KeyRound } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getWebsites, createWebsite, createClientLogin } from "@/actions/websites";
+import { getWebsites, createWebsite, createClientLogin, resetClientPassword, deleteClientLogin } from "@/actions/websites";
 
 type Website = {
   id: string;
@@ -20,6 +20,7 @@ type Website = {
   domain: string;
   isActive: boolean;
   createdAt: Date;
+  users?: { id: string; email: string; firstName: string | null; lastName: string | null }[];
 };
 
 export default function WebsitesPage() {
@@ -38,6 +39,12 @@ export default function WebsitesPage() {
   const [clientLastName, setClientLastName] = useState("");
   const [isCreatingLogin, setIsCreatingLogin] = useState(false);
   const [createdCredentials, setCreatedCredentials] = useState<{ email: string; password: string } | null>(null);
+
+  // Edit login state
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [resetCredentials, setResetCredentials] = useState<{ email: string; password: string } | null>(null);
 
   const fetchSites = async () => {
     setIsLoading(true);
@@ -88,6 +95,12 @@ export default function WebsitesPage() {
     setIsLoginModalOpen(true);
   };
 
+  const openEditModal = (site: Website) => {
+    setSelectedSite(site);
+    setResetCredentials(null);
+    setIsEditModalOpen(true);
+  };
+
   const handleCreateLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSite || !clientEmail || !clientFirstName) return;
@@ -113,10 +126,50 @@ export default function WebsitesPage() {
     }
   };
 
-  const copyCredentials = () => {
-    if (!createdCredentials) return;
+  const handleResetPassword = async () => {
+    if (!selectedSite || !selectedSite.users?.[0]) return;
+    const user = selectedSite.users[0];
+    setIsResetting(true);
+    try {
+      const res = await resetClientPassword(user.id);
+      if (res?.success && res.tempPassword) {
+        setResetCredentials({ email: user.email, password: res.tempPassword });
+      } else {
+        alert(res?.error || "Failed to reset password.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Failed to reset password.");
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedSite || !selectedSite.users?.[0]) return;
+    if (!confirm("Are you sure you want to delete this user? They will immediately lose access.")) return;
+    const user = selectedSite.users[0];
+    setIsDeleting(true);
+    try {
+      const res = await deleteClientLogin(user.id);
+      if (res?.success) {
+        setIsEditModalOpen(false);
+        fetchSites();
+      } else {
+        alert(res?.error || "Failed to delete user.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Failed to delete user.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const copyCredentials = (credentials: { email: string, password: string } | null) => {
+    if (!credentials) return;
     navigator.clipboard.writeText(
-      `Login URL: https://lead-crmsss.vercel.app/sign-in\nEmail: ${createdCredentials.email}\nPassword: ${createdCredentials.password}`
+      `Login URL: https://lead-crmsss.vercel.app/sign-in\nEmail: ${credentials.email}\nPassword: ${credentials.password}`
     );
     alert("Credentials copied to clipboard!");
   };
@@ -185,14 +238,26 @@ export default function WebsitesPage() {
                   )}
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    size="sm"
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs flex items-center gap-1.5 ml-auto"
-                    onClick={() => openLoginModal(site)}
-                  >
-                    <UserPlus className="h-3.5 w-3.5" />
-                    Create Login
-                  </Button>
+                  {site.users && site.users.length > 0 ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-slate-700 border-slate-300 text-xs flex items-center gap-1.5 ml-auto"
+                      onClick={() => openEditModal(site)}
+                    >
+                      <KeyRound className="h-3.5 w-3.5" />
+                      Edit Login
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs flex items-center gap-1.5 ml-auto"
+                      onClick={() => openLoginModal(site)}
+                    >
+                      <UserPlus className="h-3.5 w-3.5" />
+                      Create Login
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
@@ -271,10 +336,10 @@ export default function WebsitesPage() {
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <Button onClick={copyCredentials} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2">
+                  <Button onClick={() => copyCredentials(createdCredentials)} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2">
                     <Copy className="h-4 w-4" /> Copy Credentials
                   </Button>
-                  <Button variant="outline" onClick={() => setIsLoginModalOpen(false)} className="text-slate-700 border-slate-300">
+                  <Button variant="outline" onClick={() => { setIsLoginModalOpen(false); fetchSites(); }} className="text-slate-700 border-slate-300">
                     Done
                   </Button>
                 </div>
@@ -334,6 +399,67 @@ export default function WebsitesPage() {
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+      {/* Edit Client Login Modal */}
+      {isEditModalOpen && selectedSite && selectedSite.users?.[0] && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-slate-100">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Manage Client Login</h3>
+                <p className="text-xs text-slate-500 mt-0.5">For: <span className="font-medium text-slate-700">{selectedSite.name}</span></p>
+              </div>
+              <button onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-6 flex flex-col gap-6">
+              <div>
+                <p className="text-sm font-medium text-slate-700 mb-1">Current User</p>
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm">
+                  <p><span className="font-semibold text-slate-900">{selectedSite.users[0].firstName} {selectedSite.users[0].lastName}</span></p>
+                  <p className="text-slate-500 text-xs mt-0.5">{selectedSite.users[0].email}</p>
+                </div>
+              </div>
+
+              {resetCredentials ? (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <p className="text-sm font-semibold text-green-800 mb-3">✅ Password reset successful!</p>
+                  <div className="bg-white rounded border border-green-200 p-3 mt-2 font-mono text-xs text-slate-800 space-y-1">
+                    <p><span className="text-slate-500">Email:</span> {resetCredentials.email}</p>
+                    <p><span className="text-slate-500">New Password:</span> {resetCredentials.password}</p>
+                  </div>
+                  <Button onClick={() => copyCredentials(resetCredentials)} className="w-full mt-3 bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2 justify-center">
+                    <Copy className="h-4 w-4" /> Copy New Credentials
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  <p className="text-sm text-slate-600">Since passwords are encrypted securely, you cannot view the current password. If the user forgot it, you can generate a new one.</p>
+                  <Button 
+                    onClick={handleResetPassword} 
+                    disabled={isResetting || isDeleting}
+                    variant="outline" 
+                    className="w-full border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                  >
+                    {isResetting ? "Resetting..." : "Reset Password"}
+                  </Button>
+                  <div className="h-px bg-slate-100 my-2" />
+                  <p className="text-sm text-slate-600">Or you can delete this user entirely to remove their access to the portal.</p>
+                  <Button 
+                    onClick={handleDeleteUser} 
+                    disabled={isDeleting || isResetting}
+                    variant="destructive" 
+                    className="w-full"
+                  >
+                    {isDeleting ? "Deleting..." : "Delete User"}
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
