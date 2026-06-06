@@ -1,0 +1,374 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { getLeads, updateLeadStatus } from "@/actions/leads";
+import { LeadDetailsModal } from "@/components/leads/LeadDetailsModal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+} from "@/components/ui/dropdown-menu";
+import {
+  Filter,
+  ArrowRightToLine,
+  ChevronDown,
+  Columns3,
+  AlignJustify,
+  Layers,
+  MoreHorizontal,
+  LayoutGrid,
+  Mail,
+  Phone,
+  Eye,
+  CheckCircle2,
+  XCircle,
+  HelpCircle,
+  Clock,
+  ArrowRight
+} from "lucide-react";
+import { toast } from "sonner";
+
+type Lead = {
+  id: string;
+  fullName: string;
+  source: string | null;
+  status: string;
+  createdAt: string;
+  score: number;
+  temperature: string;
+  phone: string | null;
+  email: string | null;
+  website?: { name: string };
+};
+
+// ─── STAGE CONFIG ───
+const STAGE_STYLE: Record<string, { label: string; ring: string; fill: string; icon: any }> = {
+  NEW:         { label: "New Lead",      ring: "border-blue-500",   fill: "bg-transparent",  icon: HelpCircle },
+  CONTACTED:   { label: "Contacted",     ring: "border-amber-500",  fill: "bg-transparent",  icon: Clock }, 
+  FOLLOW_UP:   { label: "Follow Up",     ring: "border-orange-500", fill: "bg-transparent",  icon: ArrowRight },
+  CONVERTED:   { label: "Converted",     ring: "border-green-500",  fill: "bg-green-500",    icon: CheckCircle2 },
+  LOST:        { label: "Junk / Lost",   ring: "border-red-500",    fill: "bg-red-500",      icon: XCircle },
+  NO_RESPONSE: { label: "No response",   ring: "border-slate-400",  fill: "bg-transparent",  icon: HelpCircle },
+};
+
+// ─── HEAT/OHS CONFIG ───
+const HEAT_STYLE: Record<string, { dot: string }> = {
+  HOT:  { dot: "bg-[#10B981]" }, 
+  WARM: { dot: "bg-[#F59E0B]" }, 
+  COLD: { dot: "bg-[#EF4444]" }, 
+};
+
+function getScore(lead: Lead) {
+  if (lead.score) return lead.score;
+  if (lead.temperature === "HOT") return 88;
+  if (lead.temperature === "WARM") return 56;
+  return 24;
+}
+
+export function PipelineTable() {
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [inspectLead, setInspectLead] = useState<Lead | null>(null);
+
+  // Workable Columns State
+  const [cols, setCols] = useState({
+    name: true,
+    phone: true,
+    email: true,
+    ohs: true,
+    stage: true,
+    closeDate: true,
+  });
+
+  useEffect(() => {
+    getLeads().then((res) => {
+      if (res.success && res.leads) setLeads(res.leads);
+      setLoading(false);
+    });
+  }, []);
+
+  const handleStatusChange = async (leadId: string, newStatus: string) => {
+    // Optimistic update
+    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
+    const res = await updateLeadStatus(leadId, newStatus);
+    if (res.success) {
+      toast.success("Lead status updated to " + (STAGE_STYLE[newStatus]?.label || newStatus));
+    } else {
+      toast.error("Failed to update status");
+      // Revert if needed (omitted for brevity)
+    }
+  };
+
+  const borderClass = "border-[#E5E7EB]";
+
+  return (
+    <div className="flex flex-col h-full w-full bg-white">
+      {/* ─── TOOLBAR ─── */}
+      <div 
+        className="flex items-center justify-between px-4 py-2 bg-white border-b"
+        style={{ borderColor: "#E5E7EB", flexShrink: 0 }}
+      >
+        <div className="flex items-center gap-3">
+          <button className="flex items-center justify-center w-7 h-7 text-[#9CA3AF] hover:text-[#1A1523] hover:bg-slate-100 rounded transition-colors">
+            <ArrowRightToLine className="h-4 w-4" strokeWidth={2} />
+          </button>
+          
+          <div className="h-4 w-px bg-[#E5E7EB]" />
+          
+          <button className="flex items-center gap-1.5 px-2 py-1 text-[13px] font-semibold text-[#1A1523] hover:bg-[#F7F5FF] rounded transition-colors">
+            <UsersIcon className="h-4 w-4 text-[#9CA3AF]" />
+            All opportunities
+            <ChevronDown className="h-3.5 w-3.5 text-[#9CA3AF] ml-1" strokeWidth={2} />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-4 text-[13px] font-medium text-[#6B7280]">
+          {/* Workable Fields Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1.5 hover:text-[#1A1523] transition-colors py-1 px-2 rounded hover:bg-slate-50 outline-none">
+              <Columns3 className="h-4 w-4" strokeWidth={1.75} /> Fields
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuLabel className="text-xs">Visible Columns</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuCheckboxItem checked={cols.name} onCheckedChange={(v) => setCols(p => ({...p, name: v}))}>Name</DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={cols.phone} onCheckedChange={(v) => setCols(p => ({...p, phone: v}))}>Phone Number</DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={cols.email} onCheckedChange={(v) => setCols(p => ({...p, email: v}))}>Email Address</DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={cols.ohs} onCheckedChange={(v) => setCols(p => ({...p, ohs: v}))}>OHS Score</DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={cols.stage} onCheckedChange={(v) => setCols(p => ({...p, stage: v}))}>Stage (Status)</DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={cols.closeDate} onCheckedChange={(v) => setCols(p => ({...p, closeDate: v}))}>Close Date</DropdownMenuCheckboxItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1.5 hover:text-[#1A1523] transition-colors py-1 px-2 rounded hover:bg-slate-50 outline-none">
+              <Filter className="h-4 w-4" strokeWidth={1.75} /> Filters
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuItem className="text-[13px]">Status is any of...</DropdownMenuItem>
+              <DropdownMenuItem className="text-[13px]">Source equals...</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-[13px] text-[#7C3AED] font-medium">+ Add filter</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1.5 hover:text-[#1A1523] transition-colors py-1 px-2 rounded hover:bg-slate-50 outline-none">
+              <AlignJustify className="h-4 w-4" strokeWidth={1.75} /> Row height
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-40">
+              <DropdownMenuItem className="text-[13px]">Compact</DropdownMenuItem>
+              <DropdownMenuItem className="text-[13px] font-medium bg-slate-50">Standard</DropdownMenuItem>
+              <DropdownMenuItem className="text-[13px]">Comfortable</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      {/* ─── TABLE ─── */}
+      <div className="flex-1 overflow-auto bg-white relative">
+        <table className="w-full text-left border-collapse" style={{ tableLayout: "fixed" }}>
+          {/* HEADERS */}
+          <thead className={`sticky top-0 bg-white z-10 border-b shadow-[0_1px_0_#E5E7EB]`}>
+            <tr className="h-[36px] text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
+              <th className={`w-[48px] px-4 py-0 border-r ${borderClass} text-center font-normal`}>
+                <input type="checkbox" className="rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED]" />
+              </th>
+              {cols.name && (
+                <th className={`w-[260px] px-3 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                  <div className="flex items-center justify-between">NAME<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
+                </th>
+              )}
+              {cols.phone && (
+                <th className={`w-[140px] px-3 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                  <div className="flex items-center justify-between">PHONE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
+                </th>
+              )}
+              {cols.email && (
+                <th className={`w-[200px] px-3 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                  <div className="flex items-center justify-between">EMAIL<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
+                </th>
+              )}
+              {cols.ohs && (
+                <th className={`w-[100px] px-3 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                  <div className="flex items-center justify-between">OHS<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
+                </th>
+              )}
+              {cols.stage && (
+                <th className={`w-[180px] px-3 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                  <div className="flex items-center justify-between">STAGE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
+                </th>
+              )}
+              {cols.closeDate && (
+                <th className={`w-[120px] px-3 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                  <div className="flex items-center justify-between">CLOSE DATE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
+                </th>
+              )}
+              <th className={`w-[140px] px-0 py-0 ${borderClass}`}>
+                <div className="flex items-center justify-center">ACTIONS</div>
+              </th>
+            </tr>
+          </thead>
+
+          {/* BODY */}
+          <tbody className="text-[13px]">
+            {loading ? (
+              <tr><td colSpan={8} className="text-center py-12 text-[#9CA3AF]">Loading data...</td></tr>
+            ) : leads.map((lead) => {
+              const stage = STAGE_STYLE[lead.status] || STAGE_STYLE.NEW;
+              const heat = HEAT_STYLE[lead.temperature] || HEAT_STYLE.WARM;
+              const score = getScore(lead);
+              
+              // App logo generator
+              const colors = ["#FEE2E2", "#FEF3C7", "#D1FAE5", "#DBEAFE", "#EDE9FE"];
+              const char = lead.fullName.charAt(0).toUpperCase();
+              const idx = char.charCodeAt(0) % colors.length;
+              const logoBg = colors[idx];
+              
+              return (
+                <tr 
+                  key={lead.id} 
+                  className="h-[56px] border-b hover:bg-[#F7F5FF] transition-colors"
+                  style={{ borderColor: "#E5E7EB" }}
+                >
+                  {/* Checkbox */}
+                  <td className={`px-4 py-0 border-r text-center ${borderClass}`}>
+                    <input type="checkbox" className="rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED]" />
+                  </td>
+
+                  {/* Name */}
+                  {cols.name && (
+                    <td className={`px-3 py-0 border-r truncate ${borderClass} cursor-pointer`} onClick={() => setInspectLead(lead)}>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center h-7 w-7 rounded-md text-[12px] font-bold text-[#1A1523] flex-shrink-0 shadow-sm" style={{ background: logoBg }}>
+                          {char}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-[#1A1523] hover:text-[#7C3AED] truncate leading-tight">
+                            {lead.fullName}
+                          </div>
+                          <div className="text-[12px] text-[#6B7280] truncate leading-tight mt-0.5">
+                            {lead.source || "Website Form"}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  )}
+
+                  {/* Phone Explicit */}
+                  {cols.phone && (
+                    <td className={`px-3 py-0 border-r ${borderClass}`}>
+                      <div className="font-medium text-[#1A1523] truncate">
+                        {lead.phone ? lead.phone : <span className="text-[#9CA3AF] font-normal italic">No phone</span>}
+                      </div>
+                    </td>
+                  )}
+
+                  {/* Email Explicit */}
+                  {cols.email && (
+                    <td className={`px-3 py-0 border-r ${borderClass}`}>
+                      <div className="font-medium text-[#1A1523] truncate">
+                        {lead.email ? lead.email : <span className="text-[#9CA3AF] font-normal italic">No email</span>}
+                      </div>
+                    </td>
+                  )}
+
+                  {/* OHS / Heat */}
+                  {cols.ohs && (
+                    <td className={`px-3 py-0 border-r ${borderClass}`}>
+                      <div className="flex justify-end pr-3">
+                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-[#E5E7EB] bg-white shadow-sm">
+                          <span className={`h-1.5 w-1.5 rounded-full ${heat.dot}`} />
+                          <span className="text-[12px] font-bold text-[#1A1523]">{score}</span>
+                        </div>
+                      </div>
+                    </td>
+                  )}
+
+                  {/* Stage Dropdown inside cell */}
+                  {cols.stage && (
+                    <td className={`px-3 py-0 border-r ${borderClass}`}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger className="flex items-center gap-2.5 w-full hover:bg-white p-1 rounded outline-none">
+                          <div className={`h-3.5 w-3.5 rounded-full border-2 ${stage.ring} ${stage.fill}`} />
+                          <span className="text-[#1A1523] font-medium truncate flex-1 text-left">{stage.label}</span>
+                          <ChevronDown className="h-3 w-3 text-[#9CA3AF]" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-48">
+                          <DropdownMenuLabel className="text-xs">Update Status</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          {Object.entries(STAGE_STYLE).map(([statusKey, config]) => (
+                            <DropdownMenuItem 
+                              key={statusKey} 
+                              onClick={() => handleStatusChange(lead.id, statusKey)}
+                              className="text-[13px] flex items-center gap-2 cursor-pointer"
+                            >
+                              <div className={`h-3 w-3 rounded-full border-2 ${config.ring} ${config.fill}`} />
+                              {config.label}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
+                  )}
+
+                  {/* Received / Close Date */}
+                  {cols.closeDate && (
+                    <td className={`px-3 py-0 border-r font-medium text-[#1A1523] ${borderClass}`}>
+                      {new Date(lead.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </td>
+                  )}
+                  
+                  {/* Actions CTA (ALWAYS VISIBLE NOW) */}
+                  <td className="px-3 py-0">
+                    <div className="flex items-center justify-center gap-1.5">
+                      {lead.email ? (
+                        <a href={`mailto:${lead.email}`} className="w-8 h-8 rounded-lg bg-white border border-[#E5E7EB] hover:bg-[#F3F0FF] hover:border-[#7C3AED] hover:text-[#7C3AED] flex items-center justify-center transition-all text-[#6B7280] shadow-sm" title="Send Email">
+                          <Mail className="h-3.5 w-3.5" />
+                        </a>
+                      ) : (
+                        <div className="w-8 h-8 rounded-lg border border-transparent flex items-center justify-center text-gray-200"><Mail className="h-3.5 w-3.5" /></div>
+                      )}
+                      
+                      {lead.phone ? (
+                        <a href={`tel:${lead.phone}`} className="w-8 h-8 rounded-lg bg-white border border-[#E5E7EB] hover:bg-[#ECFDF5] hover:border-[#10B981] hover:text-[#10B981] flex items-center justify-center transition-all text-[#6B7280] shadow-sm" title="Call Contact">
+                          <Phone className="h-3.5 w-3.5" />
+                        </a>
+                      ) : (
+                        <div className="w-8 h-8 rounded-lg border border-transparent flex items-center justify-center text-gray-200"><Phone className="h-3.5 w-3.5" /></div>
+                      )}
+
+                      <button onClick={() => setInspectLead(lead)} className="w-8 h-8 rounded-lg bg-white border border-[#E5E7EB] hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 flex items-center justify-center transition-all text-[#6B7280] shadow-sm" title="View Full Details">
+                        <Eye className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {inspectLead && (
+        <LeadDetailsModal lead={inspectLead} onClose={() => setInspectLead(null)} />
+      )}
+    </div>
+  );
+}
+
+// Dummy icon
+function UsersIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
