@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import prisma from "@/lib/prisma";
 
-// Initialize Supabase Server Client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// Fixed seed IDs — must match prisma/seed.ts
+const WORKSPACE_ID = "mock_workspace_id";
 
 // CORS headers — required for browser-based form submissions from external sites
 const corsHeaders = {
@@ -59,15 +58,12 @@ export async function POST(
 
     console.log(`[WEBHOOK RECEIVED] Website: ${websiteId}`, body);
 
-    // Ensure workspace exists
-    const workspaceExists = await prisma.workspace.findUnique({
-      where: { id: "mock_workspace_id" },
+    // Self-healing: ensure workspace exists (uses fixed seed ID)
+    await prisma.workspace.upsert({
+      where: { id: WORKSPACE_ID },
+      create: { id: WORKSPACE_ID, name: "Default Workspace" },
+      update: {},
     });
-    if (!workspaceExists) {
-      await prisma.workspace.create({
-        data: { id: "mock_workspace_id", name: "Default Workspace" },
-      });
-    }
 
     // Ensure the website exists (use the ID from the URL)
     const existingSite = await prisma.website.findUnique({ where: { id: websiteId } });
@@ -90,7 +86,11 @@ export async function POST(
     const email = body.email || body["your-email"] || body.email_address || null;
     const phone = body.phone || body.tel || body.phone_number || body["your-phone"] || body.mobile || null;
     const message = body.message || body["your-message"] || body.comments || body.query || null;
-    const source = body.source || body.form_name || body.form_id || body["_wpcf7"] ? "WordPress Form" : "Website Form";
+    const source =
+      body.source ||
+      body.form_name ||
+      body.form_id ||
+      (body["_wpcf7"] ? "WordPress Form" : "Website Form");
     const utmSource = body.utm_source || null;
     const utmMedium = body.utm_medium || null;
     const utmCampaign = body.utm_campaign || null;
@@ -111,7 +111,7 @@ export async function POST(
         priority: "NORMAL",
         temperature: "WARM",
         websiteId,
-        workspaceId: "mock_workspace_id",
+        workspaceId: WORKSPACE_ID,
       },
     });
 
@@ -119,6 +119,8 @@ export async function POST(
 
     // Broadcast via Supabase Realtime to dashboard
     try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
       const supabase = createClient(supabaseUrl, supabaseAnonKey);
       await Promise.all([
         supabase.channel(`website-${websiteId}`).send({
