@@ -31,6 +31,7 @@ type Lead = {
   score: number;
   createdAt: string;
   followUpAt: string | null;
+  rawFields?: string | null;
   website: { id: string; name: string; domain: string } | null;
 };
 
@@ -468,6 +469,22 @@ export default function LeadsPage() {
                               </a>
                             )}
                           </div>
+
+                          {/* Raw Form Fields */}
+                          {(lead.rawFields && lead.rawFields !== "{}") && (
+                            <div className="col-span-2 md:col-span-3 lg:col-span-4 bg-slate-900 border border-slate-800 rounded-lg p-4 overflow-x-auto mt-2">
+                              <div className="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">Raw Form Data Captured</div>
+                              <pre className="text-[11px] text-green-400 font-mono">
+                                {(() => {
+                                  try {
+                                    return JSON.stringify(JSON.parse(lead.rawFields), null, 2);
+                                  } catch (e) {
+                                    return lead.rawFields;
+                                  }
+                                })()}
+                              </pre>
+                            </div>
+                          )}
                         </div>
                       </td>
                     </tr>
