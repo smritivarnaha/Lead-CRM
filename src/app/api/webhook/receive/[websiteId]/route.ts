@@ -207,8 +207,7 @@ export async function POST(
               "Content-Type": "application/json"
             },
             body: JSON.stringify({
-              route: "v3",
-              sender_id: "TXTIND", // Default sender ID for Fast2SMS promotional/transactional
+              route: "q", // "q" is for Quick SMS. "v3" requires DLT templates.
               message: smsMessage,
               language: "english",
               flash: 0,

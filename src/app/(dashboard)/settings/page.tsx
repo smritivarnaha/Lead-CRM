@@ -19,11 +19,36 @@ export default function SettingsPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [settings, setSettings] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
 
   useEffect(() => {
     checkPushStatus();
     fetchSettings();
+
+    // Listen for PWA install prompt
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    };
   }, []);
+
+  const handleInstallClick = async () => {
+    if (!installPrompt) {
+      toast.error("Installation is not supported or already installed on this browser.");
+      return;
+    }
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === "accepted") {
+      setInstallPrompt(null);
+    }
+  };
 
   const fetchSettings = async () => {
     try {
@@ -264,10 +289,17 @@ export default function SettingsPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="font-bold text-slate-900">Android (Chrome):</span> 
-                  Tap the 3 dots menu at the top right, then tap "Install app" or "Add to Home screen".
+                  Click the Install button below, or tap the 3 dots menu and select "Install app".
                 </li>
               </ul>
             </div>
+            <button
+              onClick={handleInstallClick}
+              className="mt-2 w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2"
+            >
+              <Smartphone className="h-4 w-4" />
+              Install App Now
+            </button>
           </div>
         </div>
 
