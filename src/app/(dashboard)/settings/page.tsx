@@ -340,7 +340,7 @@ export default function SettingsPage() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-slate-700">Icon / Logo URL</label>
+                <label className="text-sm font-medium text-slate-700">Notification Main Icon URL</label>
                 <input 
                   type="text" 
                   value={settings?.pushIconUrl || ""} 
@@ -349,7 +349,20 @@ export default function SettingsPage() {
                   placeholder="https://example.com/logo.png"
                   className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
                 />
-                <p className="text-xs text-slate-500">Paste an image URL to show on the notification.</p>
+                <p className="text-xs text-slate-500">The large colorful icon displayed in the notification body.</p>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-slate-700">Badge Icon URL (Small Monochrome)</label>
+                <input 
+                  type="text" 
+                  value={settings?.pushBadgeUrl || ""} 
+                  onChange={(e) => setSettings({...settings, pushBadgeUrl: e.target.value})}
+                  onBlur={(e) => saveSettings("pushBadgeUrl", e.target.value)}
+                  placeholder="/badge-72x72.png"
+                  className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
+                />
+                <p className="text-xs text-slate-500">The small icon that appears in the Android status bar. Must be monochrome with a transparent background.</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

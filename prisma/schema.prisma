@@ -20,6 +20,7 @@ model Workspace {
   pushTitleTemplate String? @default("🔥 New Lead Alert!")
   pushBodyTemplate  String? @default("You have a new lead: {{name}}")
   pushIconUrl       String? @default("/icon-192.png")
+  pushBadgeUrl      String? @default("/icon-192.png")
   pushCtaLabel      String? @default("View Lead")
   pushCtaUrl        String? @default("/leads")
 

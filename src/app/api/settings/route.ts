@@ -28,6 +28,10 @@ export async function POST(req: Request) {
     const allowedFields = [
       "pushTitleTemplate", 
       "pushBodyTemplate", 
+      "pushIconUrl",
+      "pushBadgeUrl",
+      "pushCtaLabel",
+      "pushCtaUrl",
       "smsAutoReplyEnabled", 
       "fast2smsApiKey", 
       "smsTemplate",
