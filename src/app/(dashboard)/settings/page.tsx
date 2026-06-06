@@ -286,8 +286,8 @@ export default function SettingsPage() {
           <div className="p-5 flex flex-col gap-5">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="text-sm font-semibold text-slate-900">Enable Auto-Reply</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Send a greeting SMS to new leads instantly</p>
+                <h4 className="text-sm font-semibold text-slate-900">Enable Admin Alerts</h4>
+                <p className="text-xs text-slate-500 mt-0.5">Receive an SMS instantly when a new lead arrives</p>
               </div>
               <button
                 onClick={() => saveSettings("smsAutoReplyEnabled", !settings?.smsAutoReplyEnabled)}
@@ -323,13 +323,26 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-slate-700">SMS Message Template</label>
+                  <label className="text-sm font-medium text-slate-700">Admin Phone Number</label>
+                  <input 
+                    type="text" 
+                    value={settings?.adminPhone || ""} 
+                    onChange={(e) => setSettings({...settings, adminPhone: e.target.value})}
+                    onBlur={(e) => saveSettings("adminPhone", e.target.value)}
+                    placeholder="e.g. 9876543210"
+                    className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
+                  />
+                  <p className="text-xs text-slate-500">The mobile number where you want to receive the lead alert.</p>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-slate-700">SMS Alert Template</label>
                   <textarea 
                     value={settings?.smsTemplate || ""} 
                     onChange={(e) => setSettings({...settings, smsTemplate: e.target.value})}
                     onBlur={(e) => saveSettings("smsTemplate", e.target.value)}
                     rows={3}
-                    placeholder="Hi {{name}}, thanks for reaching out!"
+                    placeholder="🔥 New Lead: {{name}} has submitted a form!"
                     className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors resize-none"
                   />
                   <p className="text-xs text-slate-500">Use {"{{name}}"} and {"{{source}}"} as variables.</p>

@@ -30,7 +30,8 @@ export async function POST(req: Request) {
       "pushBodyTemplate", 
       "smsAutoReplyEnabled", 
       "fast2smsApiKey", 
-      "smsTemplate"
+      "smsTemplate",
+      "adminPhone"
     ];
 
     const dataToUpdate: any = {};

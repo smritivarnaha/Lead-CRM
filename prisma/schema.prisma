@@ -24,7 +24,8 @@ model Workspace {
   // SMS Auto-Reply Settings (Fast2SMS)
   smsAutoReplyEnabled Boolean @default(false)
   fast2smsApiKey      String?
-  smsTemplate         String? @default("Hi {{name}}, thanks for reaching out! We have received your details and will contact you shortly.")
+  adminPhone          String?
+  smsTemplate         String? @default("🔥 New Lead: {{name}} has just submitted a form!")
 }
 
 model User {

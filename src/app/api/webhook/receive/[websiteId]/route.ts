@@ -188,16 +188,16 @@ export async function POST(
       where: { id: WORKSPACE_ID },
     });
 
-    // Handle SMS Auto-Reply via Fast2SMS
-    if (workspace?.smsAutoReplyEnabled && workspace?.fast2smsApiKey && phone) {
+    // Handle SMS Admin Alerts via Fast2SMS
+    if (workspace?.smsAutoReplyEnabled && workspace?.fast2smsApiKey && workspace?.adminPhone) {
       try {
-        const smsTemplate = workspace.smsTemplate || "Hi {{name}}, thanks for reaching out! We have received your details.";
+        const smsTemplate = workspace.smsTemplate || "🔥 New Lead: {{name}} has just submitted a form!";
         const smsMessage = smsTemplate
           .replace(/{{name}}/g, fullName)
           .replace(/{{source}}/g, source || "Website");
 
-        // Clean the phone number (Fast2SMS expects 10 digits usually)
-        const cleanPhone = phone.replace(/\D/g, "").slice(-10);
+        // Clean the admin phone number (Fast2SMS expects 10 digits usually)
+        const cleanPhone = workspace.adminPhone.replace(/\D/g, "").slice(-10);
 
         if (cleanPhone.length === 10) {
           const smsRes = await fetch("https://www.fast2sms.com/dev/bulkV2", {
