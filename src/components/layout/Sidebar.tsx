@@ -46,7 +46,7 @@ export function Sidebar() {
 
   return (
     <div
-      className="flex h-full w-[260px] flex-col bg-white border-r border-[#E8E4F3]"
+      className="hidden md:flex h-full w-[260px] flex-col bg-white border-r border-[#E8E4F3]"
       style={{ flexShrink: 0 }}
     >
       {/* Logo */}

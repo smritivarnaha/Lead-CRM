@@ -7,6 +7,8 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useUser } from "@clerk/nextjs";
 
+import { MobileNav } from "./MobileNav";
+
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user } = useUser();
 
@@ -49,9 +51,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       style={{ background: "#F7F5FF", color: "#1A1523" }}
     >
       <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden relative">
         <Header />
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="flex-1 overflow-y-auto pb-16 md:pb-0">{children}</main>
+        <MobileNav />
       </div>
     </div>
   );
