@@ -199,6 +199,39 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+
+        {/* Install App Card */}
+        <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden h-fit">
+          <div className="p-5 border-b border-slate-100 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+              <Smartphone className="h-5 w-5 text-indigo-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-slate-900">Install Mobile App</h3>
+              <p className="text-xs text-slate-500">Add LeadFlow to your Home Screen</p>
+            </div>
+          </div>
+
+          <div className="p-5 flex flex-col gap-4">
+            <p className="text-sm text-slate-600">
+              For the best experience and to enable push notifications on iOS, install LeadFlow directly to your phone's home screen.
+            </p>
+            
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
+              <h4 className="text-sm font-semibold text-slate-900 mb-2">How to install:</h4>
+              <ul className="text-sm text-slate-600 space-y-2">
+                <li className="flex items-start gap-2">
+                  <span className="font-bold text-slate-900">iOS (Safari):</span> 
+                  Tap the Share icon at the bottom, then scroll down and tap "Add to Home Screen".
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold text-slate-900">Android (Chrome):</span> 
+                  Tap the 3 dots menu at the top right, then tap "Install app" or "Add to Home screen".
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
