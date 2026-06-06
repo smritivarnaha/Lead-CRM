@@ -46,11 +46,11 @@ export function Sidebar() {
 
   return (
     <div
-      className="flex h-full w-[220px] flex-col bg-white border-r border-[#E8E4F3]"
+      className="flex h-full w-[260px] flex-col bg-white border-r border-[#E8E4F3]"
       style={{ flexShrink: 0 }}
     >
       {/* Logo */}
-      <div className="flex h-[58px] items-center gap-2.5 px-5 border-b border-[#E8E4F3]">
+      <div className="flex h-[60px] items-center gap-3 px-6 border-b border-[#E8E4F3]">
         {/* Purple gradient star logo — matching Gyaan */}
         <div
           className="flex h-8 w-8 items-center justify-center rounded-lg text-white text-sm font-bold flex-shrink-0"
@@ -70,7 +70,7 @@ export function Sidebar() {
 
       {/* Search */}
       <div className="px-3 pt-4 pb-2">
-        <div className="flex items-center gap-2 rounded-lg bg-[#F7F5FF] border border-[#E8E4F3] px-3 h-9 text-sm text-[#9CA3AF] cursor-pointer hover:border-[#7C3AED] transition-colors">
+        <div className="flex items-center gap-2 rounded-lg bg-[#F7F5FF] border border-[#E8E4F3] px-3 h-10 text-sm text-[#9CA3AF] cursor-pointer hover:border-[#7C3AED] transition-colors">
           <svg className="h-3.5 w-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
@@ -79,7 +79,7 @@ export function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-4 py-3 space-y-1 overflow-y-auto">
         {visibleNavItems.map((item) => {
           const isActive =
             item.href === "/"
@@ -90,7 +90,7 @@ export function Sidebar() {
               key={item.name}
               href={item.href}
               className={cn(
-                "flex items-center gap-2.5 rounded-lg px-3 h-9 text-[13.5px] font-medium transition-all duration-150",
+                "flex items-center gap-3 rounded-lg px-3 h-10 text-[14px] font-medium transition-all duration-150",
                 isActive
                   ? "bg-[#EDE9FE] text-[#7C3AED]"
                   : "text-[#6B7280] hover:bg-[#F3F0FF] hover:text-[#1A1523]"

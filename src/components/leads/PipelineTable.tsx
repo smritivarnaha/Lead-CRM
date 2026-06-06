@@ -109,7 +109,7 @@ export function PipelineTable() {
     <div className="flex flex-col h-full w-full bg-white">
       {/* ─── TOOLBAR ─── */}
       <div 
-        className="flex items-center justify-between px-4 py-2 bg-white border-b"
+        className="flex items-center justify-between px-8 py-3 bg-white border-b"
         style={{ borderColor: "#E5E7EB", flexShrink: 0 }}
       >
         <div className="flex items-center gap-3">
@@ -174,37 +174,37 @@ export function PipelineTable() {
         <table className="w-full text-left border-collapse" style={{ tableLayout: "fixed" }}>
           {/* HEADERS */}
           <thead className={`sticky top-0 bg-white z-10 border-b shadow-[0_1px_0_#E5E7EB]`}>
-            <tr className="h-[36px] text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
-              <th className={`w-[48px] px-4 py-0 border-r ${borderClass} text-center font-normal`}>
+            <tr className="h-[48px] text-[11.5px] font-semibold text-[#6B7280] uppercase tracking-wider">
+              <th className={`w-[56px] px-6 py-0 border-r ${borderClass} text-center font-normal`}>
                 <input type="checkbox" className="rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED]" />
               </th>
               {cols.name && (
-                <th className={`w-[260px] px-3 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                <th className={`w-[260px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
                   <div className="flex items-center justify-between">NAME<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                 </th>
               )}
               {cols.phone && (
-                <th className={`w-[140px] px-3 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                <th className={`w-[140px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
                   <div className="flex items-center justify-between">PHONE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                 </th>
               )}
               {cols.email && (
-                <th className={`w-[200px] px-3 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                <th className={`w-[200px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
                   <div className="flex items-center justify-between">EMAIL<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                 </th>
               )}
               {cols.ohs && (
-                <th className={`w-[100px] px-3 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                <th className={`w-[100px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
                   <div className="flex items-center justify-between">OHS<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                 </th>
               )}
               {cols.stage && (
-                <th className={`w-[180px] px-3 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                <th className={`w-[180px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
                   <div className="flex items-center justify-between">STAGE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                 </th>
               )}
               {cols.closeDate && (
-                <th className={`w-[120px] px-3 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                <th className={`w-[120px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
                   <div className="flex items-center justify-between">CLOSE DATE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                 </th>
               )}
@@ -232,17 +232,17 @@ export function PipelineTable() {
               return (
                 <tr 
                   key={lead.id} 
-                  className="h-[56px] border-b hover:bg-[#F7F5FF] transition-colors"
+                  className="h-[64px] border-b hover:bg-[#F7F5FF] transition-colors"
                   style={{ borderColor: "#E5E7EB" }}
                 >
                   {/* Checkbox */}
-                  <td className={`px-4 py-0 border-r text-center ${borderClass}`}>
+                  <td className={`px-6 py-0 border-r text-center ${borderClass}`}>
                     <input type="checkbox" className="rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED]" />
                   </td>
 
                   {/* Name */}
                   {cols.name && (
-                    <td className={`px-3 py-0 border-r truncate ${borderClass} cursor-pointer`} onClick={() => setInspectLead(lead)}>
+                    <td className={`px-5 py-0 border-r truncate ${borderClass} cursor-pointer`} onClick={() => setInspectLead(lead)}>
                       <div className="flex items-center gap-3">
                         <div className="flex items-center justify-center h-7 w-7 rounded-md text-[12px] font-bold text-[#1A1523] flex-shrink-0 shadow-sm" style={{ background: logoBg }}>
                           {char}
@@ -261,7 +261,7 @@ export function PipelineTable() {
 
                   {/* Phone Explicit */}
                   {cols.phone && (
-                    <td className={`px-3 py-0 border-r ${borderClass}`}>
+                    <td className={`px-5 py-0 border-r ${borderClass}`}>
                       <div className="font-medium text-[#1A1523] truncate">
                         {lead.phone ? lead.phone : <span className="text-[#9CA3AF] font-normal italic">No phone</span>}
                       </div>
@@ -270,7 +270,7 @@ export function PipelineTable() {
 
                   {/* Email Explicit */}
                   {cols.email && (
-                    <td className={`px-3 py-0 border-r ${borderClass}`}>
+                    <td className={`px-5 py-0 border-r ${borderClass}`}>
                       <div className="font-medium text-[#1A1523] truncate">
                         {lead.email ? lead.email : <span className="text-[#9CA3AF] font-normal italic">No email</span>}
                       </div>
@@ -279,7 +279,7 @@ export function PipelineTable() {
 
                   {/* OHS / Heat */}
                   {cols.ohs && (
-                    <td className={`px-3 py-0 border-r ${borderClass}`}>
+                    <td className={`px-5 py-0 border-r ${borderClass}`}>
                       <div className="flex justify-end pr-3">
                         <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-[#E5E7EB] bg-white shadow-sm">
                           <span className={`h-1.5 w-1.5 rounded-full ${heat.dot}`} />
@@ -291,7 +291,7 @@ export function PipelineTable() {
 
                   {/* Stage Dropdown inside cell */}
                   {cols.stage && (
-                    <td className={`px-3 py-0 border-r ${borderClass}`}>
+                    <td className={`px-5 py-0 border-r ${borderClass}`}>
                       <DropdownMenu>
                         <DropdownMenuTrigger className="flex items-center gap-2.5 w-full hover:bg-white p-1 rounded outline-none">
                           <div className={`h-3.5 w-3.5 rounded-full border-2 ${stage.ring} ${stage.fill}`} />
@@ -318,13 +318,13 @@ export function PipelineTable() {
 
                   {/* Received / Close Date */}
                   {cols.closeDate && (
-                    <td className={`px-3 py-0 border-r font-medium text-[#1A1523] ${borderClass}`}>
+                    <td className={`px-5 py-0 border-r font-medium text-[#1A1523] ${borderClass}`}>
                       {new Date(lead.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                     </td>
                   )}
                   
                   {/* Actions CTA (ALWAYS VISIBLE NOW) */}
-                  <td className="px-3 py-0">
+                  <td className="px-5 py-0">
                     <div className="flex items-center justify-center gap-1.5">
                       {lead.email ? (
                         <a href={`mailto:${lead.email}`} className="w-8 h-8 rounded-lg bg-white border border-[#E5E7EB] hover:bg-[#F3F0FF] hover:border-[#7C3AED] hover:text-[#7C3AED] flex items-center justify-center transition-all text-[#6B7280] shadow-sm" title="Send Email">

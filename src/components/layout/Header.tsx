@@ -8,11 +8,11 @@ export function Header() {
 
   return (
     <header
-      className="flex h-[48px] items-center border-b bg-white px-4"
+      className="flex h-[60px] items-center border-b bg-white px-8"
       style={{ borderColor: "#E8E4F3", flexShrink: 0 }}
     >
-      <div className="flex h-full items-center gap-6">
-        <div className="flex h-full items-center text-[13.5px] font-semibold" style={{ color: "#1A1523" }}>
+      <div className="flex h-full items-center gap-8">
+        <div className="flex h-full items-center text-[14px] font-bold" style={{ color: "#1A1523" }}>
           Lead Center
         </div>
         <div 
