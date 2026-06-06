@@ -148,36 +148,52 @@ export default function SettingsPage() {
 
             <div className="h-px bg-slate-100" />
 
-            <div className="flex flex-col gap-3">
-              {pushStatus === "subscribed" ? (
-                <>
+            <div className="flex flex-col gap-4">
+              {/* iOS Style Toggle Row */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-900">Allow Notifications</h4>
+                  <p className="text-xs text-slate-500 mt-0.5">Receive alerts when new leads arrive</p>
+                </div>
+                
+                {pushStatus === "unsupported" ? (
+                  <span className="text-xs font-semibold text-red-500">Unavailable</span>
+                ) : (
+                  <button
+                    onClick={pushStatus === "subscribed" ? handleUnsubscribe : handleSubscribe}
+                    disabled={isProcessing || pushStatus === "loading"}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 disabled:opacity-50 ${
+                      pushStatus === "subscribed" ? "bg-indigo-600" : "bg-slate-200"
+                    }`}
+                    role="switch"
+                    aria-checked={pushStatus === "subscribed"}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        pushStatus === "subscribed" ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                )}
+              </div>
+
+              {pushStatus === "subscribed" && (
+                <div className="mt-2 pt-4 border-t border-slate-100">
                   <Button 
                     onClick={handleTestNotification} 
                     disabled={isProcessing}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+                    variant="outline"
+                    className="w-full border-indigo-200 text-indigo-700 hover:bg-indigo-50"
                   >
                     Send Test Notification
                   </Button>
-                  <Button 
-                    onClick={handleUnsubscribe} 
-                    disabled={isProcessing}
-                    variant="outline"
-                    className="w-full text-red-600 border-red-200 hover:bg-red-50"
-                  >
-                    Disable Notifications
-                  </Button>
-                </>
-              ) : pushStatus === "unsubscribed" ? (
-                <Button 
-                  onClick={handleSubscribe} 
-                  disabled={isProcessing}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
-                >
-                  <Bell className="h-4 w-4 mr-2" /> Enable Notifications
-                </Button>
-              ) : (
-                <p className="text-xs text-slate-500 text-center">
-                  Your browser does not support Web Push notifications. If you are on an iPhone, please add this site to your Home Screen first!
+                </div>
+              )}
+
+              {pushStatus === "unsupported" && (
+                <p className="text-xs text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-100 mt-2">
+                  <strong>Action Required:</strong> If you are on an iPhone, you must tap the Share icon and select <strong>"Add to Home Screen"</strong> to enable notifications.
                 </p>
               )}
             </div>
