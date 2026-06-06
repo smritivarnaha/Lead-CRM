@@ -33,9 +33,9 @@ export function Header() {
   ].filter(result => result.text.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
-    <header className="flex h-20 items-center justify-between border-b bg-white px-8">
+    <header className="flex h-16 items-center justify-between border-b border-gyaan-border bg-gyaan-surface px-8">
       <div className="flex items-center gap-4">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h1>
+        <h1 className="text-[32px] font-semibold tracking-tight text-gyaan-primary leading-tight">{title}</h1>
       </div>
 
       <div className="flex items-center gap-6">
@@ -43,7 +43,7 @@ export function Header() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input 
             placeholder="Search leads, websites..." 
-            className="w-full rounded-full bg-slate-50 pl-10 border-slate-200 focus-visible:ring-blue-500"
+            className="w-full rounded-xl bg-gyaan-bg pl-10 border-gyaan-border focus-visible:ring-gyaan-purple text-[13px] text-gyaan-primary"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => setIsSearching(true)}
@@ -65,10 +65,10 @@ export function Header() {
           )}
         </div>
         
-        <div className="flex items-center gap-4 border-l pl-6">
-          <button className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors">
-            <Bell className="h-5 w-5" />
-            <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
+        <div className="flex items-center gap-4 border-l border-gyaan-divider pl-6">
+          <button className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-gyaan-border bg-gyaan-surface text-gyaan-secondary hover:bg-gyaan-hover transition-colors">
+            <Bell className="h-5 w-5 stroke-[1.75]" />
+            <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-orange-500 ring-2 ring-white" />
           </button>
           
           <DropdownMenu>

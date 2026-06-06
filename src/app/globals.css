@@ -46,6 +46,23 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  --color-gyaan-bg: #FAFAFB;
+  --color-gyaan-sidebar: #F8F8F9;
+  --color-gyaan-surface: #FFFFFF;
+  --color-gyaan-hover: #F5F5F7;
+  --color-gyaan-row-hover: #F8F8FA;
+  --color-gyaan-selected: #F2ECFF;
+  --color-gyaan-border: #E8E8ED;
+  --color-gyaan-divider: #EFEFF3;
+  --color-gyaan-primary: #121212;
+  --color-gyaan-secondary: #6D6D75;
+  --color-gyaan-muted: #9B9BA3;
+  --color-gyaan-purple: #7C3AED;
+  --color-gyaan-success-bg: #DCFCE7;
+  --color-gyaan-warning-bg: #FEF3C7;
+  --color-gyaan-danger-bg: #FEE2E2;
+  --color-gyaan-neutral-bg: #F3F4F6;
 }
 
 :root {

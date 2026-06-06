@@ -37,18 +37,18 @@ const STATUS_OPTIONS = ["NEW", "CONTACTED", "FOLLOW_UP", "NO_RESPONSE", "CONVERT
 const PRIORITY_OPTIONS = ["HIGH", "NORMAL", "LOW"];
 
 const STATUS_CONFIG: Record<string, { label: string; dot: string; bg: string; text: string; border: string }> = {
-  NEW:         { label: "New",         dot: "bg-blue-500",   bg: "bg-blue-50",   text: "text-blue-700",   border: "border-blue-200" },
-  CONTACTED:   { label: "Contacted",   dot: "bg-amber-500",  bg: "bg-amber-50",  text: "text-amber-700",  border: "border-amber-200" },
-  FOLLOW_UP:   { label: "Follow Up",   dot: "bg-orange-500", bg: "bg-orange-50", text: "text-orange-700", border: "border-orange-200" },
-  NO_RESPONSE: { label: "No Reply",    dot: "bg-slate-400",  bg: "bg-slate-50",  text: "text-slate-500",  border: "border-slate-200" },
-  CONVERTED:   { label: "Converted",   dot: "bg-green-500",  bg: "bg-green-50",  text: "text-green-700",  border: "border-green-200" },
-  LOST:        { label: "Lost",        dot: "bg-red-400",    bg: "bg-red-50",    text: "text-red-600",    border: "border-red-200" },
+  NEW:         { label: "New",         dot: "bg-blue-500",   bg: "bg-gyaan-neutral-bg",   text: "text-slate-700",   border: "border-transparent" },
+  CONTACTED:   { label: "Contacted",   dot: "bg-amber-500",  bg: "bg-gyaan-warning-bg",  text: "text-amber-700",  border: "border-transparent" },
+  FOLLOW_UP:   { label: "Follow Up",   dot: "bg-orange-500", bg: "bg-gyaan-warning-bg", text: "text-orange-700", border: "border-transparent" },
+  NO_RESPONSE: { label: "No Reply",    dot: "bg-slate-400",  bg: "bg-gyaan-neutral-bg",  text: "text-slate-600",  border: "border-transparent" },
+  CONVERTED:   { label: "Converted",   dot: "bg-green-500",  bg: "bg-gyaan-success-bg",  text: "text-green-700",  border: "border-transparent" },
+  LOST:        { label: "Lost",        dot: "bg-red-400",    bg: "bg-gyaan-danger-bg",    text: "text-red-700",    border: "border-transparent" },
 };
 
 const PRIORITY_CONFIG: Record<string, { label: string; bg: string; text: string; border: string }> = {
-  HIGH:   { label: "High",   bg: "bg-red-50",   text: "text-red-600",   border: "border-red-200" },
-  NORMAL: { label: "Normal", bg: "bg-blue-50",  text: "text-blue-600",  border: "border-blue-200" },
-  LOW:    { label: "Low",    bg: "bg-slate-50", text: "text-slate-400", border: "border-slate-200" },
+  HIGH:   { label: "High",   bg: "bg-gyaan-danger-bg",   text: "text-red-700",   border: "border-transparent" },
+  NORMAL: { label: "Normal", bg: "bg-gyaan-neutral-bg",  text: "text-slate-700",  border: "border-transparent" },
+  LOW:    { label: "Low",    bg: "bg-gyaan-neutral-bg", text: "text-slate-500", border: "border-transparent" },
 };
 
 function avatarColor(name: string) {
@@ -72,9 +72,9 @@ function timeAgo(date: string) {
 }
 
 function TempDot({ temp }: { temp: string }) {
-  if (temp === "HOT")  return <Flame    className="h-3.5 w-3.5 text-red-500"   title="Hot" />;
-  if (temp === "WARM") return <Sun      className="h-3.5 w-3.5 text-amber-400" title="Warm" />;
-  return                      <Snowflake className="h-3.5 w-3.5 text-sky-400"  title="Cold" />;
+  if (temp === "HOT")  return <span title="Hot"><Flame    className="h-3.5 w-3.5 text-red-500" /></span>;
+  if (temp === "WARM") return <span title="Warm"><Sun      className="h-3.5 w-3.5 text-amber-400" /></span>;
+  return                      <span title="Cold"><Snowflake className="h-3.5 w-3.5 text-sky-400" /></span>;
 }
 
 // ─── Info row for modal ───────────────────────────────────────────────────
@@ -446,8 +446,9 @@ export default function LeadsPage() {
     const csv = [h,...rows].map(r=>r.map(c=>`"${c}"`).join(",")).join("\n");
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv],{type:"text/csv"})); a.download="leads.csv"; a.click();
   };
-
   const hasFilters = search || statusFilter!=="ALL" || priorityFilter!=="ALL" || websiteFilter!=="ALL";
+
+  type SortKey = "fullName" | "status" | "priority" | "source" | "temperature" | "createdAt";
 
   // Columns definition
   const COLS = [
@@ -463,51 +464,41 @@ export default function LeadsPage() {
 
   return (
     <div className="flex flex-col gap-3 h-full">
-
       {/* ── Header ── */}
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 leading-none">Leads</h1>
-          <p className="text-xs text-slate-400 mt-0.5">{loading ? "Loading…" : `${filtered.length} of ${leads.length} total`}</p>
+          <h1 className="text-[20px] font-semibold text-gyaan-primary">Pipeline</h1>
+          <p className="text-[13px] font-normal text-gyaan-secondary mt-0.5">Manage and track your incoming leads.</p>
         </div>
-        <div className="flex items-center gap-1.5">
-          <button onClick={exportCSV} className="flex items-center gap-1.5 text-xs font-medium text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 px-3 py-1.5 rounded-lg transition-colors shadow-sm">
-            <Download className="h-3.5 w-3.5" /> Export
+        <div className="flex items-center gap-2">
+          <button onClick={exportCSV} className="text-[13px] font-medium bg-white hover:bg-gyaan-hover border border-gyaan-border text-gyaan-secondary px-4 py-2.5 rounded-xl transition-colors flex items-center gap-2 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+            <Download className="h-[18px] w-[18px] stroke-[1.75]" /> Export
           </button>
-          <button onClick={load} disabled={loading} className="flex items-center gap-1.5 text-xs font-medium text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 px-3 py-1.5 rounded-lg transition-colors shadow-sm disabled:opacity-50">
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh
+          <button onClick={load} className="text-[13px] font-medium bg-white hover:bg-gyaan-hover border border-gyaan-border text-gyaan-secondary px-4 py-2.5 rounded-xl transition-colors flex items-center gap-2 shadow-[0_1px_2px_rgba(0,0,0,0.03)]" title="Refresh leads">
+            <RefreshCw className={`h-[18px] w-[18px] stroke-[1.75] ${loading ? "animate-spin" : ""}`} /> Refresh
           </button>
         </div>
       </div>
 
-      {/* ── Filter Bar ── */}
-      <div className="bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm flex flex-wrap gap-2 items-center">
-        <div className="relative flex-1 min-w-[180px]">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-300" />
-          <input
-            value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search name, email, phone…"
-            className="pl-8 pr-7 py-1.5 w-full border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 text-slate-800 bg-white"
-          />
-          {search && <button onClick={()=>setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X className="h-3 w-3"/></button>}
+      {/* ── Toolbar ── */}
+      <div className="flex flex-wrap items-center gap-3 mb-6">
+        <div className="relative flex-1 min-w-[240px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-gyaan-muted stroke-[1.75]" />
+          <input type="text" placeholder="Search leads by name, email, phone..." value={search} onChange={e=>setSearch(e.target.value)} className="w-full bg-white border border-gyaan-border rounded-xl text-[13px] py-2.5 pl-10 pr-3 outline-none focus:border-gyaan-purple text-gyaan-primary placeholder-gyaan-muted shadow-[0_1px_2px_rgba(0,0,0,0.03)]" />
         </div>
 
-        <div className="flex items-center gap-1 text-[10px] text-slate-400 font-semibold uppercase tracking-wide">
-          <Filter className="h-3 w-3" /> Filter
-        </div>
-
-        <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} className="border border-slate-200 rounded-lg text-xs py-1.5 px-2.5 outline-none focus:border-blue-400 text-slate-600 bg-white cursor-pointer">
+        <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} className="border border-gyaan-border rounded-xl text-[13px] font-medium py-2.5 px-3 outline-none focus:border-gyaan-purple text-gyaan-secondary bg-white cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
           <option value="ALL">All Status</option>
           {STATUS_OPTIONS.map(s=><option key={s} value={s}>{STATUS_CONFIG[s]?.label}</option>)}
         </select>
 
-        <select value={priorityFilter} onChange={e=>setPriorityFilter(e.target.value)} className="border border-slate-200 rounded-lg text-xs py-1.5 px-2.5 outline-none focus:border-blue-400 text-slate-600 bg-white cursor-pointer">
+        <select value={priorityFilter} onChange={e=>setPriorityFilter(e.target.value)} className="border border-gyaan-border rounded-xl text-[13px] font-medium py-2.5 px-3 outline-none focus:border-gyaan-purple text-gyaan-secondary bg-white cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
           <option value="ALL">All Priority</option>
           {PRIORITY_OPTIONS.map(p=><option key={p} value={p}>{p}</option>)}
         </select>
 
         {websites.length > 1 && (
-          <select value={websiteFilter} onChange={e=>setWebsiteFilter(e.target.value)} className="border border-slate-200 rounded-lg text-xs py-1.5 px-2.5 outline-none focus:border-blue-400 text-slate-600 bg-white cursor-pointer">
+          <select value={websiteFilter} onChange={e=>setWebsiteFilter(e.target.value)} className="border border-gyaan-border rounded-xl text-[13px] font-medium py-2.5 px-3 outline-none focus:border-gyaan-purple text-gyaan-secondary bg-white cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
             <option value="ALL">All Websites</option>
             {websites.map(([id,name])=><option key={id} value={id}>{name}</option>)}
           </select>
@@ -521,17 +512,17 @@ export default function LeadsPage() {
       </div>
 
       {/* ── Table ── */}
-      <div className="flex-1 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+      <div className="flex-1 bg-white border border-gyaan-border rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
         <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-240px)]">
-          <table className="w-full">
-            <thead className="bg-slate-50 border-b border-slate-100 sticky top-0 z-10">
-              <tr>
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-white border-b border-[#ECECF0] sticky top-0 z-10">
+              <tr className="h-[52px]">
                 {COLS.map(col => (
                   <th key={col.label}
                     onClick={col.sk ? ()=>handleSort(col.sk!) : undefined}
-                    className={`px-3 py-2.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap ${col.w} ${col.sk?"cursor-pointer hover:text-slate-700 select-none":""}`}
+                    className={`px-4 text-[13px] font-semibold text-gyaan-secondary whitespace-nowrap ${col.w} ${col.sk?"cursor-pointer hover:text-gyaan-primary select-none":""}`}
                   >
-                    <div className="flex items-center gap-0.5">
+                    <div className="flex items-center gap-1.5">
                       {col.label}
                       {col.sk && <SortIcon active={sortKey===col.sk} dir={sortKey===col.sk?sortDir:null} />}
                     </div>
@@ -560,80 +551,81 @@ export default function LeadsPage() {
                 const isUpdating = updatingId === lead.id;
 
                 return (
-                  <tr key={lead.id} className={`hover:bg-slate-50/70 transition-colors group text-xs ${isUpdating?"opacity-40 pointer-events-none":""}`}>
+                  <tr key={lead.id} className={`h-[60px] hover:bg-gyaan-row-hover border-b border-gyaan-border transition-colors group ${isUpdating?"opacity-40 pointer-events-none":""}`}>
 
                     {/* ── Contact: Name + Email + Phone ── */}
-                    <td className="px-3 py-2">
-                      <div className="flex items-center gap-2.5">
-                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 ${avatarColor(lead.fullName)}`}>
+                    <td className="px-4 py-2">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0 ${avatarColor(lead.fullName)}`}>
                           {initials(lead.fullName)}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-semibold text-slate-800 text-xs leading-tight whitespace-nowrap">
-                            {lead.fullName === "Unknown" ? <span className="text-slate-400 italic font-normal">Unknown</span> : lead.fullName}
+                          <p className="font-medium text-gyaan-primary text-[14px] leading-tight whitespace-nowrap">
+                            {lead.fullName === "Unknown" ? <span className="text-gyaan-muted italic font-normal">Unknown</span> : lead.fullName}
                           </p>
-                          {lead.email && (
-                            <a href={`mailto:${lead.email}`} className="flex items-center gap-0.5 text-[11px] text-blue-500 hover:underline leading-tight mt-0.5 truncate max-w-[180px]">
-                              <Mail className="h-2.5 w-2.5 flex-shrink-0" />{lead.email}
-                            </a>
-                          )}
-                          {lead.phone && (
-                            <a href={`tel:${lead.phone}`} className="flex items-center gap-0.5 text-[11px] text-emerald-600 hover:underline leading-tight truncate max-w-[180px]">
-                              <Phone className="h-2.5 w-2.5 flex-shrink-0" />{lead.phone}
-                            </a>
-                          )}
-                          {!lead.email && !lead.phone && <span className="text-[11px] text-slate-300 italic">No contact</span>}
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {lead.email && (
+                              <a href={`mailto:${lead.email}`} className="text-[13px] font-normal text-gyaan-secondary hover:text-gyaan-primary truncate max-w-[150px]">
+                                {lead.email}
+                              </a>
+                            )}
+                            {lead.phone && (
+                              <a href={`tel:${lead.phone}`} className="text-[13px] font-normal text-gyaan-secondary hover:text-gyaan-primary truncate max-w-[120px]">
+                                {lead.phone}
+                              </a>
+                            )}
+                            {!lead.email && !lead.phone && <span className="text-[13px] font-normal text-gyaan-muted italic">No contact</span>}
+                          </div>
                         </div>
                       </div>
                     </td>
 
                     {/* ── Status ── */}
-                    <td className="px-3 py-2">
-                      <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${sc.bg} ${sc.text} ${sc.border}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${sc.dot}`} />
+                    <td className="px-4 py-2">
+                      <span className={`inline-flex items-center gap-1.5 h-[28px] px-[12px] text-[13px] font-medium rounded-full ${sc.bg} ${sc.text}`}>
                         {sc.label}
                       </span>
                     </td>
 
                     {/* ── Priority ── */}
-                    <td className="px-3 py-2">
-                      <span className={`inline-flex text-[11px] font-medium px-2 py-0.5 rounded-full border ${pc.bg} ${pc.text} ${pc.border}`}>
+                    <td className="px-4 py-2">
+                      <span className={`inline-flex items-center h-[28px] px-[12px] text-[13px] font-medium rounded-full ${pc.bg} ${pc.text}`}>
                         {pc.label}
                       </span>
                     </td>
 
                     {/* ── Source ── */}
-                    <td className="px-3 py-2 text-[11px] text-slate-500 whitespace-nowrap">
-                      {lead.source || <span className="text-slate-300">—</span>}
+                    <td className="px-4 py-2 text-[13px] font-normal text-gyaan-secondary whitespace-nowrap">
+                      {lead.source || <span className="text-gyaan-muted">—</span>}
                     </td>
 
                     {/* ── Website ── */}
-                    <td className="px-3 py-2">
+                    <td className="px-4 py-2">
                       {lead.website
-                        ? <span className="flex items-center gap-1 text-[11px] text-slate-500 whitespace-nowrap"><Globe className="h-3 w-3 text-violet-400 flex-shrink-0"/>{lead.website.name}</span>
-                        : <span className="text-slate-300 text-[11px]">—</span>}
+                        ? <span className="text-[13px] font-normal text-gyaan-secondary whitespace-nowrap">{lead.website.name}</span>
+                        : <span className="text-gyaan-muted text-[13px]">—</span>}
                     </td>
 
                     {/* ── Heat ── */}
-                    <td className="px-3 py-2">
+                    <td className="px-4 py-2">
                       <TempDot temp={lead.temperature} />
                     </td>
 
                     {/* ── Received ── */}
-                    <td className="px-3 py-2 whitespace-nowrap">
-                      <p className="text-[11px] font-medium text-slate-600">{timeAgo(lead.createdAt)}</p>
+                    <td className="px-4 py-2 whitespace-nowrap">
+                      <p className="text-[13px] font-normal text-gyaan-secondary">{timeAgo(lead.createdAt)}</p>
                     </td>
 
                     {/* ── Actions ── */}
-                    <td className="px-3 py-2">
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <td className="px-4 py-2">
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onClick={()=>setInspectLead(lead)}
-                          className="w-6 h-6 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-500 flex items-center justify-center transition-colors" title="View details">
-                          <Eye className="h-3.5 w-3.5"/>
+                          className="w-8 h-8 rounded-lg bg-white border border-gyaan-border hover:bg-gyaan-hover text-gyaan-secondary hover:text-gyaan-primary flex items-center justify-center transition-colors shadow-sm" title="View details">
+                          <Eye className="h-4 w-4 stroke-[1.75]"/>
                         </button>
                         <button onClick={()=>handleDelete(lead.id)}
-                          className="w-6 h-6 rounded-md bg-slate-50 hover:bg-red-50 text-slate-300 hover:text-red-400 flex items-center justify-center transition-colors" title="Delete">
-                          <Trash2 className="h-3.5 w-3.5"/>
+                          className="w-8 h-8 rounded-lg bg-white border border-gyaan-border hover:bg-gyaan-danger-bg text-gyaan-secondary hover:text-red-600 flex items-center justify-center transition-colors shadow-sm" title="Delete">
+                          <Trash2 className="h-4 w-4 stroke-[1.75]"/>
                         </button>
                       </div>
                     </td>
@@ -646,11 +638,11 @@ export default function LeadsPage() {
 
         {/* Footer */}
         {filtered.length > 0 && (
-          <div className="border-t border-slate-100 px-4 py-2 bg-slate-50/50 flex items-center justify-between">
-            <span className="text-[11px] text-slate-400">
-              <strong className="text-slate-600">{filtered.length}</strong>{leads.length!==filtered.length?` of ${leads.length}`:""} leads
+          <div className="border-t border-gyaan-divider px-5 py-3 bg-white flex items-center justify-between">
+            <span className="text-[13px] font-normal text-gyaan-secondary">
+              <strong className="text-gyaan-primary font-medium">{filtered.length}</strong>{leads.length!==filtered.length?` of ${leads.length}`:""} leads
             </span>
-            <span className="text-[11px] text-slate-400">Hover a row → <Eye className="h-2.5 w-2.5 inline text-blue-400" /> to view details</span>
+            <span className="text-[13px] font-normal text-gyaan-secondary flex items-center gap-1.5">Hover a row → <Eye className="h-[18px] w-[18px] inline text-gyaan-secondary stroke-[1.75]" /> to view details</span>
           </div>
         )}
       </div>

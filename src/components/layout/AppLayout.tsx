@@ -44,7 +44,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div className="flex h-screen overflow-hidden bg-gyaan-bg text-gyaan-primary">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />

@@ -40,13 +40,13 @@ export function Sidebar() {
   });
 
   return (
-    <div className="flex h-full w-64 flex-col border-r bg-white">
-      <div className="flex h-20 items-center justify-center border-b px-6">
+    <div className="flex h-full w-[280px] flex-col border-r border-gyaan-border bg-gyaan-sidebar">
+      <div className="flex h-16 items-center justify-center border-b border-gyaan-border px-6">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white font-bold">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gyaan-purple text-white font-bold text-sm">
             LF
           </div>
-          <span className="text-xl font-bold tracking-tight text-slate-900">LeadFlow</span>
+          <span className="text-xl font-bold tracking-tight text-gyaan-primary">LeadFlow</span>
         </div>
       </div>
 
@@ -61,16 +61,17 @@ export function Sidebar() {
               key={item.name}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                "flex items-center gap-3 rounded-xl px-3 h-[44px] text-[13px] font-medium transition-all duration-200 border border-transparent",
                 isActive
-                  ? "bg-blue-50 text-blue-700"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  ? "bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)] text-gyaan-primary border-l-[3px] !border-l-gyaan-purple !rounded-l-sm"
+                  : "text-gyaan-secondary hover:bg-[#F2F2F4] hover:text-gyaan-primary"
               )}
             >
               <item.icon
+                strokeWidth={1.75}
                 className={cn(
-                  "h-5 w-5",
-                  isActive ? "text-blue-700" : "text-slate-400"
+                  "h-[18px] w-[18px]",
+                  isActive ? "text-gyaan-purple" : "text-gyaan-secondary"
                 )}
               />
               {item.name}
@@ -79,12 +80,12 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="mt-auto rounded-xl bg-slate-50 p-4">
-        <h4 className="text-sm font-semibold text-slate-900">Need help?</h4>
-        <p className="mt-1 text-xs text-slate-500">
+      <div className="mt-auto rounded-xl bg-gyaan-bg border border-gyaan-border p-4 m-4">
+        <h4 className="text-[13px] font-semibold text-gyaan-primary">Need help?</h4>
+        <p className="mt-1 text-xs text-gyaan-muted">
           Check out our documentation or contact support.
         </p>
-        <button className="mt-3 w-full rounded-lg bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm border hover:bg-slate-50 transition-colors">
+        <button className="mt-3 w-full rounded-xl bg-white px-3 py-2 text-xs font-medium text-gyaan-secondary shadow-[0_1px_2px_rgba(0,0,0,0.03)] border border-gyaan-border hover:bg-gyaan-hover transition-colors">
           Documentation
         </button>
       </div>
