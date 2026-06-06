@@ -6,39 +6,41 @@ import { currentUser } from "@clerk/nextjs/server";
 export async function getLeads() {
   try {
     const user = await currentUser();
-    
-    if (!user) {
-      return { success: false, error: "Unauthorized" };
-    }
+    if (!user) return { success: false, error: "Unauthorized" };
 
     const role = user.publicMetadata?.role as string | undefined;
     const websiteId = user.publicMetadata?.websiteId as string | undefined;
+    const isClient = role === "CLIENT" && !!websiteId;
 
-    let leads;
+    const leads = await prisma.lead.findMany({
+      where: isClient ? { websiteId } : {},
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        phone: true,
+        city: true,
+        state: true,
+        message: true,
+        source: true,
+        formName: true,
+        utmSource: true,
+        utmMedium: true,
+        utmCampaign: true,
+        utmContent: true,
+        utmTerm: true,
+        status: true,
+        priority: true,
+        temperature: true,
+        score: true,
+        createdAt: true,
+        followUpAt: true,
+        website: { select: { id: true, name: true, domain: true } },
+      },
+    });
 
-    if (role === "CLIENT" && websiteId) {
-      // Clients ONLY see leads for their specific website
-      leads = await prisma.lead.findMany({
-        where: {
-          websiteId: websiteId,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
-    } else {
-      // Agency Owners / Admins see all leads across all websites
-      leads = await prisma.lead.findMany({
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
-    }
-
-    // Convert to plain objects
-    const plainLeads = JSON.parse(JSON.stringify(leads));
-
-    return { success: true, leads: plainLeads };
+    return { success: true, leads: JSON.parse(JSON.stringify(leads)) };
   } catch (error) {
     console.error("Error fetching leads:", error);
     return { success: false, error: "Failed to fetch leads" };
@@ -55,11 +57,39 @@ export async function updateLeadStatus(leadId: string, status: string) {
       data: { status },
     });
 
-    const plainLead = JSON.parse(JSON.stringify(updatedLead));
-
-    return { success: true, lead: plainLead };
+    return { success: true, lead: JSON.parse(JSON.stringify(updatedLead)) };
   } catch (error) {
     console.error("Error updating lead:", error);
     return { success: false, error: "Failed to update lead" };
+  }
+}
+
+export async function updateLeadPriority(leadId: string, priority: string) {
+  try {
+    const user = await currentUser();
+    if (!user) return { success: false, error: "Unauthorized" };
+
+    const updatedLead = await prisma.lead.update({
+      where: { id: leadId },
+      data: { priority },
+    });
+
+    return { success: true, lead: JSON.parse(JSON.stringify(updatedLead)) };
+  } catch (error) {
+    console.error("Error updating priority:", error);
+    return { success: false, error: "Failed to update priority" };
+  }
+}
+
+export async function deleteLead(leadId: string) {
+  try {
+    const user = await currentUser();
+    if (!user) return { success: false, error: "Unauthorized" };
+
+    await prisma.lead.delete({ where: { id: leadId } });
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting lead:", error);
+    return { success: false, error: "Failed to delete lead" };
   }
 }
