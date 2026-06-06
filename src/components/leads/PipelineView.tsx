@@ -47,6 +47,8 @@ type Lead = {
   website?: { name: string };
   smsSent?: boolean;
   pushSent?: boolean;
+  followUpAt?: string | null;
+  callNotes?: string | null;
 };
 
 const STAGE_STYLE: Record<string, { label: string; ring: string; fill: string; icon: any }> = {

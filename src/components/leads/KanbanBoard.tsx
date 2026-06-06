@@ -16,6 +16,8 @@ type Lead = {
   email: string | null;
   smsSent?: boolean;
   pushSent?: boolean;
+  followUpAt?: string | null;
+  callNotes?: string | null;
 };
 
 // Re-use stage config
