@@ -92,6 +92,19 @@ export function PipelineView() {
     closeDate: true,
   });
 
+  // Toolbar States
+  const [rowHeight, setRowHeight] = useState<"compact" | "standard" | "comfortable">("standard");
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  
+  const filteredLeads = leads.filter(lead => {
+    if (statusFilter === "HOT") {
+      return lead.temperature === "HOT";
+    } else if (statusFilter) {
+      return lead.status === statusFilter;
+    }
+    return true;
+  });
+
   useEffect(() => {
     getLeads().then((res) => {
       if (res.success && res.leads) setLeads(res.leads);
@@ -131,24 +144,37 @@ export function PipelineView() {
     <div className="flex flex-col h-full w-full bg-white relative overflow-hidden">
       {/* ─── TOOLBAR ─── */}
       <div 
-        className="flex items-center justify-between px-8 py-3 bg-white border-b"
+        className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-8 py-3 bg-white border-b gap-3 sm:gap-0"
         style={{ borderColor: "#E5E7EB", flexShrink: 0 }}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full sm:w-auto overflow-x-auto no-scrollbar pb-1 sm:pb-0">
           <button className="flex items-center justify-center w-7 h-7 text-[#9CA3AF] hover:text-[#1A1523] hover:bg-slate-100 rounded transition-colors">
             <ArrowRightToLine className="h-4 w-4" strokeWidth={2} />
           </button>
           
           <div className="h-4 w-px bg-[#E5E7EB]" />
           
-          <button className="flex items-center gap-1.5 px-2 py-1 text-[13px] font-semibold text-[#1A1523] hover:bg-[#F7F5FF] rounded transition-colors">
-            <UsersIcon className="h-4 w-4 text-[#9CA3AF]" />
-            All opportunities
-            <ChevronDown className="h-3.5 w-3.5 text-[#9CA3AF] ml-1" strokeWidth={2} />
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1.5 px-2 py-1 text-[13px] font-semibold text-[#1A1523] hover:bg-[#F7F5FF] rounded transition-colors outline-none">
+              <UsersIcon className="h-4 w-4 text-[#9CA3AF]" />
+              {statusFilter ? STAGE_STYLE[statusFilter]?.label || "Filtered" : "All opportunities"}
+              <ChevronDown className="h-3.5 w-3.5 text-[#9CA3AF] ml-1" strokeWidth={2} />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuItem onClick={() => setStatusFilter(null)} className={!statusFilter ? "font-bold" : ""}>All opportunities</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-xs">By Stage</DropdownMenuLabel>
+              {Object.entries(STAGE_STYLE).map(([key, config]) => (
+                <DropdownMenuItem key={key} onClick={() => setStatusFilter(key)} className={statusFilter === key ? "font-bold" : ""}>
+                  <div className={`h-2.5 w-2.5 rounded-full mr-2 ${config.fill === 'bg-transparent' ? config.ring + ' border' : config.fill}`} />
+                  {config.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
-        <div className="flex items-center gap-4 text-[13px] font-medium text-[#6B7280]">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-[13px] font-medium text-[#6B7280]">
           {/* Workable Fields Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center gap-1.5 hover:text-[#1A1523] transition-colors py-1 px-2 rounded hover:bg-slate-50 outline-none">
@@ -168,13 +194,14 @@ export function PipelineView() {
 
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center gap-1.5 hover:text-[#1A1523] transition-colors py-1 px-2 rounded hover:bg-slate-50 outline-none">
-              <Filter className="h-4 w-4" strokeWidth={1.75} /> Filters
+              <Filter className="h-4 w-4" strokeWidth={1.75} /> Filters {statusFilter && <span className="flex h-2 w-2 rounded-full bg-[#7C3AED]"></span>}
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-48">
-              <DropdownMenuItem className="text-[13px]">Status is any of...</DropdownMenuItem>
-              <DropdownMenuItem className="text-[13px]">Source equals...</DropdownMenuItem>
+              <DropdownMenuLabel className="text-xs">Quick Filters</DropdownMenuLabel>
+              <DropdownMenuItem className="text-[13px]" onClick={() => setStatusFilter("NEW")}>Show New Leads</DropdownMenuItem>
+              <DropdownMenuItem className="text-[13px]" onClick={() => setStatusFilter("HOT")}>Show Hot Leads</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-[13px] text-[#7C3AED] font-medium">+ Add filter</DropdownMenuItem>
+              <DropdownMenuItem className="text-[13px]" onClick={() => setStatusFilter(null)}>Clear all filters</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -183,9 +210,9 @@ export function PipelineView() {
               <AlignJustify className="h-4 w-4" strokeWidth={1.75} /> Row height
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-40">
-              <DropdownMenuItem className="text-[13px]">Compact</DropdownMenuItem>
-              <DropdownMenuItem className="text-[13px] font-medium bg-slate-50">Standard</DropdownMenuItem>
-              <DropdownMenuItem className="text-[13px]">Comfortable</DropdownMenuItem>
+              <DropdownMenuItem className={`text-[13px] ${rowHeight === 'compact' ? 'font-medium bg-slate-50' : ''}`} onClick={() => setRowHeight('compact')}>Compact</DropdownMenuItem>
+              <DropdownMenuItem className={`text-[13px] ${rowHeight === 'standard' ? 'font-medium bg-slate-50' : ''}`} onClick={() => setRowHeight('standard')}>Standard</DropdownMenuItem>
+              <DropdownMenuItem className={`text-[13px] ${rowHeight === 'comfortable' ? 'font-medium bg-slate-50' : ''}`} onClick={() => setRowHeight('comfortable')}>Comfortable</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -204,7 +231,7 @@ export function PipelineView() {
       {/* ─── CONTENT ─── */}
       <div className="flex-1 overflow-auto bg-white relative">
         {viewMode === "kanban" ? (
-          <KanbanBoard leads={leads} onStatusChange={handleStatusChange} onInspect={setInspectLead} />
+          <KanbanBoard leads={filteredLeads} onStatusChange={handleStatusChange} onInspect={setInspectLead} />
         ) : (
           <table className="w-full text-left border-collapse" style={{ tableLayout: "fixed" }}>
           {/* HEADERS */}
@@ -213,7 +240,7 @@ export function PipelineView() {
               <th className={`w-[56px] px-6 py-0 border-r ${borderClass} text-center font-normal`}>
                 <input 
                   type="checkbox" 
-                  checked={leads.length > 0 && selectedLeadIds.size === leads.length}
+                  checked={filteredLeads.length > 0 && selectedLeadIds.size === filteredLeads.length}
                   onChange={toggleAll}
                   className="rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED]" 
                 />
@@ -224,17 +251,17 @@ export function PipelineView() {
                 </th>
               )}
               {cols.phone && (
-                <th className={`w-[140px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                <th className={`w-[140px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer hidden md:table-cell`}>
                   <div className="flex items-center justify-between">PHONE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                 </th>
               )}
               {cols.email && (
-                <th className={`w-[200px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                <th className={`w-[200px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer hidden lg:table-cell`}>
                   <div className="flex items-center justify-between">EMAIL<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                 </th>
               )}
               {cols.ohs && (
-                <th className={`w-[100px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                <th className={`w-[100px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer hidden lg:table-cell`}>
                   <div className="flex items-center justify-between">OHS<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                 </th>
               )}
@@ -244,7 +271,7 @@ export function PipelineView() {
                 </th>
               )}
               {cols.closeDate && (
-                <th className={`w-[120px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                <th className={`w-[120px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer hidden sm:table-cell`}>
                   <div className="flex items-center justify-between">CLOSE DATE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                 </th>
               )}
@@ -258,7 +285,9 @@ export function PipelineView() {
           <tbody className="text-[13px]">
             {loading ? (
               <tr><td colSpan={8} className="text-center py-12 text-[#9CA3AF]">Loading data...</td></tr>
-            ) : leads.map((lead) => {
+            ) : filteredLeads.length === 0 ? (
+              <tr><td colSpan={8} className="text-center py-12 text-[#9CA3AF]">No leads found.</td></tr>
+            ) : filteredLeads.map((lead) => {
               const stage = STAGE_STYLE[lead.status] || STAGE_STYLE.NEW;
               const heat = HEAT_STYLE[lead.temperature] || HEAT_STYLE.WARM;
               const score = getScore(lead);
@@ -269,10 +298,12 @@ export function PipelineView() {
               const idx = char.charCodeAt(0) % colors.length;
               const logoBg = colors[idx];
               
+              const trHeightClass = rowHeight === "compact" ? "h-[48px]" : rowHeight === "comfortable" ? "h-[80px]" : "h-[64px]";
+              
               return (
                 <tr 
                   key={lead.id} 
-                  className="h-[64px] border-b hover:bg-[#F7F5FF] transition-colors"
+                  className={`${trHeightClass} border-b hover:bg-[#F7F5FF] transition-colors`}
                   style={{ borderColor: "#E5E7EB" }}
                 >
                   {/* Checkbox */}
@@ -306,7 +337,7 @@ export function PipelineView() {
 
                   {/* Phone Explicit */}
                   {cols.phone && (
-                    <td className={`px-5 py-0 border-r ${borderClass}`}>
+                    <td className={`px-5 py-0 border-r ${borderClass} hidden md:table-cell`}>
                       <div className="font-medium text-[#1A1523] truncate">
                         {lead.phone ? lead.phone : <span className="text-[#9CA3AF] font-normal italic">No phone</span>}
                       </div>
@@ -315,7 +346,7 @@ export function PipelineView() {
 
                   {/* Email Explicit */}
                   {cols.email && (
-                    <td className={`px-5 py-0 border-r ${borderClass}`}>
+                    <td className={`px-5 py-0 border-r ${borderClass} hidden lg:table-cell`}>
                       <div className="font-medium text-[#1A1523] truncate">
                         {lead.email ? lead.email : <span className="text-[#9CA3AF] font-normal italic">No email</span>}
                       </div>
@@ -324,7 +355,7 @@ export function PipelineView() {
 
                   {/* OHS / Heat */}
                   {cols.ohs && (
-                    <td className={`px-5 py-0 border-r ${borderClass}`}>
+                    <td className={`px-5 py-0 border-r ${borderClass} hidden lg:table-cell`}>
                       <div className="flex justify-end pr-3">
                         <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-[#E5E7EB] bg-white shadow-sm">
                           <span className={`h-1.5 w-1.5 rounded-full ${heat.dot}`} />
@@ -363,7 +394,7 @@ export function PipelineView() {
 
                   {/* Received / Close Date */}
                   {cols.closeDate && (
-                    <td className={`px-5 py-0 border-r font-medium text-[#1A1523] ${borderClass}`}>
+                    <td className={`px-5 py-0 border-r font-medium text-[#1A1523] ${borderClass} hidden sm:table-cell`}>
                       {new Date(lead.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                     </td>
                   )}
@@ -402,22 +433,22 @@ export function PipelineView() {
 
       {/* ─── BULK ACTIONS BAR ─── */}
       {selectedLeadIds.size > 0 && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-[#1A1523] text-white px-5 py-3 rounded-full shadow-2xl flex items-center gap-6 z-50 border border-white/10 animate-in slide-in-from-bottom-10 fade-in duration-200">
-          <div className="flex items-center gap-2 border-r border-white/20 pr-6">
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-max bg-[#1A1523] text-white px-3 sm:px-5 py-2 sm:py-3 rounded-full shadow-2xl flex items-center gap-3 sm:gap-6 z-50 border border-white/10 animate-in slide-in-from-bottom-10 fade-in duration-200 justify-center">
+          <div className="flex items-center gap-2 border-r border-white/20 pr-3 sm:pr-6">
             <span className="flex items-center justify-center bg-[#7C3AED] text-white text-xs font-bold w-5 h-5 rounded-full">{selectedLeadIds.size}</span>
-            <span className="text-[13px] font-medium">selected</span>
+            <span className="text-[13px] font-medium hidden sm:inline">selected</span>
           </div>
           
-          <div className="flex items-center gap-1 text-[13px] font-medium">
-            <button className="flex items-center gap-2 hover:bg-white/10 px-3 py-1.5 rounded transition-colors text-gray-200 hover:text-white" onClick={() => toast("Bulk Email feature coming soon!")}>
-              <Mail className="h-4 w-4" /> Email All
+          <div className="flex items-center gap-0.5 sm:gap-1 text-[13px] font-medium">
+            <button className="flex items-center gap-2 hover:bg-white/10 px-2 sm:px-3 py-1.5 rounded transition-colors text-gray-200 hover:text-white" onClick={() => toast("Bulk Email feature coming soon!")}>
+              <Mail className="h-4 w-4" /> <span className="hidden sm:inline">Email All</span>
             </button>
-            <button className="flex items-center gap-2 hover:bg-white/10 px-3 py-1.5 rounded transition-colors text-gray-200 hover:text-white" onClick={() => toast("Bulk SMS feature coming soon!")}>
-              <Phone className="h-4 w-4" /> SMS All
+            <button className="flex items-center gap-2 hover:bg-white/10 px-2 sm:px-3 py-1.5 rounded transition-colors text-gray-200 hover:text-white" onClick={() => toast("Bulk SMS feature coming soon!")}>
+              <Phone className="h-4 w-4" /> <span className="hidden sm:inline">SMS All</span>
             </button>
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-2 hover:bg-white/10 px-3 py-1.5 rounded transition-colors text-gray-200 hover:text-white outline-none">
-                <ChevronDown className="h-4 w-4" /> Update Status
+              <DropdownMenuTrigger className="flex items-center gap-2 hover:bg-white/10 px-2 sm:px-3 py-1.5 rounded transition-colors text-gray-200 hover:text-white outline-none">
+                <ChevronDown className="h-4 w-4" /> <span className="hidden sm:inline">Update Status</span>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="center" className="w-48 bg-[#1A1523] text-white border-white/10">
                 <DropdownMenuLabel className="text-xs text-gray-400">Set Status For {selectedLeadIds.size} Leads</DropdownMenuLabel>
@@ -437,8 +468,8 @@ export function PipelineView() {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            <button className="flex items-center gap-2 hover:bg-red-500/20 px-3 py-1.5 rounded transition-colors text-red-400 hover:text-red-300 ml-2" onClick={() => toast("Bulk Delete feature coming soon!")}>
-              <XCircle className="h-4 w-4" /> Delete
+            <button className="flex items-center gap-2 hover:bg-red-500/20 px-2 sm:px-3 py-1.5 rounded transition-colors text-red-400 hover:text-red-300 ml-1 sm:ml-2" onClick={() => toast("Bulk Delete feature coming soon!")}>
+              <XCircle className="h-4 w-4" /> <span className="hidden sm:inline">Delete</span>
             </button>
           </div>
         </div>

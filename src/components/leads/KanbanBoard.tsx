@@ -66,14 +66,14 @@ export function KanbanBoard({ leads, onStatusChange, onInspect }: { leads: Lead[
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="flex h-full w-full gap-4 p-6 overflow-x-auto bg-[#F9FAFB]">
+      <div className="flex h-full w-full gap-3 sm:gap-4 p-3 sm:p-6 overflow-x-auto snap-x snap-mandatory no-scrollbar bg-[#F9FAFB]">
         {columns.map(col => (
           <Droppable key={col.id} droppableId={col.id}>
             {(provided, snapshot) => (
               <div 
                 {...provided.droppableProps}
                 ref={provided.innerRef}
-                className={`flex flex-col w-[300px] flex-shrink-0 rounded-xl ${col.bg} border border-[#E5E7EB] shadow-sm transition-colors ${snapshot.isDraggingOver ? 'ring-2 ring-[#7C3AED]/30' : ''}`}
+                className={`flex flex-col w-[280px] sm:w-[300px] snap-center flex-shrink-0 rounded-xl ${col.bg} border border-[#E5E7EB] shadow-sm transition-colors ${snapshot.isDraggingOver ? 'ring-2 ring-[#7C3AED]/30' : ''}`}
               >
                 {/* Column Header */}
                 <div className="flex items-center justify-between p-4 border-b border-[#E5E7EB]/50 bg-white/50 rounded-t-xl">
@@ -132,7 +132,7 @@ export function KanbanBoard({ leads, onStatusChange, onInspect }: { leads: Lead[
                                 <span className={`h-1.5 w-1.5 rounded-full ${heat.dot}`} />
                                 <span className="text-[11px] font-bold text-[#1A1523]">{score}</span>
                               </div>
-                              <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="flex gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                 {lead.email && (
                                   <a href={`mailto:${lead.email}`} className="w-7 h-7 rounded border border-[#E5E7EB] hover:bg-[#F3F0FF] hover:border-[#7C3AED] hover:text-[#7C3AED] flex items-center justify-center text-[#6B7280]">
                                     <Mail className="h-3 w-3" />

@@ -132,6 +132,34 @@ export async function POST(
     const utmMedium   = body.utm_medium   || null;
     const utmCampaign = body.utm_campaign || null;
 
+    // --- Smart Lead Routing ---
+    // If the message or source contains certain keywords, try to assign to a specific user.
+    let assignedToId: string | null = null;
+    const allText = `${message || ''} ${JSON.stringify(body)}`.toLowerCase();
+    
+    // Example: Find a user in this workspace based on specialization
+    let targetUserKeyword = null;
+    if (allText.includes("orthodontic") || allText.includes("braces")) {
+      targetUserKeyword = "Smith"; // Dr. Smith handles orthodontics
+    } else if (allText.includes("general") || allText.includes("cleaning")) {
+      targetUserKeyword = "Jones"; // Dr. Jones handles general
+    }
+
+    if (targetUserKeyword) {
+      const targetUser = await prisma.user.findFirst({
+        where: {
+          workspaceId: WORKSPACE_ID,
+          OR: [
+            { lastName: { contains: targetUserKeyword, mode: "insensitive" } },
+            { firstName: { contains: targetUserKeyword, mode: "insensitive" } }
+          ]
+        }
+      });
+      if (targetUser) {
+        assignedToId = targetUser.id;
+      }
+    }
+
     // Save lead to database
     const newLead = await prisma.lead.create({
       data: {
@@ -149,6 +177,7 @@ export async function POST(
         temperature: "WARM",
         websiteId,
         workspaceId: WORKSPACE_ID,
+        assignedToId,
       },
     });
 
