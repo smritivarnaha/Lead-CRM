@@ -49,11 +49,13 @@ export default function WebsitesPage() {
     setIsSubmitting(true);
     
     const res = await createWebsite({ name: newSiteName, domain: newSiteDomain });
-    if (res.success) {
+    if (res?.success) {
       setNewSiteName("");
       setNewSiteDomain("");
       setIsModalOpen(false);
       fetchSites(); // Refresh list
+    } else {
+      alert(res?.error || "Failed to create website. Please check database connection.");
     }
     setIsSubmitting(false);
   };

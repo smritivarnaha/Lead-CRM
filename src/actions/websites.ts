@@ -39,11 +39,25 @@ export async function createWebsite(data: { name: string; domain: string }) {
     const user = await currentUser();
     if (!user) return { success: false, error: "Unauthorized" };
 
+    // Ensure the mock workspace exists
+    let workspace = await prisma.workspace.findUnique({
+      where: { id: "mock_workspace_id" }
+    });
+    
+    if (!workspace) {
+      workspace = await prisma.workspace.create({
+        data: {
+          id: "mock_workspace_id",
+          name: "Default Workspace",
+        }
+      });
+    }
+
     const newSite = await prisma.website.create({
       data: {
         name: data.name,
         domain: data.domain,
-        workspaceId: "mock_workspace_id", // Update this when we have real workspaces
+        workspaceId: "mock_workspace_id", 
       },
     });
 
