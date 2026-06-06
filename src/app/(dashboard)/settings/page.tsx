@@ -26,6 +26,13 @@ export default function SettingsPage() {
     checkPushStatus();
     fetchSettings();
 
+    // Force update Service Worker to ensure new notification settings apply
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.update();
+      });
+    }
+
     // Listen for PWA install prompt
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
