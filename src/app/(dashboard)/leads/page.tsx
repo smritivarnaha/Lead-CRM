@@ -8,6 +8,7 @@ import {
   RefreshCw, Search, ChevronUp, ChevronDown, ChevronsUpDown,
   Phone, Mail, Globe, MapPin, MessageSquare, TrendingUp,
   Filter, Download, Trash2, ChevronRight, X, Inbox,
+  Eye, Settings2, Calendar, CheckCircle2,
 } from "lucide-react";
 
 type Lead = {
@@ -70,6 +71,132 @@ function timeAgo(date: string) {
 type SortKey = keyof Lead;
 type SortDir = "asc" | "desc" | null;
 
+// ─── Lead Details Modal (Eye Icon) ──────────────────────────────────
+function LeadDetailsModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
+  let rawData: Record<string, unknown> = {};
+  try {
+    if (lead.rawFields) {
+      rawData = JSON.parse(lead.rawFields);
+    }
+  } catch { /* ignore */ }
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <h2 className="text-xl font-bold text-slate-900">{lead.fullName}</h2>
+              <Badge variant="outline" className={`text-xs ${STATUS_STYLE[lead.status] || STATUS_STYLE.NEW}`}>{lead.status.replace("_", " ")}</Badge>
+            </div>
+            <div className="flex items-center gap-3 text-sm text-slate-500">
+              <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {new Date(lead.createdAt).toLocaleString("en-IN")}</span>
+              {lead.website && <span className="flex items-center gap-1"><Globe className="w-3.5 h-3.5" /> {lead.website.name}</span>}
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 text-slate-500 transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+          {/* Contact Info */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Email</div>
+              <div className="text-sm font-medium text-slate-900">{lead.email || "Not provided"}</div>
+            </div>
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Phone</div>
+              <div className="text-sm font-medium text-slate-900">{lead.phone || "Not provided"}</div>
+            </div>
+          </div>
+
+          {/* Location + Form + Priority */}
+          <div className="grid grid-cols-3 gap-3">
+            {(lead.city || lead.state) && (
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <div className="text-xs font-semibold text-slate-500 uppercase mb-1 flex items-center gap-1"><MapPin className="w-3 h-3"/>Location</div>
+                <div className="text-sm text-slate-900">{[lead.city, lead.state].filter(Boolean).join(", ")}</div>
+              </div>
+            )}
+            {lead.formName && (
+              <div className="bg-blue-50 p-3 rounded-xl border border-blue-100">
+                <div className="text-xs font-semibold text-blue-600 uppercase mb-1">Form</div>
+                <div className="text-sm text-blue-900">{lead.formName}</div>
+              </div>
+            )}
+            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+              <div className="text-xs font-semibold text-slate-500 uppercase mb-1">Priority</div>
+              <div className="text-sm text-slate-900 font-medium">{lead.priority} {TEMP_STYLE[lead.temperature] || ""}</div>
+            </div>
+          </div>
+
+          {/* Message */}
+          {lead.message && (
+            <div className="bg-amber-50 p-4 rounded-xl border border-amber-100">
+              <div className="text-xs font-semibold text-amber-700 uppercase tracking-wider mb-1 flex items-center gap-1"><MessageSquare className="w-3 h-3"/>Message</div>
+              <div className="text-sm text-amber-900">{lead.message}</div>
+            </div>
+          )}
+
+          {/* UTM Data */}
+          {(lead.utmSource || lead.utmMedium || lead.utmCampaign) && (
+            <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+              <div className="text-xs font-semibold text-indigo-600 uppercase tracking-wider mb-2 flex items-center gap-1"><TrendingUp className="w-3 h-3"/>UTM Tracking</div>
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                {lead.utmSource && <div><span className="text-indigo-400">Source:</span> <span className="text-indigo-900 font-medium">{lead.utmSource}</span></div>}
+                {lead.utmMedium && <div><span className="text-indigo-400">Medium:</span> <span className="text-indigo-900 font-medium">{lead.utmMedium}</span></div>}
+                {lead.utmCampaign && <div><span className="text-indigo-400">Campaign:</span> <span className="text-indigo-900 font-medium">{lead.utmCampaign}</span></div>}
+              </div>
+            </div>
+          )}
+
+          {/* Quick Actions */}
+          <div className="flex items-center gap-2">
+            {lead.phone && (
+              <>
+                <a href={`tel:${lead.phone}`} className="flex items-center gap-1.5 bg-green-600 text-white text-xs px-3 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium">
+                  <Phone className="h-3.5 w-3.5" /> Call
+                </a>
+                <a href={`https://wa.me/${lead.phone.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 bg-[#25D366] text-white text-xs px-3 py-2 rounded-lg hover:bg-[#128C7E] transition-colors font-medium">
+                  💬 WhatsApp
+                </a>
+              </>
+            )}
+            {lead.email && (
+              <a href={`mailto:${lead.email}`} className="flex items-center gap-1.5 bg-blue-600 text-white text-xs px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                <Mail className="h-3.5 w-3.5" /> Email
+              </a>
+            )}
+          </div>
+
+          {/* Raw Form Fields */}
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-blue-500" /> All Captured Form Data
+            </h3>
+            {Object.keys(rawData).length > 0 ? (
+              <div className="bg-slate-900 rounded-xl p-5 overflow-x-auto">
+                <pre className="text-[11px] text-green-400 font-mono leading-relaxed">
+                  {JSON.stringify(rawData, null, 2)}
+                </pre>
+              </div>
+            ) : (
+              <div className="p-4 border border-dashed border-slate-200 rounded-xl text-center text-sm text-slate-500 bg-slate-50">
+                No raw form data was captured for this lead.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Leads Page ────────────────────────────────────────────────
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,6 +208,7 @@ export default function LeadsPage() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [inspectLead, setInspectLead] = useState<Lead | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -211,7 +339,6 @@ export default function LeadsPage() {
 
       {/* Filters Row */}
       <div className="flex flex-wrap gap-2 items-center bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
-        {/* Search */}
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
@@ -231,33 +358,18 @@ export default function LeadsPage() {
           <Filter className="h-3.5 w-3.5" /> Filter:
         </div>
 
-        {/* Status filter */}
-        <select
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-          className="border border-slate-200 rounded-lg text-sm py-2 px-3 outline-none focus:border-blue-500 text-slate-700 bg-white"
-        >
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="border border-slate-200 rounded-lg text-sm py-2 px-3 outline-none focus:border-blue-500 text-slate-700 bg-white">
           <option value="ALL">All Status</option>
           {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
         </select>
 
-        {/* Priority filter */}
-        <select
-          value={priorityFilter}
-          onChange={e => setPriorityFilter(e.target.value)}
-          className="border border-slate-200 rounded-lg text-sm py-2 px-3 outline-none focus:border-blue-500 text-slate-700 bg-white"
-        >
+        <select value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)} className="border border-slate-200 rounded-lg text-sm py-2 px-3 outline-none focus:border-blue-500 text-slate-700 bg-white">
           <option value="ALL">All Priority</option>
           {PRIORITY_OPTIONS.map(p => <option key={p} value={p}>{p}</option>)}
         </select>
 
-        {/* Website filter */}
         {websites.length > 1 && (
-          <select
-            value={websiteFilter}
-            onChange={e => setWebsiteFilter(e.target.value)}
-            className="border border-slate-200 rounded-lg text-sm py-2 px-3 outline-none focus:border-blue-500 text-slate-700 bg-white"
-          >
+          <select value={websiteFilter} onChange={e => setWebsiteFilter(e.target.value)} className="border border-slate-200 rounded-lg text-sm py-2 px-3 outline-none focus:border-blue-500 text-slate-700 bg-white">
             <option value="ALL">All Websites</option>
             {websites.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
           </select>
@@ -305,11 +417,11 @@ export default function LeadsPage() {
                 </td></tr>
               ) : filtered.map(lead => (
                 <>
+                  {/* Row */}
                   <tr
                     key={lead.id}
                     className={`hover:bg-slate-50 transition-colors ${expandedRow === lead.id ? "bg-blue-50/50" : ""} ${updatingId === lead.id ? "opacity-60" : ""}`}
                   >
-                    {/* Expand toggle */}
                     <td className="pl-4 pr-1 py-3">
                       <button
                         onClick={() => setExpandedRow(expandedRow === lead.id ? null : lead.id)}
@@ -319,30 +431,19 @@ export default function LeadsPage() {
                       </button>
                     </td>
 
-                    {/* Name */}
                     <td className="px-4 py-3">
                       <div className="font-semibold text-slate-900 whitespace-nowrap">{lead.fullName}</div>
                       {lead.city && <div className="text-xs text-slate-400 flex items-center gap-0.5 mt-0.5"><MapPin className="h-2.5 w-2.5" />{lead.city}{lead.state ? `, ${lead.state}` : ""}</div>}
                     </td>
 
-                    {/* Contact */}
                     <td className="px-4 py-3">
                       <div className="flex flex-col gap-0.5">
-                        {lead.email && (
-                          <a href={`mailto:${lead.email}`} className="flex items-center gap-1 text-xs text-blue-600 hover:underline">
-                            <Mail className="h-3 w-3" />{lead.email}
-                          </a>
-                        )}
-                        {lead.phone && (
-                          <a href={`tel:${lead.phone}`} className="flex items-center gap-1 text-xs text-green-600 hover:underline">
-                            <Phone className="h-3 w-3" />{lead.phone}
-                          </a>
-                        )}
+                        {lead.email && <a href={`mailto:${lead.email}`} className="flex items-center gap-1 text-xs text-blue-600 hover:underline"><Mail className="h-3 w-3" />{lead.email}</a>}
+                        {lead.phone && <a href={`tel:${lead.phone}`} className="flex items-center gap-1 text-xs text-green-600 hover:underline"><Phone className="h-3 w-3" />{lead.phone}</a>}
                         {!lead.email && !lead.phone && <span className="text-xs text-slate-400">—</span>}
                       </div>
                     </td>
 
-                    {/* Website */}
                     <td className="px-4 py-3">
                       {lead.website ? (
                         <div className="flex items-center gap-1 text-xs text-slate-600 whitespace-nowrap">
@@ -352,14 +453,12 @@ export default function LeadsPage() {
                       ) : <span className="text-xs text-slate-400">—</span>}
                     </td>
 
-                    {/* Source */}
                     <td className="px-4 py-3">
                       <span className="text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded whitespace-nowrap">
                         {lead.source || "Direct"}
                       </span>
                     </td>
 
-                    {/* Status */}
                     <td className="px-4 py-3">
                       <select
                         value={lead.status}
@@ -370,7 +469,6 @@ export default function LeadsPage() {
                       </select>
                     </td>
 
-                    {/* Priority */}
                     <td className="px-4 py-3">
                       <select
                         value={lead.priority}
@@ -381,25 +479,31 @@ export default function LeadsPage() {
                       </select>
                     </td>
 
-                    {/* Temperature */}
                     <td className="px-4 py-3 text-center text-base">
                       {TEMP_STYLE[lead.temperature] || "❄️"}
                     </td>
 
-                    {/* Date */}
                     <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">
                       {timeAgo(lead.createdAt)}
                     </td>
 
-                    {/* Actions */}
                     <td className="px-4 py-3">
-                      <button
-                        onClick={() => handleDelete(lead.id)}
-                        className="text-slate-300 hover:text-red-500 transition-colors"
-                        title="Delete lead"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setInspectLead(lead)}
+                          className="text-blue-500 hover:text-blue-700 transition-colors p-1 rounded hover:bg-blue-50"
+                          title="View full details"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(lead.id)}
+                          className="text-slate-300 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
+                          title="Delete lead"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
 
@@ -408,7 +512,6 @@ export default function LeadsPage() {
                     <tr key={`${lead.id}-expanded`} className="bg-blue-50/30">
                       <td colSpan={10} className="px-8 py-4">
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                          {/* Message */}
                           {lead.message && (
                             <div className="col-span-2 bg-white border border-slate-200 rounded-lg p-3">
                               <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mb-1.5">
@@ -418,7 +521,6 @@ export default function LeadsPage() {
                             </div>
                           )}
 
-                          {/* UTM Info */}
                           {(lead.utmSource || lead.utmMedium || lead.utmCampaign || lead.utmContent || lead.utmTerm) && (
                             <div className="bg-white border border-slate-200 rounded-lg p-3">
                               <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mb-1.5">
@@ -428,13 +530,10 @@ export default function LeadsPage() {
                                 {lead.utmSource && <p><span className="text-slate-400">Source:</span> <span className="text-slate-700 font-medium">{lead.utmSource}</span></p>}
                                 {lead.utmMedium && <p><span className="text-slate-400">Medium:</span> <span className="text-slate-700 font-medium">{lead.utmMedium}</span></p>}
                                 {lead.utmCampaign && <p><span className="text-slate-400">Campaign:</span> <span className="text-slate-700 font-medium">{lead.utmCampaign}</span></p>}
-                                {lead.utmContent && <p><span className="text-slate-400">Content:</span> <span className="text-slate-700 font-medium">{lead.utmContent}</span></p>}
-                                {lead.utmTerm && <p><span className="text-slate-400">Term:</span> <span className="text-slate-700 font-medium">{lead.utmTerm}</span></p>}
                               </div>
                             </div>
                           )}
 
-                          {/* Lead Meta */}
                           <div className="bg-white border border-slate-200 rounded-lg p-3">
                             <div className="text-xs font-semibold text-slate-500 mb-1.5">Lead Details</div>
                             <div className="space-y-1 text-xs">
@@ -446,7 +545,6 @@ export default function LeadsPage() {
                             </div>
                           </div>
 
-                          {/* Quick actions */}
                           <div className="flex flex-col gap-2">
                             {lead.phone && (
                               <a href={`tel:${lead.phone}`} className="flex items-center gap-2 bg-green-600 text-white text-xs px-3 py-2 rounded-lg hover:bg-green-700 transition-colors">
@@ -459,26 +557,21 @@ export default function LeadsPage() {
                               </a>
                             )}
                             {lead.phone && (
-                              <a
-                                href={`https://wa.me/${lead.phone.replace(/\D/g, "")}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 bg-[#25D366] text-white text-xs px-3 py-2 rounded-lg hover:bg-[#128C7E] transition-colors"
-                              >
+                              <a href={`https://wa.me/${lead.phone.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-[#25D366] text-white text-xs px-3 py-2 rounded-lg hover:bg-[#128C7E] transition-colors">
                                 <span className="text-sm">💬</span> WhatsApp
                               </a>
                             )}
                           </div>
 
-                          {/* Raw Form Fields */}
+                          {/* Raw Form Data in expanded row */}
                           {(lead.rawFields && lead.rawFields !== "{}") && (
                             <div className="col-span-2 md:col-span-3 lg:col-span-4 bg-slate-900 border border-slate-800 rounded-lg p-4 overflow-x-auto mt-2">
                               <div className="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">Raw Form Data Captured</div>
                               <pre className="text-[11px] text-green-400 font-mono">
                                 {(() => {
                                   try {
-                                    return JSON.stringify(JSON.parse(lead.rawFields), null, 2);
-                                  } catch (e) {
+                                    return JSON.stringify(JSON.parse(lead.rawFields!), null, 2);
+                                  } catch {
                                     return lead.rawFields;
                                   }
                                 })()}
@@ -495,14 +588,18 @@ export default function LeadsPage() {
           </table>
         </div>
 
-        {/* Table Footer */}
         {filtered.length > 0 && (
           <div className="border-t border-slate-100 px-4 py-2 bg-slate-50/50 flex items-center justify-between text-xs text-slate-400">
             <span>Showing {filtered.length} leads{leads.length !== filtered.length ? ` (filtered from ${leads.length})` : ""}</span>
-            <span>Click <ChevronRight className="h-3 w-3 inline" /> on any row to see full details</span>
+            <span>Click <Eye className="h-3 w-3 inline text-blue-500" /> to view full lead details</span>
           </div>
         )}
       </div>
+
+      {/* Lead Details Modal */}
+      {inspectLead && (
+        <LeadDetailsModal lead={inspectLead} onClose={() => setInspectLead(null)} />
+      )}
     </div>
   );
 }
