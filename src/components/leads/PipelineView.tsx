@@ -399,9 +399,9 @@ export function PipelineView() {
                             {(lead.smsSent || lead.pushSent) && (
                               <>
                                 <span className="text-gray-300">•</span>
-                                <div className="flex items-center gap-1 bg-[#F7F5FF] px-1.5 py-0.5 rounded border border-[#E8E4F3]">
-                                  {lead.smsSent && <Phone className="h-3 w-3 text-indigo-500" title="SMS Alert Sent" />}
-                                  {lead.pushSent && <BellRing className="h-3 w-3 text-indigo-500" title="Push Alert Sent" />}
+                                <div className="flex items-center gap-1 bg-[#F7F5FF] px-1.5 py-0.5 rounded border border-[#E8E4F3]" title="Alerts Sent">
+                                  {lead.smsSent && <Phone className="h-3 w-3 text-indigo-500" />}
+                                  {lead.pushSent && <BellRing className="h-3 w-3 text-indigo-500" />}
                                 </div>
                               </>
                             )}
