@@ -271,14 +271,14 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* SMS Auto-Reply Settings Card */}
+        {/* SMS Admin Alert Settings Card */}
         <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden h-fit">
           <div className="p-5 border-b border-slate-100 flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
               <Smartphone className="h-5 w-5 text-indigo-600" />
             </div>
             <div>
-              <h3 className="font-semibold text-slate-900">SMS Auto-Reply (India)</h3>
+              <h3 className="font-semibold text-slate-900">SMS Admin Alerts (India)</h3>
               <p className="text-xs text-slate-500">Powered by Fast2SMS</p>
             </div>
           </div>
@@ -347,6 +347,19 @@ export default function SettingsPage() {
                   />
                   <p className="text-xs text-slate-500">Use {"{{name}}"} and {"{{source}}"} as variables.</p>
                 </div>
+
+                <button
+                  onClick={() => {
+                    saveSettings("fast2smsApiKey", settings?.fast2smsApiKey);
+                    saveSettings("adminPhone", settings?.adminPhone);
+                    saveSettings("smsTemplate", settings?.smsTemplate);
+                    toast.success("SMS Settings saved successfully!");
+                  }}
+                  disabled={isSaving}
+                  className="mt-2 w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50"
+                >
+                  {isSaving ? "Saving..." : "Save SMS Settings"}
+                </button>
               </>
             )}
           </div>
