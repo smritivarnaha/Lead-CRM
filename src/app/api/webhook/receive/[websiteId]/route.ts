@@ -106,6 +106,7 @@ export async function POST(
         utmSource,
         utmMedium,
         utmCampaign,
+        rawFields: JSON.stringify(body),
         status: "NEW",
         priority: "NORMAL",
         temperature: "WARM",

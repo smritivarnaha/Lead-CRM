@@ -139,12 +139,12 @@ export default function WebsitesPage() {
 
       <div className="rounded-xl border bg-white shadow-sm overflow-hidden mt-4">
         <Table>
-          <TableHeader className="bg-slate-50/50">
+          <TableHeader className="bg-slate-50 border-b border-slate-200">
             <TableRow>
-              <TableHead className="w-[280px] font-semibold">Website Name</TableHead>
-              <TableHead className="font-semibold">Webhook URL</TableHead>
-              <TableHead className="font-semibold">Status</TableHead>
-              <TableHead className="text-right font-semibold">Actions</TableHead>
+              <TableHead className="w-[280px] font-semibold text-slate-600">Website Name</TableHead>
+              <TableHead className="font-semibold text-slate-600">Webhook URL</TableHead>
+              <TableHead className="font-semibold text-slate-600">Status</TableHead>
+              <TableHead className="text-right font-semibold text-slate-600">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -175,11 +175,11 @@ export default function WebsitesPage() {
                 </TableCell>
                 <TableCell>
                   {site.isActive ? (
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                      <CheckCircle2 className="mr-1 h-3 w-3" /> Active
+                    <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 rounded-full px-2.5 py-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2" /> Active
                     </Badge>
                   ) : (
-                    <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200">
+                    <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200 rounded-full px-2.5 py-0.5">
                       Inactive
                     </Badge>
                   )}
