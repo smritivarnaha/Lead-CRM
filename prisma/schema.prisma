@@ -60,17 +60,17 @@ model Lead {
   city        String?
   state       String?
   
-  formName    String?\
-  source      String?\
-  pageUrl     String?   // URL of page where form was submitted\
-  pageTitle   String?   // Title of page where form was submitted\
-  rawFields   String?   // JSON string of all raw form fields\
-  utmSource   String?\
-  utmMedium   String?\
-  utmCampaign String?\
-  utmContent  String?\
-  utmTerm     String?\
-  message     String?\
+  formName    String?
+  source      String?
+  pageUrl     String?   // URL of page where form was submitted
+  pageTitle   String?   // Title of page where form was submitted
+  rawFields   String?   // JSON string of all raw form fields
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmContent  String?
+  utmTerm     String?
+  message     String?
 
   score       Int      @default(0)
   priority    String   @default("NORMAL") // HIGH, NORMAL, LOW
