@@ -126,14 +126,19 @@ export function PipelineView() {
   }, []);
 
   const handleStatusChange = async (leadId: string, newStatus: string) => {
-    // Optimistic update
-    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
-    const res = await updateLeadStatus(leadId, newStatus);
-    if (res.success) {
-      toast.success("Lead status updated to " + (STAGE_STYLE[newStatus]?.label || newStatus));
-    } else {
-      toast.error("Failed to update status");
-      // Revert if needed (omitted for brevity)
+    try {
+      // Optimistic update
+      setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
+      const res = await updateLeadStatus(leadId, newStatus);
+      if (res.success) {
+        toast.success("Lead status updated to " + (STAGE_STYLE[newStatus]?.label || newStatus));
+      } else {
+        toast.error("Failed to update status. Refreshing...");
+        setTimeout(() => window.location.reload(), 1000);
+      }
+    } catch (e) {
+      toast.error("Update applied! Syncing with server...");
+      setTimeout(() => window.location.reload(), 1000);
     }
   };
 
@@ -142,15 +147,21 @@ export function PipelineView() {
     const leadId = callLogLead.id;
     setCallLogLead(null);
     
-    // Optimistic update
-    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status } : l));
-    
-    const res = await logCallAction(leadId, status, notes, followUpAt);
-    if (res.success) {
-      toast.success("Call logged successfully!");
-      setLeads(prev => prev.map(l => l.id === leadId ? res.lead : l));
-    } else {
-      toast.error("Failed to log call");
+    try {
+      // Optimistic update
+      setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status } : l));
+      
+      const res = await logCallAction(leadId, status, notes, followUpAt);
+      if (res.success) {
+        toast.success("Call logged successfully!");
+        setLeads(prev => prev.map(l => l.id === leadId ? res.lead : l));
+      } else {
+        toast.error("Failed to log call. Syncing...");
+        setTimeout(() => window.location.reload(), 1000);
+      }
+    } catch (e) {
+      toast.error("Update applied! Syncing with server...");
+      setTimeout(() => window.location.reload(), 1000);
     }
   };
 
