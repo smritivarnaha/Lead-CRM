@@ -36,7 +36,7 @@ export async function getLeads() {
     }
 
     // Convert to plain objects
-    const plainLeads = leads.map(lead => ({ ...lead }));
+    const plainLeads = JSON.parse(JSON.stringify(leads));
 
     return { success: true, leads: plainLeads };
   } catch (error) {
@@ -55,7 +55,7 @@ export async function updateLeadStatus(leadId: string, status: string) {
       data: { status },
     });
 
-    const plainLead = { ...updatedLead };
+    const plainLead = JSON.parse(JSON.stringify(updatedLead));
 
     return { success: true, lead: plainLead };
   } catch (error) {

@@ -27,8 +27,8 @@ export async function getWebsites() {
       },
     });
 
-    // Convert Prisma objects to plain JS objects to avoid Next.js RSC serialization errors
-    const plainWebsites = websites.map(site => ({ ...site }));
+    // Convert Prisma objects to plain JS objects using JSON to absolutely guarantee serialization
+    const plainWebsites = JSON.parse(JSON.stringify(websites));
 
     return { success: true, websites: plainWebsites };
   } catch (error) {
@@ -64,7 +64,7 @@ export async function createWebsite(data: { name: string; domain: string }) {
       },
     });
 
-    const plainSite = { ...newSite };
+    const plainSite = JSON.parse(JSON.stringify(newSite));
 
     revalidatePath("/websites");
     return { success: true, website: plainSite };
