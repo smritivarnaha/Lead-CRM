@@ -205,18 +205,34 @@ export async function POST(
       console.warn("[WEBHOOK] Realtime broadcast failed (non-critical):", realtimeErr);
     }
 
-    // Fire push notification to all subscribed team members (non-blocking)
+    // Fire push notification to all subscribed team members
     const siteName = existingSite.name || "Website";
     const contactLine = [fullName !== "Unknown" ? fullName : null, phone, email].filter(Boolean).join(" · ");
-    sendPushToAll({
-      title: `🔔 New Lead — ${siteName}`,
-      body: contactLine || "A new lead just arrived.",
-      url: "/leads",
-      actions: [
-        { action: "view", title: "View Lead" },
-        { action: "dismiss", title: "Dismiss" },
-      ],
-    }).catch(err => console.warn("[PUSH] Non-critical push error:", err));
+    
+    let pushStatus = { success: false, count: 0 };
+    try {
+      pushStatus = await sendPushToAll({
+        title: `🔔 New Lead — ${siteName}`,
+        body: contactLine || "A new lead just arrived.",
+        url: "/leads",
+        actions: [
+          { action: "view", title: "View Lead" },
+          { action: "dismiss", title: "Dismiss" },
+        ],
+      });
+      
+      // Broadcast the push delivery status to the dashboard
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+      const supabase = createClient(supabaseUrl, supabaseAnonKey);
+      await supabase.channel("leads-channel").send({
+        type: "broadcast",
+        event: "push-status",
+        payload: { success: pushStatus.success, count: pushStatus.count, leadId: newLead.id },
+      });
+    } catch (err) {
+      console.warn("[PUSH] Non-critical push error:", err);
+    }
 
     console.log(`[WEBHOOK SUCCESS] Lead saved: ${newLead.id} for website: ${websiteId}`);
 

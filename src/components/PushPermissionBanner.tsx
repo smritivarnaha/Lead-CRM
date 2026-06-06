@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bell, BellOff, X } from "lucide-react";
+import { Bell, BellOff, X, ArrowDownToLine, Smartphone } from "lucide-react";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 
@@ -15,18 +15,31 @@ function urlBase64ToUint8Array(base64String: string) {
 export default function PushPermissionBanner() {
   const [show, setShow] = useState(false);
   const [state, setState] = useState<"idle" | "loading" | "success" | "denied">("idle");
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(true);
 
   useEffect(() => {
-    // Only show if: browser supports push, not already asked, not already subscribed
-    if (!("Notification" in window) || !("serviceWorker" in navigator)) return;
-    if (Notification.permission === "granted") return; // already subscribed
+    // Basic detection
+    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
+    
+    setIsIOS(ios);
+    setIsStandalone(standalone);
+
+    if (!("Notification" in window) && !ios) return; // If completely unsupported
+    if ("Notification" in window && Notification.permission === "granted") return;
     if (localStorage.getItem("push-banner-dismissed")) return;
-    // Small delay so it doesn't flash immediately on load
-    const t = setTimeout(() => setShow(true), 2500);
+
+    const t = setTimeout(() => setShow(true), 2000);
     return () => clearTimeout(t);
   }, []);
 
   const handleEnable = async () => {
+    if (isIOS && !isStandalone) {
+      // Cannot request permission, they must add to home screen first
+      return;
+    }
+
     setState("loading");
     try {
       const permission = await Notification.requestPermission();
@@ -41,7 +54,6 @@ export default function PushPermissionBanner() {
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
 
-      // Save subscription to server
       await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -50,7 +62,7 @@ export default function PushPermissionBanner() {
 
       setState("success");
       localStorage.setItem("push-banner-dismissed", "true");
-      setTimeout(() => setShow(false), 2000);
+      setTimeout(() => setShow(false), 2500);
     } catch (err) {
       console.error("[PUSH] Subscription failed:", err);
       setState("denied");
@@ -65,79 +77,115 @@ export default function PushPermissionBanner() {
   if (!show) return null;
 
   return (
-    <div
-      className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm"
-      style={{ animation: "slideUpBanner 0.3s cubic-bezier(0.32,0.72,0,1)" }}
-    >
-      <div className="mx-4 bg-slate-900 text-white rounded-2xl shadow-2xl overflow-hidden border border-slate-700">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none p-4 pb-8 sm:p-6">
+      <div 
+        className="pointer-events-auto w-full max-w-sm bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] overflow-hidden border border-slate-100 relative"
+        style={{ animation: "slideUpSheet 0.5s cubic-bezier(0.16, 1, 0.3, 1)" }}
+      >
+        {/* Close Button */}
+        <button onClick={handleDismiss} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-full transition-colors z-10">
+          <X className="h-4 w-4" />
+        </button>
+
         {state === "success" ? (
-          <div className="flex items-center gap-3 px-5 py-4">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center flex-shrink-0">
-              <Bell className="h-5 w-5 text-white" />
+          <div className="px-6 py-8 flex flex-col items-center text-center">
+            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-4">
+              <Bell className="h-8 w-8" />
             </div>
-            <div>
-              <p className="text-sm font-semibold">Notifications enabled! 🎉</p>
-              <p className="text-xs text-slate-400">You&apos;ll get instant alerts for new leads.</p>
-            </div>
+            <h3 className="text-xl font-bold text-slate-900">You're all set! 🎉</h3>
+            <p className="text-slate-500 mt-2 text-sm">We'll ping your phone instantly when a new lead arrives.</p>
           </div>
         ) : state === "denied" ? (
-          <div className="flex items-center gap-3 px-5 py-4">
-            <div className="w-9 h-9 rounded-xl bg-slate-600 flex items-center justify-center flex-shrink-0">
-              <BellOff className="h-5 w-5 text-slate-300" />
+          <div className="px-6 py-8 flex flex-col items-center text-center">
+            <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mb-4">
+              <BellOff className="h-8 w-8" />
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold">Notifications blocked</p>
-              <p className="text-xs text-slate-400">Enable in browser settings to get lead alerts.</p>
+            <h3 className="text-xl font-bold text-slate-900">Notifications Blocked</h3>
+            <p className="text-slate-500 mt-2 text-sm">Please enable them in your browser settings to receive alerts.</p>
+          </div>
+        ) : isIOS && !isStandalone ? (
+          /* iOS Add to Home Screen Instructions */
+          <div className="px-6 py-8 flex flex-col items-center text-center">
+            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+              <ArrowDownToLine className="h-8 w-8" />
             </div>
-            <button onClick={handleDismiss} className="text-slate-400 hover:text-white">
-              <X className="h-4 w-4" />
-            </button>
+            <h3 className="text-xl font-bold text-slate-900">Install the App</h3>
+            <p className="text-slate-500 mt-2 text-sm leading-relaxed">
+              Apple requires you to add this site to your Home Screen before you can receive push notifications.
+            </p>
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mt-6 w-full text-left">
+              <ol className="text-sm text-slate-700 space-y-3 font-medium">
+                <li className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs">1</span> 
+                  Tap the <strong>Share</strong> button below
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs">2</span> 
+                  Scroll down & tap <strong>Add to Home Screen</strong>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs">3</span> 
+                  Open LeadFlow from your Home Screen!
+                </li>
+              </ol>
+            </div>
           </div>
         ) : (
-          <>
-            {/* Top section */}
-            <div className="px-5 pt-4 pb-3 flex items-start gap-3">
-              <div className="w-9 h-9 rounded-xl bg-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <Bell className="h-5 w-5 text-white" />
+          /* Default Premium Subscribe Modal */
+          <div>
+            <div className="relative h-32 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center overflow-hidden">
+              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_white_10%,_transparent_50%)] animate-pulse" style={{ animationDuration: '3s' }} />
+              
+              <div className="relative z-10 w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center">
+                <div className="relative">
+                  <Bell className="h-8 w-8 text-indigo-600 animate-wiggle" style={{ animationDuration: '2s', animationIterationCount: 'infinite' }} />
+                  <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 border-2 border-white rounded-full" />
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold leading-tight">Get instant lead alerts</p>
-                <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
-                  Know the moment a new lead arrives — even on your phone.
-                </p>
-              </div>
-              <button onClick={handleDismiss} className="text-slate-500 hover:text-slate-300 flex-shrink-0 mt-0.5">
-                <X className="h-3.5 w-3.5" />
-              </button>
+            </div>
+            
+            <div className="px-6 py-6 text-center">
+              <h3 className="text-xl font-bold text-slate-900">Never miss a hot lead!</h3>
+              <p className="text-slate-500 mt-2 text-sm leading-relaxed">
+                Enable push notifications to get instant alerts on your phone the second a lead submits a form.
+              </p>
             </div>
 
-            {/* Actions */}
-            <div className="px-4 pb-4 flex gap-2">
+            <div className="px-6 pb-6 pt-2">
               <button
                 onClick={handleEnable}
                 disabled={state === "loading"}
-                className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:opacity-60 text-white text-xs font-bold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-1.5"
+                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-70 flex items-center justify-center gap-2"
               >
                 {state === "loading" ? (
-                  <><span className="animate-spin">⏳</span> Enabling…</>
+                  <span className="animate-spin text-lg">⚙️</span>
                 ) : (
-                  <><Bell className="h-3.5 w-3.5" /> Enable Notifications</>
+                  <>
+                    <Smartphone className="h-5 w-5" /> Enable Notifications
+                  </>
                 )}
               </button>
               <button
                 onClick={handleDismiss}
-                className="px-4 text-xs text-slate-400 hover:text-slate-200 transition-colors"
+                className="w-full mt-3 text-slate-500 hover:text-slate-700 font-semibold py-2 text-sm transition-colors"
               >
-                Later
+                Maybe later
               </button>
             </div>
-          </>
+          </div>
         )}
       </div>
+
       <style>{`
-        @keyframes slideUpBanner {
-          from { transform: translateX(-50%) translateY(20px); opacity: 0; }
-          to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+        @keyframes slideUpSheet {
+          0% { transform: translateY(100%) scale(0.95); opacity: 0; }
+          100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        @keyframes wiggle {
+          0%, 100% { transform: rotate(0deg); }
+          25% { transform: rotate(-15deg); }
+          50% { transform: rotate(15deg); }
+          75% { transform: rotate(-15deg); }
         }
       `}</style>
     </div>

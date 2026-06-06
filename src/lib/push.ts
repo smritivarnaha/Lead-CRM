@@ -25,14 +25,14 @@ export type PushPayload = {
  * Send a push notification to ALL subscribed devices.
  * Silently removes stale/expired subscriptions.
  */
-export async function sendPushToAll(payload: PushPayload): Promise<void> {
+export async function sendPushToAll(payload: PushPayload): Promise<{ success: boolean; count: number }> {
   if (!vapidPublicKey || !vapidPrivateKey) {
     console.warn("[PUSH] VAPID keys not configured — skipping push.");
-    return;
+    return { success: false, count: 0 };
   }
 
   const subscriptions = await prisma.pushSubscription.findMany();
-  if (subscriptions.length === 0) return;
+  if (subscriptions.length === 0) return { success: true, count: 0 };
 
   const results = await Promise.allSettled(
     subscriptions.map(sub =>
@@ -61,4 +61,6 @@ export async function sendPushToAll(payload: PushPayload): Promise<void> {
 
   const sent = results.filter(r => r.status === "fulfilled").length;
   console.log(`[PUSH] Sent to ${sent}/${subscriptions.length} device(s).`);
+  
+  return { success: sent > 0, count: sent };
 }
