@@ -19,6 +19,7 @@ export default function SettingsPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [settings, setSettings] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isTestingSms, setIsTestingSms] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
 
   useEffect(() => {
@@ -82,6 +83,35 @@ export default function SettingsPage() {
       toast.error("Network error.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleTestSms = async () => {
+    if (!settings?.fast2smsApiKey || !settings?.adminPhone) {
+      toast.error("Please save API Key and Admin Phone first.");
+      return;
+    }
+    setIsTestingSms(true);
+    try {
+      const res = await fetch("/api/settings/test-sms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          apiKey: settings.fast2smsApiKey, 
+          phone: settings.adminPhone 
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Test SMS sent successfully!");
+      } else {
+        toast.error(data.error || "Failed to send test SMS.");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Network error while sending SMS.");
+    } finally {
+      setIsTestingSms(false);
     }
   };
 
@@ -380,23 +410,35 @@ export default function SettingsPage() {
                   <p className="text-xs text-slate-500">Use {"{{name}}"} and {"{{source}}"} as variables.</p>
                 </div>
 
-                <button
-                  onClick={() => {
-                    saveSettings("fast2smsApiKey", settings?.fast2smsApiKey);
-                    saveSettings("adminPhone", settings?.adminPhone);
-                    saveSettings("smsTemplate", settings?.smsTemplate);
-                    toast.success("SMS Settings saved successfully!");
-                  }}
-                  disabled={isSaving}
-                  className="mt-2 w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50"
-                >
-                  {isSaving ? "Saving..." : "Save SMS Settings"}
-                </button>
+                <div className="flex flex-col sm:flex-row gap-3 mt-2">
+                  <button
+                    onClick={() => {
+                      saveSettings("fast2smsApiKey", settings?.fast2smsApiKey);
+                      saveSettings("adminPhone", settings?.adminPhone);
+                      saveSettings("smsTemplate", settings?.smsTemplate);
+                      toast.success("SMS Settings saved successfully!");
+                    }}
+                    disabled={isSaving}
+                    className="flex-1 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50"
+                  >
+                    {isSaving ? "Saving..." : "Save SMS Settings"}
+                  </button>
+                  <button
+                    onClick={handleTestSms}
+                    disabled={isTestingSms || isSaving}
+                    className="flex-1 py-2.5 px-4 bg-white border border-indigo-200 hover:bg-indigo-50 text-indigo-700 text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50"
+                  >
+                    {isTestingSms ? "Sending..." : "Send Test SMS"}
+                  </button>
+                </div>
               </>
             )}
           </div>
         </div>
       </div>
+      
+      {/* Spacer specifically for Mobile to prevent bottom nav from hiding content */}
+      <div className="h-32 w-full flex-shrink-0 md:hidden"></div>
     </div>
   );
 }
