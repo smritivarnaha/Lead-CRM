@@ -5,19 +5,17 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-function createPrismaClient() {
-  const datasourceUrl = process.env.DATABASE_URL;
-  if (!datasourceUrl) {
-    throw new Error("DATABASE_URL environment variable is not set.");
-  }
-  return new PrismaClient({
-    datasourceUrl,
-    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
-  });
+// In Prisma 7, the DATABASE_URL is read from the environment via prisma.config.ts
+// We just need to make sure the env var is present before initializing
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL environment variable is not set.");
 }
 
 export const prisma =
-  globalForPrisma.prisma ?? createPrismaClient();
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+  });
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
