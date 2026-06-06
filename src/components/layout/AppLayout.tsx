@@ -53,7 +53,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden relative">
         <Header />
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-0">{children}</main>
+        <main className="flex-1 overflow-y-auto bg-slate-50 pb-20 md:pb-0">
+          <div className="p-4 md:p-8 h-full">
+            {children}
+          </div>
+        </main>
         <MobileNav />
       </div>
     </div>
