@@ -17,10 +17,48 @@ function urlBase64ToUint8Array(base64String: string) {
 export default function SettingsPage() {
   const [pushStatus, setPushStatus] = useState<"loading" | "subscribed" | "unsubscribed" | "unsupported">("loading");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [settings, setSettings] = useState<any>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     checkPushStatus();
+    fetchSettings();
   }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const res = await fetch("/api/settings");
+      const data = await res.json();
+      if (data.success) {
+        setSettings(data.settings);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const saveSettings = async (field: string, value: any) => {
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: value }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSettings(data.settings);
+        toast.success("Settings saved!");
+      } else {
+        toast.error("Failed to save settings.");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Network error.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const checkPushStatus = async () => {
     if (!("Notification" in window) || !("serviceWorker" in navigator)) {
@@ -230,6 +268,74 @@ export default function SettingsPage() {
                 </li>
               </ul>
             </div>
+          </div>
+        </div>
+
+        {/* SMS Auto-Reply Settings Card */}
+        <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden h-fit">
+          <div className="p-5 border-b border-slate-100 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+              <Smartphone className="h-5 w-5 text-indigo-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-slate-900">SMS Auto-Reply (India)</h3>
+              <p className="text-xs text-slate-500">Powered by Fast2SMS</p>
+            </div>
+          </div>
+
+          <div className="p-5 flex flex-col gap-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-semibold text-slate-900">Enable Auto-Reply</h4>
+                <p className="text-xs text-slate-500 mt-0.5">Send a greeting SMS to new leads instantly</p>
+              </div>
+              <button
+                onClick={() => saveSettings("smsAutoReplyEnabled", !settings?.smsAutoReplyEnabled)}
+                disabled={isSaving || !settings}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 disabled:opacity-50 ${
+                  settings?.smsAutoReplyEnabled ? "bg-indigo-600" : "bg-slate-200"
+                }`}
+                role="switch"
+                aria-checked={settings?.smsAutoReplyEnabled || false}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    settings?.smsAutoReplyEnabled ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {settings?.smsAutoReplyEnabled && (
+              <>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-slate-700">Fast2SMS API Key</label>
+                  <input 
+                    type="password" 
+                    value={settings?.fast2smsApiKey || ""} 
+                    onChange={(e) => setSettings({...settings, fast2smsApiKey: e.target.value})}
+                    onBlur={(e) => saveSettings("fast2smsApiKey", e.target.value)}
+                    placeholder="Enter your Fast2SMS API Key"
+                    className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
+                  />
+                  <p className="text-xs text-slate-500">Sign up on Fast2SMS.com to get your key.</p>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-slate-700">SMS Message Template</label>
+                  <textarea 
+                    value={settings?.smsTemplate || ""} 
+                    onChange={(e) => setSettings({...settings, smsTemplate: e.target.value})}
+                    onBlur={(e) => saveSettings("smsTemplate", e.target.value)}
+                    rows={3}
+                    placeholder="Hi {{name}}, thanks for reaching out!"
+                    className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors resize-none"
+                  />
+                  <p className="text-xs text-slate-500">Use {"{{name}}"} and {"{{source}}"} as variables.</p>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

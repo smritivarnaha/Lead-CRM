@@ -183,6 +183,49 @@ export async function POST(
 
     const leadPayload = JSON.parse(JSON.stringify(newLead));
 
+    // Fetch Workspace settings to check for SMS and Push configs
+    const workspace = await prisma.workspace.findUnique({
+      where: { id: WORKSPACE_ID },
+    });
+
+    // Handle SMS Auto-Reply via Fast2SMS
+    if (workspace?.smsAutoReplyEnabled && workspace?.fast2smsApiKey && phone) {
+      try {
+        const smsTemplate = workspace.smsTemplate || "Hi {{name}}, thanks for reaching out! We have received your details.";
+        const smsMessage = smsTemplate
+          .replace(/{{name}}/g, fullName)
+          .replace(/{{source}}/g, source || "Website");
+
+        // Clean the phone number (Fast2SMS expects 10 digits usually)
+        const cleanPhone = phone.replace(/\D/g, "").slice(-10);
+
+        if (cleanPhone.length === 10) {
+          const smsRes = await fetch("https://www.fast2sms.com/dev/bulkV2", {
+            method: "POST",
+            headers: {
+              "authorization": workspace.fast2smsApiKey,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              route: "v3",
+              sender_id: "TXTIND", // Default sender ID for Fast2SMS promotional/transactional
+              message: smsMessage,
+              language: "english",
+              flash: 0,
+              numbers: cleanPhone,
+            }),
+          });
+          
+          const smsData = await smsRes.json();
+          console.log("[SMS RESULT]", smsData);
+        } else {
+          console.warn("[SMS] Invalid Indian phone number length:", cleanPhone);
+        }
+      } catch (smsErr) {
+        console.error("[SMS ERROR]", smsErr);
+      }
+    }
+
     // Broadcast via Supabase Realtime to dashboard
     try {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
