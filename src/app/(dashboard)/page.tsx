@@ -451,7 +451,7 @@ export default function Dashboard() {
                 {recentLeads.map((lead: {
                   id: string; fullName: string; source?: string; status: string;
                   priority: string; createdAt: string; website?: { name: string };
-                }, i) => {
+                }, i: number) => {
                   const s = STATUS_STYLE[lead.status] || STATUS_STYLE.NEW;
                   const initials = lead.fullName
                     .split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
