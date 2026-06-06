@@ -1,544 +1,248 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getDashboardStats } from "@/actions/dashboard";
+import { getLeads } from "@/actions/leads";
 import {
-  Users, TrendingUp, TrendingDown, Globe,
-  Inbox, PhoneCall, RefreshCw, CheckCircle2,
-  Loader2, AlertCircle, ArrowUpRight, ArrowDownRight,
-  Zap,
+  Settings2,
+  Filter,
+  ArrowRightToLine,
+  ChevronDown,
+  Columns3,
+  AlignJustify,
+  Layers,
+  MoreHorizontal,
+  LayoutGrid
 } from "lucide-react";
-import {
-  AreaChart, Area, BarChart, Bar, Cell, ResponsiveContainer,
-  XAxis, YAxis, Tooltip, CartesianGrid,
-} from "recharts";
 
-type DashboardData = Awaited<ReturnType<typeof getDashboardStats>>;
-
-/* ─── helpers ─── */
-function timeAgo(date: string) {
-  const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
-  if (s < 60) return "Just now";
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  return `${Math.floor(s / 86400)}d ago`;
-}
-
-const STATUS_STYLE: Record<string, { bg: string; text: string; dot: string }> = {
-  NEW:         { bg: "#EDE9FE", text: "#7C3AED", dot: "#7C3AED" },
-  CONTACTED:   { bg: "#DBEAFE", text: "#1D4ED8", dot: "#3B82F6" },
-  FOLLOW_UP:   { bg: "#FEF3C7", text: "#B45309", dot: "#F59E0B" },
-  CONVERTED:   { bg: "#D1FAE5", text: "#065F46", dot: "#10B981" },
-  LOST:        { bg: "#FEE2E2", text: "#991B1B", dot: "#EF4444" },
-  NO_RESPONSE: { bg: "#F3F4F6", text: "#374151", dot: "#9CA3AF" },
+type Lead = {
+  id: string;
+  fullName: string;
+  source: string | null;
+  status: string;
+  createdAt: string;
+  score: number;
+  temperature: string;
+  phone: string | null;
 };
 
-const PRIORITY_DOT: Record<string, string> = {
-  HIGH:   "#EF4444",
-  NORMAL: "#7C3AED",
-  LOW:    "#9CA3AF",
+// ─── STAGE CONFIG ───
+const STAGE_STYLE: Record<string, { label: string; ring: string; fill: string }> = {
+  NEW:         { label: "Prospecting",   ring: "border-[#7C3AED]", fill: "bg-transparent" },
+  CONTACTED:   { label: "Requirement",   ring: "border-[#7C3AED]", fill: "bg-transparent" }, // like 1/4 filled but we can use gradients or solid for simplicity
+  FOLLOW_UP:   { label: "Negotiation",   ring: "border-[#7C3AED]", fill: "bg-transparent" },
+  CONVERTED:   { label: "Technical win", ring: "border-[#7C3AED]", fill: "bg-[#7C3AED]" },
+  LOST:        { label: "Closed lost",   ring: "border-[#9CA3AF]", fill: "bg-[#9CA3AF]" },
+  NO_RESPONSE: { label: "No response",   ring: "border-[#9CA3AF]", fill: "bg-transparent" },
 };
 
-/* ─── Stat Card ─── */
-function StatCard({
-  label, value, sub, icon, accentColor, accentBg, trend, trendLabel,
-}: {
-  label: string; value: string | number; sub?: string;
-  icon: React.ReactNode; accentColor: string; accentBg: string;
-  trend?: number; trendLabel?: string;
-}) {
-  const isUp = trend === undefined ? null : trend >= 0;
-  return (
-    <div
-      className="relative overflow-hidden rounded-2xl bg-white p-5 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
-      style={{ border: "1px solid #E8E4F3", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
-    >
-      {/* Soft gradient circle in top-right */}
-      <div
-        className="absolute -top-6 -right-6 h-24 w-24 rounded-full opacity-10"
-        style={{ background: accentColor }}
-      />
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-[12.5px] font-medium" style={{ color: "#9CA3AF" }}>
-            {label}
-          </p>
-          <p
-            className="mt-1.5 text-[28px] font-bold leading-none tracking-tight"
-            style={{ color: "#1A1523" }}
-          >
-            {value}
-          </p>
-          {sub && (
-            <p className="mt-1 text-[12px]" style={{ color: "#9CA3AF" }}>
-              {sub}
-            </p>
-          )}
-          {trend !== undefined && (
-            <div className="mt-2 flex items-center gap-1">
-              <span
-                className="flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-semibold"
-                style={{
-                  background: isUp ? "#D1FAE5" : "#FEE2E2",
-                  color: isUp ? "#065F46" : "#991B1B",
-                }}
-              >
-                {isUp ? (
-                  <ArrowUpRight className="h-3 w-3" />
-                ) : (
-                  <ArrowDownRight className="h-3 w-3" />
-                )}
-                {Math.abs(trend)}%
-              </span>
-              {trendLabel && (
-                <span className="text-[11px]" style={{ color: "#9CA3AF" }}>
-                  {trendLabel}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-        <div
-          className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0"
-          style={{ background: accentBg }}
-        >
-          {icon}
-        </div>
-      </div>
-    </div>
-  );
-}
+// ─── HEAT/OHS CONFIG ───
+const HEAT_STYLE: Record<string, { dot: string }> = {
+  HOT:  { dot: "bg-[#10B981]" }, // Green in screenshot
+  WARM: { dot: "bg-[#F59E0B]" }, // Orange in screenshot
+  COLD: { dot: "bg-[#EF4444]" }, // Red in screenshot
+};
 
-/* ─── Custom Tooltip ─── */
-function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div
-      className="rounded-xl px-3 py-2 text-[13px] shadow-lg"
-      style={{ background: "#1A1523", color: "#fff", border: "none" }}
-    >
-      <p className="font-semibold">{label}</p>
-      <p style={{ color: "#A78BFA" }}>{payload[0].value} leads</p>
-    </div>
-  );
+function getScore(lead: Lead) {
+  if (lead.score) return lead.score;
+  if (lead.temperature === "HOT") return 88;
+  if (lead.temperature === "WARM") return 56;
+  return 24;
 }
 
 export default function Dashboard() {
-  const [data, setData] = useState<DashboardData | null>(null);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      const res = await getDashboardStats();
-      setData(res);
-    } catch (e) {
-      console.error(e);
-    } finally {
+  useEffect(() => {
+    getLeads().then((res) => {
+      if (res.success && res.leads) setLeads(res.leads);
       setLoading(false);
-    }
-  };
-
-  useEffect(() => { load(); }, []);
-
-  const stats = data?.success ? data.stats : null;
-  const recentLeads = data?.success ? data.recentLeads : [];
-  const chartData =
-    data?.success && data.chartData && data.chartData.length > 0
-      ? data.chartData
-      : [
-          { name: "Mon", leads: 0 }, { name: "Tue", leads: 0 }, { name: "Wed", leads: 0 },
-          { name: "Thu", leads: 0 }, { name: "Fri", leads: 0 }, { name: "Sat", leads: 0 },
-          { name: "Sun", leads: 0 },
-        ];
+    });
+  }, []);
 
   return (
-    <div className="flex flex-col gap-6 pb-8">
-      {/* ─── Top bar ─── */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-[22px] font-bold tracking-tight" style={{ color: "#1A1523" }}>
-            Dashboard
-          </h2>
-          <p className="mt-0.5 text-[13px]" style={{ color: "#9CA3AF" }}>
-            Live overview of all your leads and websites.
-          </p>
+    <div className="flex flex-col h-full w-full bg-white">
+      {/* ─── TOOLBAR ─── */}
+      <div 
+        className="flex items-center justify-between px-4 py-2 bg-white border-b"
+        style={{ borderColor: "#E8E4F3", flexShrink: 0 }}
+      >
+        <div className="flex items-center gap-3">
+          <button className="flex items-center justify-center w-7 h-7 text-[#9CA3AF] hover:text-[#1A1523] transition-colors">
+            <ArrowRightToLine className="h-4 w-4" strokeWidth={2} />
+          </button>
+          
+          <div className="h-4 w-px bg-[#E8E4F3]" />
+          
+          <button className="flex items-center gap-1.5 px-2 py-1 text-[13px] font-semibold text-[#1A1523] hover:bg-[#F7F5FF] rounded transition-colors">
+            <UsersIcon className="h-4 w-4 text-[#9CA3AF]" />
+            All leads
+            <ChevronDown className="h-3.5 w-3.5 text-[#9CA3AF] ml-1" strokeWidth={2} />
+          </button>
         </div>
-        <button
-          onClick={load}
-          disabled={loading}
-          className="flex items-center gap-2 rounded-lg border bg-white px-3.5 py-2 text-[13px] font-medium transition-all hover:border-[#7C3AED] hover:text-[#7C3AED] disabled:opacity-60"
-          style={{ borderColor: "#E8E4F3", color: "#6B7280" }}
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
-          Refresh
-        </button>
+
+        <div className="flex items-center gap-4 text-[13px] font-medium text-[#6B7280]">
+          <button className="flex items-center gap-1.5 hover:text-[#1A1523] transition-colors">
+            <Columns3 className="h-4 w-4" strokeWidth={1.75} /> Fields
+          </button>
+          <button className="flex items-center gap-1.5 hover:text-[#1A1523] transition-colors">
+            <Filter className="h-4 w-4" strokeWidth={1.75} /> Filters
+          </button>
+          <button className="flex items-center gap-1.5 hover:text-[#1A1523] transition-colors">
+            <AlignJustify className="h-4 w-4" strokeWidth={1.75} /> Row height
+          </button>
+          <button className="flex items-center gap-1.5 hover:text-[#1A1523] transition-colors">
+            <Layers className="h-4 w-4" strokeWidth={1.75} /> Group by
+          </button>
+          <button className="flex items-center gap-1.5 hover:text-[#1A1523] transition-colors">
+            <LayoutGrid className="h-4 w-4" strokeWidth={1.75} /> Layout
+          </button>
+        </div>
       </div>
 
-      {/* ─── Loading ─── */}
-      {loading && !data && (
-        <div className="flex items-center justify-center py-24" style={{ color: "#9CA3AF" }}>
-          <Loader2 className="h-6 w-6 animate-spin mr-3" />
-          <span className="text-[14px]">Loading live data…</span>
-        </div>
-      )}
-
-      {/* ─── Error ─── */}
-      {data && !data.success && (
-        <div
-          className="flex items-center gap-3 rounded-xl p-4 text-sm"
-          style={{ background: "#FEE2E2", color: "#991B1B", border: "1px solid #FECACA" }}
-        >
-          <AlertCircle className="h-5 w-5 flex-shrink-0" />
-          Could not load data. Please refresh.
-        </div>
-      )}
-
-      {stats && (
-        <>
-          {/* ─── KPI Cards ─── */}
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard
-              label="Total Leads"
-              value={stats.totalLeads.toLocaleString()}
-              sub={`${stats.leadsToday} today · ${stats.leadsThisMonth} this month`}
-              icon={<Users className="h-5 w-5" style={{ color: "#7C3AED" }} strokeWidth={1.75} />}
-              accentColor="#7C3AED"
-              accentBg="#EDE9FE"
-              trend={stats.monthGrowth}
-              trendLabel="vs last month"
-            />
-            <StatCard
-              label="Monthly Growth"
-              value={`${stats.monthGrowth >= 0 ? "+" : ""}${stats.monthGrowth}%`}
-              sub="vs last month"
-              icon={
-                stats.monthGrowth >= 0
-                  ? <TrendingUp className="h-5 w-5" style={{ color: "#10B981" }} strokeWidth={1.75} />
-                  : <TrendingDown className="h-5 w-5" style={{ color: "#EF4444" }} strokeWidth={1.75} />
-              }
-              accentColor={stats.monthGrowth >= 0 ? "#10B981" : "#EF4444"}
-              accentBg={stats.monthGrowth >= 0 ? "#D1FAE5" : "#FEE2E2"}
-            />
-            <StatCard
-              label="Conversion Rate"
-              value={`${stats.conversionRate}%`}
-              sub={`${stats.convertedLeads} of ${stats.totalLeads} converted`}
-              icon={<CheckCircle2 className="h-5 w-5" style={{ color: "#3B82F6" }} strokeWidth={1.75} />}
-              accentColor="#3B82F6"
-              accentBg="#DBEAFE"
-            />
-            <StatCard
-              label="Active Websites"
-              value={stats.activeWebsites}
-              sub="Connected & receiving leads"
-              icon={<Globe className="h-5 w-5" style={{ color: "#F59E0B" }} strokeWidth={1.75} />}
-              accentColor="#F59E0B"
-              accentBg="#FEF3C7"
-            />
-          </div>
-
-          {/* ─── Chart + Pipeline ─── */}
-          <div className="grid gap-5 lg:grid-cols-7">
-            {/* Area Chart */}
-            <div
-              className="col-span-4 rounded-2xl bg-white p-5"
-              style={{ border: "1px solid #E8E4F3", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
-            >
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <h3 className="text-[14px] font-semibold" style={{ color: "#1A1523" }}>
-                    Lead Volume
-                  </h3>
-                  <p className="text-[12px]" style={{ color: "#9CA3AF" }}>Last 7 days</p>
+      {/* ─── TABLE ─── */}
+      <div className="flex-1 overflow-auto bg-white">
+        <table className="w-full text-left border-collapse" style={{ tableLayout: "fixed" }}>
+          {/* HEADERS */}
+          <thead className="sticky top-0 bg-white z-10 border-b shadow-[0_1px_0_#E8E4F3]">
+            <tr className="h-9 text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
+              <th className="w-[48px] px-4 py-0 border-r border-[#F3F0FF] text-center font-normal">
+                <input type="checkbox" className="rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED]" />
+              </th>
+              <th className="w-[300px] px-3 py-0 border-r border-[#F3F0FF]">
+                <div className="flex items-center justify-between">
+                  NAME
+                  <ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} />
                 </div>
-                <span
-                  className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                  style={{ background: "#EDE9FE", color: "#7C3AED" }}
-                >
-                  <Zap className="h-3 w-3" strokeWidth={2} />
-                  Live
-                </span>
-              </div>
-              <div className="h-[220px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="purpleGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%"  stopColor="#7C3AED" stopOpacity={0.18} />
-                        <stop offset="95%" stopColor="#7C3AED" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid stroke="#F3F0FF" strokeDasharray="4 4" vertical={false} />
-                    <XAxis
-                      dataKey="name"
-                      stroke="#C4B8FF"
-                      fontSize={11}
-                      tickLine={false}
-                      axisLine={false}
-                      dy={6}
-                    />
-                    <YAxis
-                      stroke="#C4B8FF"
-                      fontSize={11}
-                      tickLine={false}
-                      axisLine={false}
-                      allowDecimals={false}
-                    />
-                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#7C3AED", strokeWidth: 1, strokeDasharray: "4 4" }} />
-                    <Area
-                      type="monotone"
-                      dataKey="leads"
-                      stroke="#7C3AED"
-                      strokeWidth={2.5}
-                      fill="url(#purpleGrad)"
-                      dot={{ fill: "#7C3AED", r: 3, strokeWidth: 0 }}
-                      activeDot={{ r: 5, fill: "#7C3AED", stroke: "#fff", strokeWidth: 2 }}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+              </th>
+              <th className="w-[120px] px-3 py-0 border-r border-[#F3F0FF]">
+                <div className="flex items-center justify-between">
+                  HEAT
+                  <ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} />
+                </div>
+              </th>
+              <th className="w-[180px] px-3 py-0 border-r border-[#F3F0FF]">
+                <div className="flex items-center justify-between">
+                  CONTACT
+                  <ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} />
+                </div>
+              </th>
+              <th className="w-[180px] px-3 py-0 border-r border-[#F3F0FF]">
+                <div className="flex items-center justify-between">
+                  STAGE
+                  <ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} />
+                </div>
+              </th>
+              <th className="w-[120px] px-3 py-0 border-r border-[#F3F0FF]">
+                <div className="flex items-center justify-between">
+                  RECEIVED
+                  <ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} />
+                </div>
+              </th>
+              <th className="w-[48px] px-0 py-0 border-[#F3F0FF]">
+                <div className="flex items-center justify-center">
+                  <MoreHorizontal className="h-4 w-4 text-[#D1D5DB]" />
+                </div>
+              </th>
+            </tr>
+          </thead>
 
-            {/* Pipeline Status */}
-            <div
-              className="col-span-3 rounded-2xl bg-white p-5"
-              style={{ border: "1px solid #E8E4F3", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
-            >
-              <div className="mb-4">
-                <h3 className="text-[14px] font-semibold" style={{ color: "#1A1523" }}>
-                  Pipeline Status
-                </h3>
-                <p className="text-[12px]" style={{ color: "#9CA3AF" }}>Lead stage breakdown</p>
-              </div>
-              <div className="flex flex-col gap-4">
-                {[
-                  {
-                    label: "New", count: stats.newLeads,
-                    icon: <Inbox className="h-4 w-4" style={{ color: "#7C3AED" }} strokeWidth={1.75} />,
-                    bar: "#7C3AED", bg: "#EDE9FE",
-                  },
-                  {
-                    label: "Contacted", count: stats.contactedLeads,
-                    icon: <PhoneCall className="h-4 w-4" style={{ color: "#3B82F6" }} strokeWidth={1.75} />,
-                    bar: "#3B82F6", bg: "#DBEAFE",
-                  },
-                  {
-                    label: "Follow Up", count: stats.followUpLeads,
-                    icon: <RefreshCw className="h-4 w-4" style={{ color: "#F59E0B" }} strokeWidth={1.75} />,
-                    bar: "#F59E0B", bg: "#FEF3C7",
-                  },
-                  {
-                    label: "Converted", count: stats.convertedLeads,
-                    icon: <CheckCircle2 className="h-4 w-4" style={{ color: "#10B981" }} strokeWidth={1.75} />,
-                    bar: "#10B981", bg: "#D1FAE5",
-                  },
-                ].map(({ label, count, icon, bar, bg }) => {
-                  const pct =
-                    stats.totalLeads > 0
-                      ? Math.round((count / stats.totalLeads) * 100)
-                      : 0;
-                  return (
-                    <div key={label} className="flex items-center gap-3">
-                      <div
-                        className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0"
-                        style={{ background: bg }}
+          {/* BODY */}
+          <tbody className="text-[13px]">
+            {loading ? (
+              <tr><td colSpan={7} className="text-center py-12 text-[#9CA3AF]">Loading data...</td></tr>
+            ) : leads.map((lead) => {
+              const stage = STAGE_STYLE[lead.status] || STAGE_STYLE.NEW;
+              const heat = HEAT_STYLE[lead.temperature] || HEAT_STYLE.WARM;
+              const score = getScore(lead);
+              
+              // App logo generator
+              const colors = ["#FEE2E2", "#FEF3C7", "#D1FAE5", "#DBEAFE", "#EDE9FE"];
+              const char = lead.fullName.charAt(0).toUpperCase();
+              const idx = char.charCodeAt(0) % colors.length;
+              const logoBg = colors[idx];
+              
+              return (
+                <tr 
+                  key={lead.id} 
+                  className="h-[52px] border-b hover:bg-[#F7F5FF] transition-colors"
+                  style={{ borderColor: "#F3F0FF" }}
+                >
+                  {/* Checkbox */}
+                  <td className="px-4 py-0 border-r text-center" style={{ borderColor: "#F3F0FF" }}>
+                    <input type="checkbox" className="rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED]" />
+                  </td>
+
+                  {/* Name */}
+                  <td className="px-3 py-0 border-r truncate" style={{ borderColor: "#F3F0FF" }}>
+                    <div className="flex items-center gap-2.5">
+                      <div 
+                        className="flex items-center justify-center h-6 w-6 rounded text-[11px] font-bold text-[#1A1523] flex-shrink-0"
+                        style={{ background: logoBg }}
                       >
-                        {icon}
+                        {char}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-center mb-1.5">
-                          <span className="text-[13px] font-medium" style={{ color: "#1A1523" }}>
-                            {label}
-                          </span>
-                          <span className="text-[13px] font-bold" style={{ color: "#1A1523" }}>
-                            {count}
-                          </span>
-                        </div>
-                        <div
-                          className="h-1.5 w-full rounded-full overflow-hidden"
-                          style={{ background: "#F3F0FF" }}
-                        >
-                          <div
-                            className="h-full rounded-full transition-all duration-700"
-                            style={{ width: `${pct}%`, background: bar }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Mini bar chart for pipeline */}
-              <div className="mt-5 pt-4" style={{ borderTop: "1px solid #F3F0FF" }}>
-                <p className="text-[11px] font-medium mb-2" style={{ color: "#9CA3AF" }}>
-                  Stage Distribution
-                </p>
-                <div className="h-[60px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={[
-                        { name: "New",    v: stats.newLeads },
-                        { name: "Cont",   v: stats.contactedLeads },
-                        { name: "FU",     v: stats.followUpLeads },
-                        { name: "Conv",   v: stats.convertedLeads },
-                      ]}
-                      margin={{ top: 0, right: 0, left: -30, bottom: 0 }}
-                      barCategoryGap="30%"
-                    >
-                      <XAxis dataKey="name" stroke="#C4B8FF" fontSize={10} tickLine={false} axisLine={false} />
-                      <Tooltip
-                        cursor={{ fill: "rgba(124,58,237,0.05)" }}
-                        contentStyle={{ borderRadius: "8px", border: "1px solid #E8E4F3", fontSize: 12 }}
-                      />
-                      <Bar dataKey="v" radius={[4, 4, 0, 0]}>
-                        {["#7C3AED", "#3B82F6", "#F59E0B", "#10B981"].map((color, index) => (
-                          <Cell key={index} fill={color} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ─── Recent Leads Table ─── */}
-          <div
-            className="rounded-2xl bg-white overflow-hidden"
-            style={{ border: "1px solid #E8E4F3", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
-          >
-            {/* Table header */}
-            <div
-              className="flex items-center justify-between px-5 py-4"
-              style={{ borderBottom: "1px solid #F3F0FF" }}
-            >
-              <div>
-                <h3 className="text-[14px] font-semibold" style={{ color: "#1A1523" }}>
-                  Recent Leads
-                </h3>
-                <p className="text-[12px]" style={{ color: "#9CA3AF" }}>
-                  Latest incoming leads across all websites
-                </p>
-              </div>
-              <a
-                href="/leads"
-                className="text-[13px] font-medium transition-colors hover:underline"
-                style={{ color: "#7C3AED" }}
-              >
-                View all →
-              </a>
-            </div>
-
-            {recentLeads && recentLeads.length > 0 ? (
-              <div>
-                {/* Column headers */}
-                <div
-                  className="grid px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wide"
-                  style={{
-                    color: "#9CA3AF",
-                    borderBottom: "1px solid #F3F0FF",
-                    gridTemplateColumns: "1fr 160px 120px 120px 80px",
-                  }}
-                >
-                  <span>NAME</span>
-                  <span>SOURCE</span>
-                  <span>STATUS</span>
-                  <span>WEBSITE</span>
-                  <span className="text-right">TIME</span>
-                </div>
-                {recentLeads.map((lead: {
-                  id: string; fullName: string; source?: string; status: string;
-                  priority: string; createdAt: string; website?: { name: string };
-                }, i: number) => {
-                  const s = STATUS_STYLE[lead.status] || STATUS_STYLE.NEW;
-                  const initials = lead.fullName
-                    .split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
-                  return (
-                    <div
-                      key={lead.id}
-                      className="grid items-center px-5 py-3 transition-colors hover:bg-[#F9F7FF] cursor-pointer"
-                      style={{
-                        borderBottom: i < recentLeads.length - 1 ? "1px solid #F7F5FF" : "none",
-                        gridTemplateColumns: "1fr 160px 120px 120px 80px",
-                      }}
-                    >
-                      {/* Name + avatar */}
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="relative flex-shrink-0">
-                          <div
-                            className="flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold text-white"
-                            style={{ background: "linear-gradient(135deg, #7C3AED, #A78BFA)" }}
-                          >
-                            {initials}
-                          </div>
-                          <span
-                            className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-white"
-                            style={{ background: PRIORITY_DOT[lead.priority] || "#9CA3AF" }}
-                          />
-                        </div>
-                        <span
-                          className="text-[13.5px] font-semibold truncate"
-                          style={{ color: "#1A1523" }}
-                        >
+                      <div className="min-w-0">
+                        <div className="font-medium text-[#1A1523] truncate leading-tight">
                           {lead.fullName}
-                        </span>
+                        </div>
+                        <div className="text-[11px] text-[#6B7280] truncate leading-tight mt-0.5">
+                          {lead.source || "Website Form"}
+                        </div>
                       </div>
-                      {/* Source */}
-                      <span className="text-[13px] truncate" style={{ color: "#6B7280" }}>
-                        {lead.source || "Website Form"}
-                      </span>
-                      {/* Status badge */}
-                      <div>
-                        <span
-                          className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold"
-                          style={{ background: s.bg, color: s.text }}
-                        >
-                          <span
-                            className="h-1.5 w-1.5 rounded-full flex-shrink-0"
-                            style={{ background: s.dot }}
-                          />
-                          {lead.status.replace("_", " ")}
-                        </span>
-                      </div>
-                      {/* Website */}
-                      <span
-                        className="text-[12px] truncate"
-                        style={{ color: "#9CA3AF" }}
-                      >
-                        {lead.website?.name || "—"}
-                      </span>
-                      {/* Time */}
-                      <span
-                        className="text-right text-[12px]"
-                        style={{ color: "#9CA3AF" }}
-                      >
-                        {timeAgo(lead.createdAt)}
-                      </span>
                     </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-16">
-                <div
-                  className="flex h-14 w-14 items-center justify-center rounded-2xl mb-4"
-                  style={{ background: "#EDE9FE" }}
-                >
-                  <Inbox className="h-7 w-7" style={{ color: "#7C3AED" }} strokeWidth={1.75} />
-                </div>
-                <p className="text-[14px] font-semibold mb-1" style={{ color: "#1A1523" }}>
-                  No leads yet
-                </p>
-                <p className="text-[13px]" style={{ color: "#9CA3AF" }}>
-                  Connect your first website to start receiving leads.
-                </p>
-              </div>
-            )}
-          </div>
-        </>
-      )}
+                  </td>
+
+                  {/* OHS / Heat */}
+                  <td className="px-3 py-0 border-r" style={{ borderColor: "#F3F0FF" }}>
+                    <div className="flex justify-end pr-2">
+                      <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-[#E8E4F3] bg-white">
+                        <span className={`h-1.5 w-1.5 rounded-full ${heat.dot}`} />
+                        <span className="text-[12px] font-medium text-[#1A1523]">{score}</span>
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Contact / Amount equivalent */}
+                  <td className="px-3 py-0 border-r text-right pr-6" style={{ borderColor: "#F3F0FF" }}>
+                    <div className="font-medium text-[#1A1523]">
+                      {lead.phone || "No phone"}
+                    </div>
+                  </td>
+
+                  {/* Stage */}
+                  <td className="px-3 py-0 border-r" style={{ borderColor: "#F3F0FF" }}>
+                    <div className="flex items-center gap-2">
+                      <div className={`h-3.5 w-3.5 rounded-full border-2 ${stage.ring} ${stage.fill}`} />
+                      <span className="text-[#1A1523] truncate">{stage.label}</span>
+                    </div>
+                  </td>
+
+                  {/* Received / Close Date */}
+                  <td className="px-3 py-0 border-r text-[#6B7280]" style={{ borderColor: "#F3F0FF" }}>
+                    {new Date(lead.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </td>
+                  
+                  {/* Empty */}
+                  <td className="px-0 py-0" />
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
+  );
+}
+
+// Dummy icon for "All leads"
+function UsersIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
   );
 }
