@@ -6,6 +6,12 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+// Required for Chrome to recognize the app as an installable PWA
+self.addEventListener('fetch', (event) => {
+  // We don't need to cache anything right now, just providing the fetch handler 
+  // satisfies the PWA installability criteria.
+});
+
 self.addEventListener('push', function (event) {
   if (event.data) {
     const data = event.data.json();
