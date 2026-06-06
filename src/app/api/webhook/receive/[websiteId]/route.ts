@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import prisma from "@/lib/prisma";
+import { sendPushToAll } from "@/lib/push";
 
 // Fixed seed IDs — must match prisma/seed.ts
 const WORKSPACE_ID = "mock_workspace_id";
@@ -174,6 +175,19 @@ export async function POST(
       // Realtime failure is non-critical — lead is already saved
       console.warn("[WEBHOOK] Realtime broadcast failed (non-critical):", realtimeErr);
     }
+
+    // Fire push notification to all subscribed team members (non-blocking)
+    const siteName = existingSite.name || "Website";
+    const contactLine = [fullName !== "Unknown" ? fullName : null, phone, email].filter(Boolean).join(" · ");
+    sendPushToAll({
+      title: `🔔 New Lead — ${siteName}`,
+      body: contactLine || "A new lead just arrived.",
+      url: "/leads",
+      actions: [
+        { action: "view", title: "View Lead" },
+        { action: "dismiss", title: "Dismiss" },
+      ],
+    }).catch(err => console.warn("[PUSH] Non-critical push error:", err));
 
     console.log(`[WEBHOOK SUCCESS] Lead saved: ${newLead.id} for website: ${websiteId}`);
 

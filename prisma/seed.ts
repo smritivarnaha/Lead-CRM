@@ -29,6 +29,10 @@ if (!connectionString) {
   throw new Error("DIRECT_URL or DATABASE_URL environment variable is not set.");
 }
 
+if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+  console.warn("⚠️ VAPID keys not set. Push notifications will be disabled.");
+}
+
 const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter } as never);
