@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
-import { Clock, ArrowRight, CheckCircle2, XCircle, HelpCircle, Mail, Phone, Eye } from "lucide-react";
+import { Clock, ArrowRight, CheckCircle2, XCircle, HelpCircle, Mail, Phone, Eye, BellRing } from "lucide-react";
 
 type Lead = {
   id: string;
@@ -14,6 +14,8 @@ type Lead = {
   temperature: string;
   phone: string | null;
   email: string | null;
+  smsSent?: boolean;
+  pushSent?: boolean;
 };
 
 // Re-use stage config
@@ -109,7 +111,18 @@ export function KanbanBoard({ leads, onStatusChange, onInspect }: { leads: Lead[
                                   <h4 className="font-semibold text-[14px] text-[#1A1523] truncate leading-tight cursor-pointer hover:text-[#7C3AED]" onClick={() => onInspect(lead)}>
                                     {lead.fullName}
                                   </h4>
-                                  <p className="text-[12px] text-[#6B7280] truncate mt-0.5">{lead.source || "Website Form"}</p>
+                                  <div className="text-[12px] text-[#6B7280] truncate mt-0.5 flex items-center gap-1.5">
+                                    <span>{lead.source || "Website Form"}</span>
+                                    {(lead.smsSent || lead.pushSent) && (
+                                      <>
+                                        <span className="text-gray-300">•</span>
+                                        <div className="flex items-center gap-1 bg-[#F7F5FF] px-1.5 py-0.5 rounded border border-[#E8E4F3]">
+                                          {lead.smsSent && <Phone className="h-2.5 w-2.5 text-indigo-500" title="SMS Alert Sent" />}
+                                          {lead.pushSent && <BellRing className="h-2.5 w-2.5 text-indigo-500" title="Push Alert Sent" />}
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>

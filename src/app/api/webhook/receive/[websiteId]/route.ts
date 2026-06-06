@@ -183,6 +183,9 @@ export async function POST(
 
     const leadPayload = JSON.parse(JSON.stringify(newLead));
 
+    let smsSent = false;
+    let pushSent = false;
+
     // Fetch Workspace settings to check for SMS and Push configs
     const workspace = await prisma.workspace.findUnique({
       where: { id: WORKSPACE_ID },
@@ -217,6 +220,9 @@ export async function POST(
           
           const smsData = await smsRes.json();
           console.log("[SMS RESULT]", smsData);
+          if (smsData.return === true) {
+            smsSent = true;
+          }
         } else {
           console.warn("[SMS] Invalid Indian phone number length:", cleanPhone);
         }
@@ -277,8 +283,25 @@ export async function POST(
         event: "push-status",
         payload: { success: pushStatus.success, count: pushStatus.count, leadId: newLead.id },
       });
+      if (pushStatus.success) {
+        pushSent = true;
+      }
     } catch (err) {
       console.warn("[PUSH] Non-critical push error:", err);
+    }
+
+    // Update the Lead in the database with the notification statuses
+    if (smsSent || pushSent) {
+      await prisma.lead.update({
+        where: { id: newLead.id },
+        data: {
+          smsSent,
+          pushSent,
+        },
+      });
+      // Update payload for the UI broadcast
+      leadPayload.smsSent = smsSent;
+      leadPayload.pushSent = pushSent;
     }
 
     console.log(`[WEBHOOK SUCCESS] Lead saved: ${newLead.id} for website: ${websiteId}`);

@@ -28,7 +28,8 @@ import {
   XCircle,
   HelpCircle,
   Clock,
-  ArrowRight
+  ArrowRight,
+  BellRing
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -43,6 +44,8 @@ type Lead = {
   phone: string | null;
   email: string | null;
   website?: { name: string };
+  smsSent?: boolean;
+  pushSent?: boolean;
 };
 
 // ─── STAGE CONFIG ───
@@ -327,8 +330,17 @@ export function PipelineView() {
                           <div className="font-semibold text-[#1A1523] hover:text-[#7C3AED] truncate leading-tight">
                             {lead.fullName}
                           </div>
-                          <div className="text-[12px] text-[#6B7280] truncate leading-tight mt-0.5">
-                            {lead.source || "Website Form"}
+                          <div className="text-[12px] text-[#6B7280] truncate leading-tight mt-0.5 flex items-center gap-1.5">
+                            <span>{lead.source || "Website Form"}</span>
+                            {(lead.smsSent || lead.pushSent) && (
+                              <>
+                                <span className="text-gray-300">•</span>
+                                <div className="flex items-center gap-1 bg-[#F7F5FF] px-1.5 py-0.5 rounded border border-[#E8E4F3]">
+                                  {lead.smsSent && <Phone className="h-3 w-3 text-indigo-500" title="SMS Alert Sent" />}
+                                  {lead.pushSent && <BellRing className="h-3 w-3 text-indigo-500" title="Push Alert Sent" />}
+                                </div>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>

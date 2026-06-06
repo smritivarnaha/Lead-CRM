@@ -110,6 +110,10 @@ model Lead {
   updatedAt   DateTime @updatedAt
   followUpAt  DateTime?
 
+  // Notification Status Tracking
+  smsSent     Boolean  @default(false)
+  pushSent    Boolean  @default(false)
+
   assignedToId String?
   assignedTo   User?    @relation("AssignedTo", fields: [assignedToId], references: [id])
 

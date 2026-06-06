@@ -37,6 +37,8 @@ export async function getLeads() {
         createdAt: true,
         followUpAt: true,
         rawFields: true,
+        smsSent: true,
+        pushSent: true,
         website: { select: { id: true, name: true, domain: true } },
       },
     });
