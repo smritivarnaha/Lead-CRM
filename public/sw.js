@@ -28,12 +28,29 @@ self.addEventListener('push', function (event) {
   }
 });
 
-self.addEventListener('notificationclick', function (event) {
+self.addEventListener('notificationclick', function(event) {
   event.notification.close();
-  if (event.action === 'dismiss') {
-    return; // Just close it
+
+  // If the user clicked the "View Lead" action button or just the notification body
+  if (event.action === 'view' || !event.action) {
+    const targetUrl = event.notification.data && event.notification.data.leadId 
+      ? `/leads` 
+      : '/leads';
+
+    event.waitUntil(
+      clients.matchAll({ type: 'window' }).then(function(clientList) {
+        for (var i = 0; i < clientList.length; i++) {
+          var client = clientList[i];
+          if (client.url.includes(targetUrl) && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        if (clients.openWindow) {
+          return clients.openWindow(targetUrl);
+        }
+      })
+    );
+  } else if (event.action === 'dismiss') {
+    // Just close it, do nothing else
   }
-  event.waitUntil(
-    clients.openWindow(event.notification.data.url)
-  );
 });

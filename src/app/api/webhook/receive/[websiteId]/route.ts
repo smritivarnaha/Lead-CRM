@@ -215,10 +215,15 @@ export async function POST(
         title: `🔔 New Lead — ${siteName}`,
         body: contactLine || "A new lead just arrived.",
         url: "/leads",
+        icon: "/icon-192.png",
+        badge: "/icon-192.png",
         actions: [
           { action: "view", title: "View Lead" },
           { action: "dismiss", title: "Dismiss" },
         ],
+        data: {
+          leadId: newLead.id
+        }
       });
       
       // Broadcast the push delivery status to the dashboard
