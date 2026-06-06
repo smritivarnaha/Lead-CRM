@@ -259,14 +259,22 @@ export async function POST(
     
     let pushStatus = { success: false, count: 0 };
     try {
+      const pushTitle = workspace?.pushTitleTemplate 
+        ? workspace.pushTitleTemplate.replace(/{{name}}/g, fullName)
+        : `🔔 New Lead — ${siteName}`;
+        
+      const pushBody = workspace?.pushBodyTemplate
+        ? workspace.pushBodyTemplate.replace(/{{name}}/g, fullName)
+        : contactLine || "A new lead just arrived.";
+
       pushStatus = await sendPushToAll({
-        title: `🔔 New Lead — ${siteName}`,
-        body: contactLine || "A new lead just arrived.",
+        title: pushTitle,
+        body: pushBody,
         url: "/leads",
-        icon: "/icon-192.png",
-        badge: "/icon-192.png",
+        icon: workspace?.pushIconUrl || "/icon-192.png",
+        // badge property removed to fix white square bug on Android
         actions: [
-          { action: "view", title: "View Lead" },
+          { action: "view", title: workspace?.pushCtaLabel || "View Lead", url: workspace?.pushCtaUrl || "/leads" },
           { action: "dismiss", title: "Dismiss" },
         ],
         data: {

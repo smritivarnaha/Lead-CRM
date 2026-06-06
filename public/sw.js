@@ -17,8 +17,7 @@ self.addEventListener('push', function (event) {
     const data = event.data.json();
     const options = {
       body: data.body,
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
+      icon: data.icon || '/icon-192.png',
       vibrate: [200, 100, 200, 100, 200],
       requireInteraction: true,
       actions: data.actions || [
@@ -27,7 +26,9 @@ self.addEventListener('push', function (event) {
       data: {
         dateOfArrival: Date.now(),
         primaryKey: '2',
-        url: data.url || '/'
+        url: data.url || '/leads',
+        // Pass the actions array into data so notificationclick can read action URLs
+        actionsData: data.actions || [] 
       },
     };
     event.waitUntil(self.registration.showNotification(data.title, options));
@@ -37,11 +38,17 @@ self.addEventListener('push', function (event) {
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
 
-  // If the user clicked the "View Lead" action button or just the notification body
-  if (event.action === 'view' || !event.action) {
-    const targetUrl = event.notification.data && event.notification.data.leadId 
-      ? `/leads` 
-      : '/leads';
+  // Find the action that was clicked
+  const actionsData = event.notification.data?.actionsData || [];
+  const clickedAction = actionsData.find(a => a.action === event.action);
+
+  if (event.action !== 'dismiss') {
+    let targetUrl = event.notification.data?.url || '/leads';
+    
+    // If a specific action was clicked and it has a URL, use it
+    if (clickedAction && clickedAction.url) {
+      targetUrl = clickedAction.url;
+    }
 
     event.waitUntil(
       clients.matchAll({ type: 'window' }).then(function(clientList) {

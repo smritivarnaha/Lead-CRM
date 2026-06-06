@@ -207,6 +207,8 @@ export default function SettingsPage() {
     }
   };
 
+  const [activeTab, setActiveTab] = useState("push");
+
   return (
     <div className="flex flex-col h-full gap-6">
       <div>
@@ -214,34 +216,53 @@ export default function SettingsPage() {
         <p className="text-sm text-slate-500 mt-1">Configure your CRM preferences and integrations.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Push Notifications Card */}
-        <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
-          <div className="p-5 border-b border-slate-100 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
-              <BellRing className="h-5 w-5 text-indigo-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-slate-900">Push Notifications</h3>
-              <p className="text-xs text-slate-500">Get instant alerts on your phone</p>
-            </div>
-          </div>
+      <div className="flex gap-4 overflow-x-auto no-scrollbar border-b border-slate-200">
+        <button 
+          onClick={() => setActiveTab("push")}
+          className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "push" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+        >
+          Push Notifications
+        </button>
+        <button 
+          onClick={() => setActiveTab("sms")}
+          className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "sms" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+        >
+          SMS Alerts
+        </button>
+        <button 
+          onClick={() => setActiveTab("install")}
+          className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "install" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+        >
+          App Installation
+        </button>
+      </div>
 
-          <div className="p-5 flex flex-col gap-5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Smartphone className="h-4 w-4 text-slate-400" />
-                <span className="text-sm font-medium text-slate-700">Device Status</span>
+      <div className="max-w-2xl">
+        {/* ─── PUSH NOTIFICATIONS TAB ─── */}
+        {activeTab === "push" && (
+          <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden mb-6">
+            <div className="p-5 border-b border-slate-100 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+                <BellRing className="h-5 w-5 text-indigo-600" />
               </div>
-              {pushStatus === "loading" && <span className="text-xs text-slate-400">Checking...</span>}
-              {pushStatus === "unsupported" && <span className="text-xs text-red-500 font-medium">Not Supported</span>}
-              {pushStatus === "subscribed" && <span className="text-xs text-emerald-600 bg-emerald-50 px-2 py-1 rounded font-semibold">Enabled</span>}
-              {pushStatus === "unsubscribed" && <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded font-medium">Disabled</span>}
+              <div>
+                <h3 className="font-semibold text-slate-900">Push Notifications</h3>
+                <p className="text-xs text-slate-500">Get instant alerts on your phone</p>
+              </div>
             </div>
 
-            <div className="h-px bg-slate-100" />
+            <div className="p-5 flex flex-col gap-6">
+              <div className="flex items-center justify-between bg-slate-50 p-4 rounded-lg border border-slate-100">
+                <div className="flex items-center gap-2">
+                  <Smartphone className="h-4 w-4 text-slate-400" />
+                  <span className="text-sm font-medium text-slate-700">Device Status</span>
+                </div>
+                {pushStatus === "loading" && <span className="text-xs text-slate-400">Checking...</span>}
+                {pushStatus === "unsupported" && <span className="text-xs text-red-500 font-medium">Not Supported</span>}
+                {pushStatus === "subscribed" && <span className="text-xs text-emerald-600 bg-emerald-50 px-2 py-1 rounded font-semibold">Enabled</span>}
+                {pushStatus === "unsubscribed" && <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded font-medium">Disabled</span>}
+              </div>
 
-            <div className="flex flex-col gap-4">
               {/* iOS Style Toggle Row */}
               <div className="flex items-center justify-between">
                 <div>
@@ -271,172 +292,242 @@ export default function SettingsPage() {
                 )}
               </div>
 
+              {pushStatus === "unsupported" && (
+                <p className="text-xs text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-100">
+                  <strong>Action Required:</strong> If you are on an iPhone, you must tap the Share icon and select <strong>"Add to Home Screen"</strong> to enable notifications.
+                </p>
+              )}
+
               {pushStatus === "subscribed" && (
-                <div className="mt-2 pt-4 border-t border-slate-100">
+                <div className="pt-4 border-t border-slate-100">
                   <Button 
                     onClick={handleTestNotification} 
                     disabled={isProcessing}
                     variant="outline"
-                    className="w-full border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                    className="w-full sm:w-auto border-indigo-200 text-indigo-700 hover:bg-indigo-50"
                   >
                     Send Test Notification
                   </Button>
                 </div>
               )}
 
-              {pushStatus === "unsupported" && (
-                <p className="text-xs text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-100 mt-2">
-                  <strong>Action Required:</strong> If you are on an iPhone, you must tap the Share icon and select <strong>"Add to Home Screen"</strong> to enable notifications.
-                </p>
+              <div className="h-px bg-slate-100 my-2" />
+              
+              <h4 className="text-sm font-semibold text-slate-900">Customization</h4>
+              
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-slate-700">Notification Title Template</label>
+                <input 
+                  type="text" 
+                  value={settings?.pushTitleTemplate || ""} 
+                  onChange={(e) => setSettings({...settings, pushTitleTemplate: e.target.value})}
+                  onBlur={(e) => saveSettings("pushTitleTemplate", e.target.value)}
+                  placeholder="🔥 New Lead Alert!"
+                  className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-slate-700">Notification Body Template</label>
+                <input 
+                  type="text" 
+                  value={settings?.pushBodyTemplate || ""} 
+                  onChange={(e) => setSettings({...settings, pushBodyTemplate: e.target.value})}
+                  onBlur={(e) => saveSettings("pushBodyTemplate", e.target.value)}
+                  placeholder="You have a new lead: {{name}}"
+                  className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-slate-700">Icon / Logo URL</label>
+                <input 
+                  type="text" 
+                  value={settings?.pushIconUrl || ""} 
+                  onChange={(e) => setSettings({...settings, pushIconUrl: e.target.value})}
+                  onBlur={(e) => saveSettings("pushIconUrl", e.target.value)}
+                  placeholder="https://example.com/logo.png"
+                  className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
+                />
+                <p className="text-xs text-slate-500">Paste an image URL to show on the notification.</p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-slate-700">Button Label</label>
+                  <input 
+                    type="text" 
+                    value={settings?.pushCtaLabel || ""} 
+                    onChange={(e) => setSettings({...settings, pushCtaLabel: e.target.value})}
+                    onBlur={(e) => saveSettings("pushCtaLabel", e.target.value)}
+                    placeholder="View Lead"
+                    className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-slate-700">Button Redirect URL</label>
+                  <input 
+                    type="text" 
+                    value={settings?.pushCtaUrl || ""} 
+                    onChange={(e) => setSettings({...settings, pushCtaUrl: e.target.value})}
+                    onBlur={(e) => saveSettings("pushCtaUrl", e.target.value)}
+                    placeholder="/leads"
+                    className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ─── SMS ALERTS TAB ─── */}
+        {activeTab === "sms" && (
+          <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden h-fit mb-6">
+            <div className="p-5 border-b border-slate-100 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+                <Smartphone className="h-5 w-5 text-indigo-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900">SMS Admin Alerts (India)</h3>
+                <p className="text-xs text-slate-500">Powered by Fast2SMS</p>
+              </div>
+            </div>
+
+            <div className="p-5 flex flex-col gap-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-900">Enable Admin Alerts</h4>
+                  <p className="text-xs text-slate-500 mt-0.5">Receive an SMS instantly when a new lead arrives</p>
+                </div>
+                <button
+                  onClick={() => saveSettings("smsAutoReplyEnabled", !settings?.smsAutoReplyEnabled)}
+                  disabled={isSaving || !settings}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 disabled:opacity-50 ${
+                    settings?.smsAutoReplyEnabled ? "bg-indigo-600" : "bg-slate-200"
+                  }`}
+                  role="switch"
+                  aria-checked={settings?.smsAutoReplyEnabled || false}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      settings?.smsAutoReplyEnabled ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {settings?.smsAutoReplyEnabled && (
+                <>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-slate-700">Fast2SMS API Key</label>
+                    <input 
+                      type="password" 
+                      value={settings?.fast2smsApiKey || ""} 
+                      onChange={(e) => setSettings({...settings, fast2smsApiKey: e.target.value})}
+                      onBlur={(e) => saveSettings("fast2smsApiKey", e.target.value)}
+                      placeholder="Enter your Fast2SMS API Key"
+                      className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
+                    />
+                    <p className="text-xs text-slate-500">Sign up on Fast2SMS.com to get your key.</p>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-slate-700">Admin Phone Number</label>
+                    <input 
+                      type="text" 
+                      value={settings?.adminPhone || ""} 
+                      onChange={(e) => setSettings({...settings, adminPhone: e.target.value})}
+                      onBlur={(e) => saveSettings("adminPhone", e.target.value)}
+                      placeholder="e.g. 9876543210"
+                      className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
+                    />
+                    <p className="text-xs text-slate-500">The mobile number where you want to receive the lead alert.</p>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-slate-700">SMS Alert Template</label>
+                    <textarea 
+                      value={settings?.smsTemplate || ""} 
+                      onChange={(e) => setSettings({...settings, smsTemplate: e.target.value})}
+                      onBlur={(e) => saveSettings("smsTemplate", e.target.value)}
+                      rows={3}
+                      placeholder="🔥 New Lead: {{name}} has submitted a form!"
+                      className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors resize-none"
+                    />
+                    <p className="text-xs text-slate-500">Use {"{{name}}"} and {"{{source}}"} as variables.</p>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-3 mt-2">
+                    <button
+                      onClick={() => {
+                        saveSettings("fast2smsApiKey", settings?.fast2smsApiKey);
+                        saveSettings("adminPhone", settings?.adminPhone);
+                        saveSettings("smsTemplate", settings?.smsTemplate);
+                        toast.success("SMS Settings saved successfully!");
+                      }}
+                      disabled={isSaving}
+                      className="flex-1 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50"
+                    >
+                      {isSaving ? "Saving..." : "Save SMS Settings"}
+                    </button>
+                    <button
+                      onClick={handleTestSms}
+                      disabled={isTestingSms || isSaving}
+                      className="flex-1 py-2.5 px-4 bg-white border border-indigo-200 hover:bg-indigo-50 text-indigo-700 text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50"
+                    >
+                      {isTestingSms ? "Sending..." : "Send Test SMS"}
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Install App Card */}
-        <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden h-fit">
-          <div className="p-5 border-b border-slate-100 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
-              <Smartphone className="h-5 w-5 text-indigo-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-slate-900">Install Mobile App</h3>
-              <p className="text-xs text-slate-500">Add LeadFlow to your Home Screen</p>
-            </div>
-          </div>
-
-          <div className="p-5 flex flex-col gap-4">
-            <p className="text-sm text-slate-600">
-              For the best experience and to enable push notifications on iOS, install LeadFlow directly to your phone's home screen.
-            </p>
-            
-            <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
-              <h4 className="text-sm font-semibold text-slate-900 mb-2">How to install:</h4>
-              <ul className="text-sm text-slate-600 space-y-2">
-                <li className="flex items-start gap-2">
-                  <span className="font-bold text-slate-900">iOS (Safari):</span> 
-                  Tap the Share icon at the bottom, then scroll down and tap "Add to Home Screen".
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-bold text-slate-900">Android (Chrome):</span> 
-                  Click the Install button below, or tap the 3 dots menu and select "Install app".
-                </li>
-              </ul>
-            </div>
-            <button
-              onClick={handleInstallClick}
-              className="mt-2 w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2"
-            >
-              <Smartphone className="h-4 w-4" />
-              Install App Now
-            </button>
-          </div>
-        </div>
-
-        {/* SMS Admin Alert Settings Card */}
-        <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden h-fit">
-          <div className="p-5 border-b border-slate-100 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
-              <Smartphone className="h-5 w-5 text-indigo-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-slate-900">SMS Admin Alerts (India)</h3>
-              <p className="text-xs text-slate-500">Powered by Fast2SMS</p>
-            </div>
-          </div>
-
-          <div className="p-5 flex flex-col gap-5">
-            <div className="flex items-center justify-between">
+        {/* ─── INSTALL APP TAB ─── */}
+        {activeTab === "install" && (
+          <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden h-fit mb-6">
+            <div className="p-5 border-b border-slate-100 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+                <Smartphone className="h-5 w-5 text-indigo-600" />
+              </div>
               <div>
-                <h4 className="text-sm font-semibold text-slate-900">Enable Admin Alerts</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Receive an SMS instantly when a new lead arrives</p>
+                <h3 className="font-semibold text-slate-900">Install Mobile App</h3>
+                <p className="text-xs text-slate-500">Add LeadFlow to your Home Screen</p>
+              </div>
+            </div>
+
+            <div className="p-5 flex flex-col gap-4">
+              <p className="text-sm text-slate-600">
+                For the best experience and to enable push notifications on iOS, install LeadFlow directly to your phone's home screen.
+              </p>
+              
+              <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
+                <h4 className="text-sm font-semibold text-slate-900 mb-2">How to install:</h4>
+                <ul className="text-sm text-slate-600 space-y-2">
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold text-slate-900">iOS (Safari):</span> 
+                    Tap the Share icon at the bottom, then scroll down and tap "Add to Home Screen".
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold text-slate-900">Android (Chrome):</span> 
+                    Click the Install button below, or tap the 3 dots menu and select "Install app".
+                  </li>
+                </ul>
               </div>
               <button
-                onClick={() => saveSettings("smsAutoReplyEnabled", !settings?.smsAutoReplyEnabled)}
-                disabled={isSaving || !settings}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 disabled:opacity-50 ${
-                  settings?.smsAutoReplyEnabled ? "bg-indigo-600" : "bg-slate-200"
-                }`}
-                role="switch"
-                aria-checked={settings?.smsAutoReplyEnabled || false}
+                onClick={handleInstallClick}
+                className="mt-2 w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2"
               >
-                <span
-                  aria-hidden="true"
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                    settings?.smsAutoReplyEnabled ? "translate-x-5" : "translate-x-0"
-                  }`}
-                />
+                <Smartphone className="h-4 w-4" />
+                Install App Now
               </button>
             </div>
-
-            {settings?.smsAutoReplyEnabled && (
-              <>
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-slate-700">Fast2SMS API Key</label>
-                  <input 
-                    type="password" 
-                    value={settings?.fast2smsApiKey || ""} 
-                    onChange={(e) => setSettings({...settings, fast2smsApiKey: e.target.value})}
-                    onBlur={(e) => saveSettings("fast2smsApiKey", e.target.value)}
-                    placeholder="Enter your Fast2SMS API Key"
-                    className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
-                  />
-                  <p className="text-xs text-slate-500">Sign up on Fast2SMS.com to get your key.</p>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-slate-700">Admin Phone Number</label>
-                  <input 
-                    type="text" 
-                    value={settings?.adminPhone || ""} 
-                    onChange={(e) => setSettings({...settings, adminPhone: e.target.value})}
-                    onBlur={(e) => saveSettings("adminPhone", e.target.value)}
-                    placeholder="e.g. 9876543210"
-                    className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
-                  />
-                  <p className="text-xs text-slate-500">The mobile number where you want to receive the lead alert.</p>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-slate-700">SMS Alert Template</label>
-                  <textarea 
-                    value={settings?.smsTemplate || ""} 
-                    onChange={(e) => setSettings({...settings, smsTemplate: e.target.value})}
-                    onBlur={(e) => saveSettings("smsTemplate", e.target.value)}
-                    rows={3}
-                    placeholder="🔥 New Lead: {{name}} has submitted a form!"
-                    className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors resize-none"
-                  />
-                  <p className="text-xs text-slate-500">Use {"{{name}}"} and {"{{source}}"} as variables.</p>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-3 mt-2">
-                  <button
-                    onClick={() => {
-                      saveSettings("fast2smsApiKey", settings?.fast2smsApiKey);
-                      saveSettings("adminPhone", settings?.adminPhone);
-                      saveSettings("smsTemplate", settings?.smsTemplate);
-                      toast.success("SMS Settings saved successfully!");
-                    }}
-                    disabled={isSaving}
-                    className="flex-1 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50"
-                  >
-                    {isSaving ? "Saving..." : "Save SMS Settings"}
-                  </button>
-                  <button
-                    onClick={handleTestSms}
-                    disabled={isTestingSms || isSaving}
-                    className="flex-1 py-2.5 px-4 bg-white border border-indigo-200 hover:bg-indigo-50 text-indigo-700 text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50"
-                  >
-                    {isTestingSms ? "Sending..." : "Send Test SMS"}
-                  </button>
-                </div>
-              </>
-            )}
           </div>
-        </div>
+        )}
       </div>
-      
+
       {/* Spacer specifically for Mobile to prevent bottom nav from hiding content */}
       <div className="h-32 w-full flex-shrink-0 md:hidden"></div>
     </div>
