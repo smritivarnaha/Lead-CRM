@@ -76,23 +76,59 @@ export async function POST(
     }
 
     // Map all common field names from different form plugins
-    const fullName =
-      body.name ||
-      body.fullName ||
-      body.full_name ||
-      `${body.first_name || body.firstName || ""} ${body.last_name || body.lastName || ""}`.trim() ||
-      "Unknown";
+    // ── Smart field detection ──────────────────────────────────────────
+    // Elementor sends fields with keys like: field_1, field_2, or the field ID
+    // if explicitly set. We fuzzy-match on key names so it "just works"
+    // regardless of how the form is configured.
 
-    const email = body.email || body["your-email"] || body.email_address || null;
-    const phone = body.phone || body.tel || body.phone_number || body["your-phone"] || body.mobile || null;
-    const message = body.message || body["your-message"] || body.comments || body.query || null;
+    const find = (patterns: string[]): string | null => {
+      for (const p of patterns) {
+        const key = Object.keys(body).find(k =>
+          k.toLowerCase() === p.toLowerCase() ||
+          k.toLowerCase().includes(p.toLowerCase())
+        );
+        if (key && body[key]) return body[key];
+      }
+      return null;
+    };
+
+    // Detect email by value pattern as final fallback
+    const emailByValue = Object.values(body).find(v =>
+      typeof v === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
+    ) as string | undefined;
+
+    // Detect phone by value pattern (7-15 digits, may have +, -, spaces)
+    const phoneByValue = Object.values(body).find(v =>
+      typeof v === "string" && /^[\+\d][\d\s\-]{6,14}\d$/.test(v.trim())
+    ) as string | undefined;
+
+    const email   = find(["email", "your-email", "email_address", "e-mail", "mail"]) || emailByValue || null;
+    const phone   = find(["phone", "tel", "mobile", "phone_number", "your-phone", "contact", "whatsapp", "number"]) || phoneByValue || null;
+    const message = find(["message", "your-message", "comments", "query", "description", "msg", "text", "details"]) || null;
+
+    // Name: try known keys first, then check for a value that looks like a name
+    // (2-50 chars, no @ sign, not a phone number)
+    const nameByKey = find(["name", "fullName", "full_name", "first_name", "your-name", "contact_name", "naam"]);
+    const firstLast = [find(["first_name", "firstname"]) || "", find(["last_name", "lastname"]) || ""].join(" ").trim();
+    const nameByValue = !nameByKey && !firstLast
+      ? Object.entries(body).find(([k, v]) =>
+          !["email", "phone", "message", "source", "utm", "form", "_"].some(p => k.toLowerCase().includes(p)) &&
+          typeof v === "string" &&
+          v.length >= 2 && v.length <= 60 &&
+          !v.includes("@") &&
+          !/^\+?[\d\s\-]{7,}$/.test(v) // not a phone
+        )?.[1]
+      : undefined;
+
+    const fullName = nameByKey || firstLast || nameByValue || "Unknown";
+
     const source =
       body.source ||
       body.form_name ||
       body.form_id ||
       (body["_wpcf7"] ? "WordPress Form" : "Website Form");
-    const utmSource = body.utm_source || null;
-    const utmMedium = body.utm_medium || null;
+    const utmSource   = body.utm_source   || null;
+    const utmMedium   = body.utm_medium   || null;
     const utmCampaign = body.utm_campaign || null;
 
     // Save lead to database
