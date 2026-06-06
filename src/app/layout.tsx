@@ -28,9 +28,9 @@ export default function RootLayout({
       >
         <head>
           <link rel="manifest" href="/manifest.json" />
-          <meta name="theme-color" content="#0f172a" />
+          <meta name="theme-color" content="#7C3AED" />
         </head>
-        <body className="min-h-full flex flex-col bg-slate-50 text-slate-900">
+        <body className="min-h-full flex flex-col bg-background text-foreground">
           <TooltipProvider>{children}</TooltipProvider>
           <Toaster richColors position="top-right" />
           <script

@@ -44,7 +44,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gyaan-bg text-gyaan-primary">
+    <div
+      className="flex h-screen overflow-hidden"
+      style={{ background: "#F7F5FF", color: "#1A1523" }}
+    >
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
