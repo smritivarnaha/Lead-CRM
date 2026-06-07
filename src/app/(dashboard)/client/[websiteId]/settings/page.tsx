@@ -184,6 +184,4 @@ export default function ClientSettingsPage() {
       </div>
     </div>
   );
-}>
-  );
 }

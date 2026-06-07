@@ -78,7 +78,7 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
           <button 
             key={m.id}
             onClick={() => setActiveMethod(m.id)}
-            className={\`flex flex-col items-center text-center p-4 rounded-xl border-2 transition-all duration-200 bg-white hover:shadow-md \${activeMethod === m.id ? \`\${m.color} shadow-sm bg-slate-50 scale-[1.02]\` : "border-slate-100 hover:border-slate-300 opacity-70 hover:opacity-100"}\`}
+            className={`flex flex-col items-center text-center p-4 rounded-xl border-2 transition-all duration-200 bg-white hover:shadow-md ${activeMethod === m.id ? `${m.color} shadow-sm bg-slate-50 scale-[1.02]` : "border-slate-100 hover:border-slate-300 opacity-70 hover:opacity-100"}`}
           >
             {m.icon}
             <span className="mt-3 text-sm font-bold text-slate-900">{m.title}</span>
@@ -105,7 +105,7 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
             </div>
             
             {!isGlobal && (
-              <a href={\`/api/websites/\${site.id}/plugin\`} download className="inline-flex items-center justify-center gap-2 bg-[#0073AA] text-white hover:bg-[#005177] px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-md hover:shadow-lg w-full sm:w-auto">
+              <a href={`/api/websites/${site.id}/plugin`} download className="inline-flex items-center justify-center gap-2 bg-[#0073AA] text-white hover:bg-[#005177] px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-md hover:shadow-lg w-full sm:w-auto">
                 <Download className="w-4 h-4" /> Download Custom WP Plugin
               </a>
             )}
@@ -127,7 +127,34 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
               </ol>
             </div>
             
-            <CopyBox language="Google Apps Script (javascript)" code={\`const WEBHOOK_URL = 'https://lead-crmsss.vercel.app/api/webhook/receive/\${site.id}';\n\nfunction onOpen() {\n  var ui = SpreadsheetApp.getUi();\n  ui.createMenu('LeadFlow CRM')\n      .addItem('Push Selected Row to CRM', 'sendRowToCRM')\n      .addToUi();\n}\n\nfunction sendRowToCRM() {\n  var sheet = SpreadsheetApp.getActiveSheet();\n  var row = sheet.getActiveCell().getRow();\n  if (row === 1) return SpreadsheetApp.getUi().alert("Please select a data row.");\n  \n  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];\n  var values = sheet.getRange(row, 1, 1, sheet.getLastColumn()).getValues()[0];\n  \n  var payload = {};\n  for (var i = 0; i < headers.length; i++) {\n    if (headers[i]) payload[headers[i]] = values[i];\n  }\n  \n  UrlFetchApp.fetch(WEBHOOK_URL, {\n    "method": "post",\n    "contentType": "application/json",\n    "payload": JSON.stringify(payload)\n  });\n}\`} />
+            <CopyBox language="Google Apps Script (javascript)" code={`const WEBHOOK_URL = 'https://lead-crmsss.vercel.app/api/webhook/receive/${site.id}';
+
+function onOpen() {
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu('LeadFlow CRM')
+      .addItem('Push Selected Row to CRM', 'sendRowToCRM')
+      .addToUi();
+}
+
+function sendRowToCRM() {
+  var sheet = SpreadsheetApp.getActiveSheet();
+  var row = sheet.getActiveCell().getRow();
+  if (row === 1) return SpreadsheetApp.getUi().alert("Please select a data row.");
+  
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var values = sheet.getRange(row, 1, 1, sheet.getLastColumn()).getValues()[0];
+  
+  var payload = {};
+  for (var i = 0; i < headers.length; i++) {
+    if (headers[i]) payload[headers[i]] = values[i];
+  }
+  
+  UrlFetchApp.fetch(WEBHOOK_URL, {
+    "method": "post",
+    "contentType": "application/json",
+    "payload": JSON.stringify(payload)
+  });
+}`} />
           </div>
         )}
 
@@ -143,7 +170,7 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
               This intelligent script automatically listens for any form submission on your website. When a user submits a form, it grabs all the inputs and instantly sends them to your CRM behind the scenes.
             </div>
 
-            <CopyBox language="HTML Snippet (html)" code={\`<script>\ndocument.addEventListener('submit', function(e) {\n  const form = e.target.closest('form');\n  if (!form) return;\n  \n  // Convert all form fields automatically\n  const formData = new FormData(form);\n  const data = Object.fromEntries(formData.entries());\n  data.page_url = window.location.href;\n\n  // Send to CRM in the background\n  fetch('https://lead-crmsss.vercel.app/api/webhook/receive/\${site.id}', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify(data),\n    keepalive: true // Ensures data sends perfectly even if the page redirects\n  }).catch(console.error);\n});\n</script>\`} />
+            <CopyBox language="HTML Snippet (html)" code={"<script>\ndocument.addEventListener('submit', function(e) {\n  const form = e.target.closest('form');\n  if (!form) return;\n  \n  // 1. Automatically grab EVERY field in your HTML form\n  const formData = new FormData(form);\n  const data = Object.fromEntries(formData.entries());\n  data.page_url = window.location.href;\n\n  // 2. Send to CRM silently in the background\n  fetch('https://lead-crmsss.vercel.app/api/webhook/receive/" + site.id + "', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify(data),\n    keepalive: true // Ensures data sends perfectly even if the page redirects\n  }).catch(console.error);\n});\n" + "</sc" + "ript>"} />
           </div>
         )}
 
@@ -154,7 +181,23 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
             </h3>
             <p className="text-slate-600 mb-6">For advanced WordPress users. Paste this into your theme's <code>functions.php</code> or using the WPCode snippet plugin for ultra-fast server-side tracking.</p>
             
-            <CopyBox language="PHP (functions.php)" code={\`add_action( 'elementor_pro/forms/new_record', function( $record, $handler ) {\n    $fields = [];\n    foreach ( $record->get( 'fields' ) as $id => $field ) {\n        $fields[ $id ] = $field['value'];\n    }\n    \n    // Auto-detect IP and Page URL\n    $fields['page_url'] = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';\n    $fields['ipAddress'] = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0] : (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '');\n    \n    // Post to CRM\n    wp_remote_post( 'https://lead-crmsss.vercel.app/api/webhook/receive/\${site.id}', [\n        'body' => wp_json_encode($fields),\n        'headers' => [ 'Content-Type' => 'application/json' ],\n        'blocking' => false\n    ]);\n}, 10, 2 );\`} />
+            <CopyBox language="PHP (functions.php)" code={`add_action( 'elementor_pro/forms/new_record', function( $record, $handler ) {
+    $fields = [];
+    foreach ( $record->get( 'fields' ) as $id => $field ) {
+        $fields[ $id ] = $field['value'];
+    }
+    
+    // Auto-detect IP and Page URL
+    $fields['page_url'] = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
+    $fields['ipAddress'] = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0] : (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '');
+    
+    // Post to CRM
+    wp_remote_post( 'https://lead-crmsss.vercel.app/api/webhook/receive/${site.id}', [
+        'body' => wp_json_encode($fields),
+        'headers' => [ 'Content-Type' => 'application/json' ],
+        'blocking' => false
+    ]);
+}, 10, 2 );`} />
           </div>
         )}
 
@@ -174,7 +217,7 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
                 </code>
                 <button 
                   onClick={() => {
-                    navigator.clipboard.writeText(\`https://lead-crmsss.vercel.app/api/webhook/receive/\${site.id}\`);
+                    navigator.clipboard.writeText(`https://lead-crmsss.vercel.app/api/webhook/receive/${site.id}`);
                     toast.success("Webhook URL copied!");
                   }} 
                   className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm flex items-center gap-2 px-6 py-4 h-full transition-colors shrink-0 border-l border-indigo-700"
