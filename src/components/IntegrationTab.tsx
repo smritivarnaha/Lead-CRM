@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Copy, Download, LinkIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,8 +21,25 @@ export const SVGIcons = {
 
 export default function IntegrationTab({ site, isGlobal = false }: { site: { id: string }, isGlobal?: boolean }) {
   const [activeMethod, setActiveMethod] = useState<string>("wordpress");
-  const [dynamicSiteId, setDynamicSiteId] = useState<string>(isGlobal ? "" : site.id);
-  const finalSiteId = dynamicSiteId || (isGlobal ? "YOUR_WEBSITE_ID" : site.id);
+  const [dynamicSiteId, setDynamicSiteId] = useState<string>(site.id);
+  const finalSiteId = dynamicSiteId || site.id;
+
+  useEffect(() => {
+    if (site.id) {
+      setDynamicSiteId(site.id);
+    }
+  }, [site.id]);
+
+  const handleSiteIdChange = (val: string) => {
+    // Restrict spaces and non-alphanumeric characters (allow hyphens and underscores)
+    const sanitized = val.replace(/[^a-zA-Z0-9-_]/g, "");
+    if (val !== sanitized) {
+      toast.error("Website ID can only contain letters, numbers, hyphens, and underscores. Spaces and special characters are not allowed.", {
+        id: "id-validation-toast",
+      });
+    }
+    setDynamicSiteId(sanitized);
+  };
 
   const methods = [
     {
@@ -119,7 +136,7 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
                 <input 
                   type="text" 
                   value={dynamicSiteId}
-                  onChange={(e) => setDynamicSiteId(e.target.value)}
+                  onChange={(e) => handleSiteIdChange(e.target.value)}
                   placeholder="e.g. cm1a2b3c4d5e6f"
                   className="w-full max-w-md border border-slate-300 px-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                 />
@@ -164,7 +181,7 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
                 <input 
                   type="text" 
                   value={dynamicSiteId}
-                  onChange={(e) => setDynamicSiteId(e.target.value)}
+                  onChange={(e) => handleSiteIdChange(e.target.value)}
                   placeholder="YOUR_WEBSITE_ID"
                   className="w-full max-w-md border border-[#0F9D58] px-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-[#0F9D58] outline-none"
                 />
@@ -220,7 +237,7 @@ function sendRowToCRM() {
                 <input 
                   type="text" 
                   value={dynamicSiteId}
-                  onChange={(e) => setDynamicSiteId(e.target.value)}
+                  onChange={(e) => handleSiteIdChange(e.target.value)}
                   placeholder="YOUR_WEBSITE_ID"
                   className="w-full max-w-md border border-slate-300 px-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-[#E34F26] outline-none"
                 />
@@ -244,7 +261,7 @@ function sendRowToCRM() {
                 <input 
                   type="text" 
                   value={dynamicSiteId}
-                  onChange={(e) => setDynamicSiteId(e.target.value)}
+                  onChange={(e) => handleSiteIdChange(e.target.value)}
                   placeholder="YOUR_WEBSITE_ID"
                   className="w-full max-w-md border border-slate-300 px-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-[#777BB4] outline-none"
                 />
@@ -287,7 +304,7 @@ function sendRowToCRM() {
                   <input 
                     type="text" 
                     value={dynamicSiteId}
-                    onChange={(e) => setDynamicSiteId(e.target.value)}
+                    onChange={(e) => handleSiteIdChange(e.target.value)}
                     placeholder="YOUR_WEBSITE_ID"
                     className="w-full border border-slate-300 px-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                   />

@@ -265,6 +265,24 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
     });
   }, [websiteId]);
 
+  useEffect(() => {
+    if (leads.length > 0 && typeof window !== "undefined") {
+      const searchParams = new URLSearchParams(window.location.search);
+      const leadId = searchParams.get("leadId");
+      if (leadId) {
+        const matchingLead = leads.find(l => l.id === leadId);
+        if (matchingLead) {
+          setInspectLead(matchingLead);
+          // Preserve other parameters but remove leadId
+          searchParams.delete("leadId");
+          const queryStr = searchParams.toString();
+          const newUrl = window.location.pathname + (queryStr ? `?${queryStr}` : "");
+          window.history.replaceState({}, document.title, newUrl);
+        }
+      }
+    }
+  }, [leads]);
+
   const handleStatusChange = async (leadId: string, newStatus: string) => {
     try {
       // Optimistic update

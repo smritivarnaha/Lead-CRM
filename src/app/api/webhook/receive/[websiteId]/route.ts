@@ -278,14 +278,28 @@ export async function POST(
 
       const clientBadgeUrl = existingSite.logoUrl || workspace?.pushBadgeUrl;
 
+      const defaultActionUrl = `/client/${websiteId}?leadId=${newLead.id}`;
+      let resolvedActionUrl = defaultActionUrl;
+      
+      if (workspace?.pushCtaUrl && workspace.pushCtaUrl !== "/leads") {
+        let customUrl = workspace.pushCtaUrl
+          .replace(/\[websiteId\]/g, websiteId)
+          .replace(/\{\{websiteId\}\}/g, websiteId);
+        
+        if (customUrl.startsWith("/")) {
+          customUrl += (customUrl.includes("?") ? "&" : "?") + `leadId=${newLead.id}`;
+        }
+        resolvedActionUrl = customUrl;
+      }
+
       pushStatus = await sendPushToAll({
         title: pushTitle,
         body: pushBody,
-        url: "/leads",
+        url: resolvedActionUrl,
         icon: workspace?.pushIconUrl?.startsWith('data:') ? `${baseUrl}/api/settings/icon?t=${Date.now()}` : (workspace?.pushIconUrl?.startsWith('http') ? workspace.pushIconUrl : `${baseUrl}${workspace?.pushIconUrl || "/icon-192.png"}`),
         badge: clientBadgeUrl?.startsWith('data:') ? `${baseUrl}/api/settings/client-badge?siteId=${websiteId}&t=${Date.now()}` : (clientBadgeUrl?.startsWith('http') ? clientBadgeUrl : `${baseUrl}${clientBadgeUrl || "/badge-72x72.png"}`),
         actions: [
-          { action: "view", title: workspace?.pushCtaLabel || "View Lead", url: workspace?.pushCtaUrl || "/leads" },
+          { action: "view", title: workspace?.pushCtaLabel || "View Lead", url: resolvedActionUrl },
           { action: "dismiss", title: "Dismiss" },
         ],
         data: {

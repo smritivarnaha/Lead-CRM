@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Bell, BellRing, BellOff, Smartphone, X, Link as LinkIcon, Download, Copy, Code2 } from "lucide-react";
 import { toast } from "sonner";
 import IntegrationTab from "@/components/IntegrationTab";
+import { getWebsites } from "@/actions/websites";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 
@@ -22,10 +23,12 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isTestingSms, setIsTestingSms] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [defaultWebsiteId, setDefaultWebsiteId] = useState<string>("cm1a2b3c4d5e6f");
 
   useEffect(() => {
     checkPushStatus();
     fetchSettings();
+    fetchDefaultWebsite();
 
     // Force update Service Worker to ensure new notification settings apply
     if ("serviceWorker" in navigator) {
@@ -68,6 +71,17 @@ export default function SettingsPage() {
       }
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const fetchDefaultWebsite = async () => {
+    try {
+      const res = await getWebsites();
+      if (res?.success && res.websites && res.websites.length > 0) {
+        setDefaultWebsiteId(res.websites[0].id);
+      }
+    } catch (e) {
+      console.error("Failed to fetch default website for integration settings:", e);
     }
   };
 
@@ -499,7 +513,7 @@ export default function SettingsPage() {
                     value={settings?.pushCtaUrl || ""} 
                     onChange={(e) => setSettings({...settings, pushCtaUrl: e.target.value})}
                     onBlur={(e) => saveSettings("pushCtaUrl", e.target.value)}
-                    placeholder="/leads"
+                    placeholder="/client/[websiteId]"
                     className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
                   />
                 </div>
@@ -677,7 +691,7 @@ export default function SettingsPage() {
 
         {/* ─── INTEGRATION GUIDE TAB ─── */}
         {activeTab === "integration" && (
-          <IntegrationTab site={{ id: "YOUR_WEBSITE_ID" }} isGlobal={true} />
+          <IntegrationTab site={{ id: defaultWebsiteId }} isGlobal={true} />
         )}
       </div>
 
