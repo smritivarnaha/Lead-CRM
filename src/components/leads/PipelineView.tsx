@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getLeads, getLeadsByWebsite, updateLeadStatus, logCallAction } from "@/actions/leads";
 import { LeadDetailsModal } from "@/components/leads/LeadDetailsModal";
 import { CallLogModal } from "@/components/leads/CallLogModal";
@@ -76,6 +76,65 @@ function getScore(lead: Lead) {
 }
 
 import { KanbanBoard } from "./KanbanBoard";
+
+// --- Custom Stage Selector Component (Bug-Free) ---
+function StageSelector({ lead, stageConfig, handleStatusChange, isMobile = false }: { lead: any, stageConfig: any, handleStatusChange: any, isMobile?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    if (open) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  return (
+    <div className="relative w-full" ref={containerRef}>
+      <button 
+        type="button"
+        onClick={(e) => { e.stopPropagation(); e.preventDefault(); setOpen(!open); }}
+        className={`flex items-center outline-none cursor-pointer text-left transition-colors ${
+          isMobile 
+            ? "justify-between w-full bg-slate-50 border border-slate-200 hover:bg-slate-100 p-2.5 rounded-lg" 
+            : "gap-2.5 w-full hover:bg-white p-1.5 rounded"
+        }`}
+      >
+        <div className={`flex items-center ${isMobile ? "gap-2.5" : ""}`}>
+          <div className={`h-3.5 w-3.5 rounded-full border-2 ${stageConfig.ring} ${stageConfig.fill} shrink-0`} />
+          <span className={`${isMobile ? "text-[13px] font-semibold text-slate-700" : "text-[#1A1523] font-medium truncate flex-1"}`}>{stageConfig.label}</span>
+        </div>
+        <ChevronDown className={`${isMobile ? "h-4 w-4 text-slate-400 shrink-0" : "h-3 w-3 text-[#9CA3AF] shrink-0"}`} />
+      </button>
+
+      {open && (
+        <div className={`absolute left-0 mt-1 bg-white border border-slate-200 shadow-xl rounded-lg z-[100] p-1 flex flex-col gap-0.5 ${isMobile ? "w-full" : "w-48 top-full"}`}>
+          <div className="px-2 py-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100 mb-1">Update Status</div>
+          {Object.entries(STAGE_STYLE).map(([statusKey, config]) => (
+            <button 
+              key={statusKey} 
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                handleStatusChange(lead.id, statusKey);
+                setOpen(false);
+              }}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] font-medium text-slate-700 hover:bg-slate-50 rounded cursor-pointer text-left transition-colors"
+            >
+              <div className={`h-3 w-3 rounded-full border-2 ${config.ring} ${config.fill} shrink-0`} />
+              {config.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+// ------------------------------------------------
 
 export function PipelineView({ websiteId }: { websiteId?: string }) {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -446,32 +505,7 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
                         )}
                         {cols.stage && (
                           <td className={`px-5 py-0 border-r ${borderClass}`}>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger render={
-                                <button type="button" className="flex items-center gap-2.5 w-full hover:bg-white p-1.5 rounded outline-none cursor-pointer text-left">
-                                  <div className={`h-3.5 w-3.5 rounded-full border-2 ${stage.ring} ${stage.fill} shrink-0`} />
-                                  <span className="text-[#1A1523] font-medium truncate flex-1">{stage.label}</span>
-                                  <ChevronDown className="h-3 w-3 text-[#9CA3AF] shrink-0" />
-                                </button>
-                              } />
-                              <DropdownMenuContent align="start" className="w-48 z-50">
-                                <DropdownMenuLabel className="text-xs">Update Status</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                {Object.entries(STAGE_STYLE).map(([statusKey, config]) => (
-                                  <DropdownMenuItem 
-                                    key={statusKey} 
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleStatusChange(lead.id, statusKey);
-                                    }}
-                                    className="text-[13px] flex items-center gap-2 cursor-pointer py-2"
-                                  >
-                                    <div className={`h-3 w-3 rounded-full border-2 ${config.ring} ${config.fill}`} />
-                                    {config.label}
-                                  </DropdownMenuItem>
-                                ))}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <StageSelector lead={lead} stageConfig={stage} handleStatusChange={handleStatusChange} />
                           </td>
                         )}
                         {cols.closeDate && (
@@ -540,35 +574,8 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
                       />
                     </div>
                     
-                    <div className="flex flex-col gap-2">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger render={
-                          <button type="button" className="flex items-center justify-between w-full bg-slate-50 border border-slate-200 hover:bg-slate-100 p-2.5 rounded-lg outline-none transition-colors cursor-pointer text-left">
-                            <div className="flex items-center gap-2.5">
-                              <div className={`h-3 w-3 rounded-full border-2 ${stage.ring} ${stage.fill} shrink-0`} />
-                              <span className="text-[13px] font-semibold text-slate-700">{stage.label}</span>
-                            </div>
-                            <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />
-                          </button>
-                        } />
-                        <DropdownMenuContent align="start" className="w-[calc(100vw-3rem)] z-50">
-                          <DropdownMenuLabel className="text-xs">Update Status</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          {Object.entries(STAGE_STYLE).map(([statusKey, config]) => (
-                            <DropdownMenuItem 
-                              key={statusKey} 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleStatusChange(lead.id, statusKey);
-                              }}
-                              className="flex items-center gap-2.5 p-3 text-sm cursor-pointer"
-                            >
-                              <div className={`h-3 w-3 rounded-full border-2 ${config.ring} ${config.fill}`} />
-                              {config.label}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <div className="flex flex-col gap-2 relative">
+                      <StageSelector lead={lead} stageConfig={stage} handleStatusChange={handleStatusChange} isMobile={true} />
                     </div>
 
                     <div className="flex items-center gap-2 pt-1">
