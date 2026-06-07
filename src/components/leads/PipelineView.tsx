@@ -408,7 +408,7 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
                       </th>
                     )}
                     {cols.stage && (
-                      <th className={`w-[180px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                      <th className={`w-[240px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
                         <div className="flex items-center justify-between">STAGE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                       </th>
                     )}
