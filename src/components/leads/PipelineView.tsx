@@ -128,6 +128,44 @@ function StageSelector({ lead, stageConfig, handleStatusChange, isMobile = false
   );
 }
 // ------------------------------------------------
+// Custom Toolbar Dropdown Component
+function ToolbarDropdown({ label, icon: Icon, children, isActive = false, indicator = false }: { label: React.ReactNode, icon: any, children: React.ReactNode, isActive?: boolean, indicator?: boolean }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
+        className={`flex items-center gap-1.5 py-1 px-2 rounded transition-colors outline-none ${isActive ? 'bg-[#F7F5FF] text-[#1A1523] font-semibold' : 'text-[#6B7280] hover:text-[#1A1523] hover:bg-slate-50'}`}
+      >
+        <Icon className="h-4 w-4" strokeWidth={1.75} /> 
+        {label}
+        {indicator && <span className="flex h-2 w-2 rounded-full bg-[#7C3AED] ml-1"></span>}
+      </button>
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-1 min-w-[12rem] bg-white border border-slate-200 rounded-lg shadow-xl z-50 py-1" onClick={(e) => e.stopPropagation()}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+// ------------------------------------------------
 
 export function PipelineView({ websiteId }: { websiteId?: string }) {
   const [leads, setLeads] = useState<Lead[]>([]);
