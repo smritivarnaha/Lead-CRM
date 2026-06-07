@@ -68,9 +68,11 @@ function getScore(lead: Lead) {
 
 import { KanbanBoard } from "./KanbanBoard";
 
-// --- Custom Stage Selector Component ---
+// --- Custom Stage / Action Selector Component ---
 function StageSelector({ lead, stageConfig, handleStatusChange, isMobile = false }: { lead: any, stageConfig: any, handleStatusChange: any, isMobile?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [note, setNote] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
@@ -83,45 +85,102 @@ function StageSelector({ lead, stageConfig, handleStatusChange, isMobile = false
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const saveNote = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!note.trim()) return;
+    setSavingNote(true);
+    try {
+      const res = await fetch("/api/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leadId: lead.id, content: note })
+      });
+      if (res.ok) {
+        setNote("");
+        toast.success("Note added successfully");
+        setIsOpen(false);
+      } else {
+        toast.error("Failed to add note");
+      }
+    } catch (err) {
+      toast.error("Error adding note");
+    } finally {
+      setSavingNote(false);
+    }
+  };
+
   return (
     <div className="relative w-full" ref={ref} onClick={(e) => e.stopPropagation()}>
       <button 
         type="button"
         onClick={(e) => { e.stopPropagation(); e.preventDefault(); setIsOpen(!isOpen); }}
-        className={`flex items-center outline-none cursor-pointer text-left transition-colors ${
+        className={`flex items-center justify-between w-full transition-all border group ${
           isMobile 
-            ? "justify-between w-full bg-slate-50 border border-slate-200 hover:bg-slate-100 p-2.5 rounded-lg" 
-            : "gap-2.5 w-full hover:bg-white p-1.5 rounded"
+            ? "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50 p-2.5 rounded-lg shadow-sm" 
+            : "bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300 px-3 py-1.5 rounded-md shadow-sm"
         }`}
       >
-        <div className={`flex items-center ${isMobile ? "gap-2.5" : "gap-2.5"}`}>
-          <div className={`h-3.5 w-3.5 rounded-full border-2 ${stageConfig.ring} ${stageConfig.fill} shrink-0`} />
-          <span className={`${isMobile ? "text-[13px] font-semibold text-slate-700" : "text-[#1A1523] font-medium truncate flex-1"}`}>{stageConfig.label}</span>
+        <div className="flex items-center gap-2">
+          <div className={`h-2.5 w-2.5 rounded-full border-2 ${stageConfig.ring} ${stageConfig.fill} shrink-0`} />
+          <span className={`font-semibold ${isMobile ? "text-[14px] text-slate-800" : "text-[12px] text-slate-700 truncate"}`}>
+            {stageConfig.label === "New" ? "Take Action" : stageConfig.label}
+          </span>
         </div>
-        <ChevronDown className={`${isMobile ? "h-4 w-4 text-slate-400 shrink-0" : "h-3 w-3 text-[#9CA3AF] shrink-0"}`} />
+        <ChevronDown className={`text-slate-400 group-hover:text-slate-600 shrink-0 ${isMobile ? "h-4 w-4" : "h-3.5 w-3.5"}`} />
       </button>
 
       {isOpen && (
-        <div className={`absolute left-0 mt-1 bg-white border border-slate-200 shadow-xl rounded-lg z-[100] p-1 flex flex-col gap-0.5 ${isMobile ? "w-full" : "w-48 top-full"}`}>
-          <div className="px-2 py-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100 mb-1">Update Status</div>
-          {Object.entries(STAGE_STYLE).map(([statusKey, config]) => (
-            <button 
-              key={statusKey} 
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                setIsOpen(false);
-                handleStatusChange(lead.id, statusKey);
-              }}
-              className={`flex items-center gap-2.5 px-2.5 py-2 w-full text-left rounded-md transition-colors ${
-                lead.status === statusKey ? "bg-[#F7F5FF] font-bold text-[#1A1523]" : "hover:bg-slate-50 text-slate-700 font-medium"
-              }`}
-            >
-              <div className={`h-2.5 w-2.5 rounded-full border-2 shrink-0 ${config.ring} ${config.fill}`} />
-              <span className="text-[13px] truncate">{config.label}</span>
-            </button>
-          ))}
+        <div className={`absolute z-[100] bg-white border border-[#E8E4F3] shadow-[0_12px_40px_-15px_rgba(0,0,0,0.15)] rounded-2xl p-2.5 flex flex-col gap-2 ${
+          isMobile ? "bottom-full left-0 w-full mb-2" : "right-0 top-full mt-2 w-[280px]"
+        }`}>
+          <div>
+            <div className="px-1.5 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Update Status</div>
+            <div className="grid grid-cols-2 gap-1.5">
+              {Object.entries(STAGE_STYLE).map(([statusKey, config]: [string, any]) => (
+                <button 
+                  key={statusKey} 
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    handleStatusChange(lead.id, statusKey);
+                  }}
+                  className={`flex items-center gap-2 px-2.5 py-2 text-left rounded-lg transition-colors border ${
+                    lead.status === statusKey 
+                      ? "bg-[#F7F5FF] border-[#7C3AED]/30 text-[#1A1523] shadow-sm" 
+                      : "bg-white border-transparent hover:bg-slate-50 text-slate-600"
+                  }`}
+                >
+                  <div className={`h-2 w-2 rounded-full shrink-0 ${config.text.replace("text-", "bg-")}`} />
+                  <span className="text-[11px] font-semibold truncate">{config.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="h-px w-full bg-[#E8E4F3] my-0.5" />
+          
+          <div>
+            <div className="px-1.5 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Add Quick Note</div>
+            <div className="flex flex-col gap-2 px-0.5">
+              <textarea
+                placeholder="Spoke with them about..."
+                value={note}
+                onChange={e => setNote(e.target.value)}
+                onClick={e => e.stopPropagation()}
+                onKeyDown={e => { if(e.key==='Enter' && !e.shiftKey) { e.preventDefault(); saveNote(e as any); } }}
+                className="w-full border border-[#E8E4F3] rounded-xl text-[13px] p-2.5 outline-none focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED] bg-white text-[#1A1523] min-h-[60px] resize-none shadow-sm"
+              />
+              <button
+                onClick={saveNote}
+                disabled={savingNote || !note.trim()}
+                className="w-full bg-[#1A1523] hover:bg-[#342E40] disabled:opacity-50 text-white font-semibold text-[13px] py-2 rounded-xl transition-colors shadow-sm"
+              >
+                {savingNote ? "Saving..." : "Save Note"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -503,14 +562,14 @@ export function PipelineView({ websiteId, initialLeads }: { websiteId?: string; 
                         <div className="flex items-center justify-between">IN STAGE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                       </th>
                     )}
-                    {cols.stage && (
-                      <th className={`w-[155px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer`}>
-                        <div className="flex items-center justify-between">STAGE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
-                      </th>
-                    )}
                     {cols.closeDate && (
                       <th className={`w-[90px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer`}>
                         <div className="flex items-center justify-between">CLOSE DATE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
+                      </th>
+                    )}
+                    {cols.stage && (
+                      <th className={`w-[170px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer`}>
+                        <div className="flex items-center justify-between">ACTION<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                       </th>
                     )}
                     <th className={`w-[100px] px-0 py-0 ${borderClass}`}>
@@ -607,14 +666,14 @@ export function PipelineView({ websiteId, initialLeads }: { websiteId?: string; 
                             </div>
                           </td>
                         )}
-                        {cols.stage && (
-                          <td className={`px-4 py-0 border-r ${borderClass}`}>
-                            <StageSelector lead={lead} stageConfig={stage} handleStatusChange={handleStatusChange} />
-                          </td>
-                        )}
                         {cols.closeDate && (
                           <td className={`px-4 py-0 border-r font-medium text-[#1A1523] text-[12.5px] ${borderClass}`}>
                             {new Date(lead.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          </td>
+                        )}
+                        {cols.stage && (
+                          <td className={`px-4 py-0 border-r ${borderClass} bg-slate-50/30`}>
+                            <StageSelector lead={lead} stageConfig={stage} handleStatusChange={handleStatusChange} />
                           </td>
                         )}
                         <td className="px-4 py-0">
