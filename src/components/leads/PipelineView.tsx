@@ -165,6 +165,54 @@ function ToolbarDropdown({ label, icon: Icon, children, isActive = false, indica
     </div>
   );
 }
+
+// Custom Bulk Status Dropdown Component
+function BulkStatusDropdown({ selectedLeadIds, handleStatusChange, setSelectedLeadIds }: { selectedLeadIds: Set<string>, handleStatusChange: any, setSelectedLeadIds: any }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button 
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsOpen(!isOpen); }}
+        className="flex items-center gap-2 hover:bg-white/10 px-2 sm:px-3 py-1.5 rounded transition-colors text-gray-200 hover:text-white outline-none"
+      >
+        <ChevronDown className="h-4 w-4" /> <span className="hidden sm:inline">Update Status</span>
+      </button>
+      {isOpen && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-[#1A1523] border border-white/10 rounded-lg shadow-xl z-50 py-1" onClick={(e) => e.stopPropagation()}>
+          <div className="px-3 py-2 text-xs text-gray-400 border-b border-white/10">Set Status For {selectedLeadIds.size} Leads</div>
+          {Object.entries(STAGE_STYLE).map(([statusKey, config]) => (
+            <button 
+              key={statusKey} 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                selectedLeadIds.forEach((id: string) => handleStatusChange(id, statusKey));
+                setSelectedLeadIds(new Set());
+                setIsOpen(false);
+              }}
+              className="w-full text-left flex items-center gap-2 px-3 py-2 text-[13px] text-gray-200 hover:bg-white/10 transition-colors"
+            >
+              <div className={`h-2.5 w-2.5 rounded-full ${config.fill === 'bg-transparent' ? config.ring + ' border' : config.fill}`} />
+              {config.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 // ------------------------------------------------
 
 export function PipelineView({ websiteId }: { websiteId?: string }) {
@@ -644,28 +692,11 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
             <button className="flex items-center gap-2 hover:bg-white/10 px-2 sm:px-3 py-1.5 rounded transition-colors text-gray-200 hover:text-white" onClick={() => toast("Bulk SMS feature coming soon!")}>
               <Phone className="h-4 w-4" /> <span className="hidden sm:inline">SMS All</span>
             </button>
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-2 hover:bg-white/10 px-2 sm:px-3 py-1.5 rounded transition-colors text-gray-200 hover:text-white outline-none">
-                <ChevronDown className="h-4 w-4" /> <span className="hidden sm:inline">Update Status</span>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-48 bg-[#1A1523] text-white border-white/10">
-                <DropdownMenuLabel className="text-xs text-gray-400">Set Status For {selectedLeadIds.size} Leads</DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-white/10" />
-                {Object.entries(STAGE_STYLE).map(([statusKey, config]) => (
-                  <DropdownMenuItem 
-                    key={statusKey} 
-                    onClick={() => {
-                      selectedLeadIds.forEach(id => handleStatusChange(id, statusKey));
-                      setSelectedLeadIds(new Set());
-                    }}
-                    className="text-[13px] flex items-center gap-2 cursor-pointer focus:bg-white/10 focus:text-white"
-                  >
-                    <div className={`h-2.5 w-2.5 rounded-full ${config.fill === 'bg-transparent' ? config.ring + ' border' : config.fill}`} />
-                    {config.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <BulkStatusDropdown 
+              selectedLeadIds={selectedLeadIds} 
+              handleStatusChange={handleStatusChange} 
+              setSelectedLeadIds={setSelectedLeadIds} 
+            />
             <button className="flex items-center gap-2 hover:bg-red-500/20 px-2 sm:px-3 py-1.5 rounded transition-colors text-red-400 hover:text-red-300 ml-1 sm:ml-2" onClick={() => toast("Bulk Delete feature coming soon!")}>
               <XCircle className="h-4 w-4" /> <span className="hidden sm:inline">Delete</span>
             </button>
