@@ -12,11 +12,18 @@ export async function getWebsites() {
       return { success: false, error: "Unauthorized" };
     }
 
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
     const websites = await prisma.website.findMany({
       include: {
         users: {
           where: { role: "CLIENT" },
           select: { id: true, email: true, firstName: true, lastName: true },
+        },
+        _count: {
+          select: {
+            leads: true,
+          }
         }
       },
       orderBy: {
@@ -24,7 +31,31 @@ export async function getWebsites() {
       },
     });
 
-    const plainWebsites = JSON.parse(JSON.stringify(websites));
+    // We fetch the 'new this week' separately because some older prisma versions don't support where inside _count select
+    const websitesWithStats = await Promise.all(websites.map(async (site) => {
+      const newThisWeek = await prisma.lead.count({
+        where: {
+          websiteId: site.id,
+          createdAt: { gte: oneWeekAgo }
+        }
+      });
+      const unreadLeads = await prisma.lead.count({
+        where: {
+          websiteId: site.id,
+          status: "NEW"
+        }
+      });
+      return {
+        ...site,
+        stats: {
+          total: site._count.leads,
+          newThisWeek,
+          unread: unreadLeads
+        }
+      };
+    }));
+
+    const plainWebsites = JSON.parse(JSON.stringify(websitesWithStats));
     return { success: true, websites: plainWebsites };
   } catch (error) {
     console.error("Error fetching websites:", error);

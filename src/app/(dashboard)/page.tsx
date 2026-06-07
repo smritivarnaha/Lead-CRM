@@ -157,14 +157,21 @@ export default function DashboardPage() {
                 </a>
 
                 {/* Premium Stats Section */}
-                <div className="w-full mt-8 grid grid-cols-2 gap-4">
-                  <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 group-hover:bg-indigo-50 group-hover:border-indigo-100 transition-colors duration-300 flex flex-col items-center">
-                    <span className="text-2xl font-black text-slate-800 group-hover:text-indigo-700 transition-colors">0</span>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Total Leads</span>
+                <div className="w-full mt-8 grid grid-cols-3 gap-3">
+                  <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 group-hover:bg-indigo-50 group-hover:border-indigo-100 transition-colors duration-300 flex flex-col items-center justify-center">
+                    <span className="text-xl font-black text-slate-800 group-hover:text-indigo-700 transition-colors">{site.stats?.total || 0}</span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Total</span>
                   </div>
-                  <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 group-hover:bg-purple-50 group-hover:border-purple-100 transition-colors duration-300 flex flex-col items-center">
-                    <span className="text-2xl font-black text-slate-800 group-hover:text-purple-700 transition-colors">0</span>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">New This Wk</span>
+                  <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 group-hover:bg-purple-50 group-hover:border-purple-100 transition-colors duration-300 flex flex-col items-center justify-center">
+                    <span className="text-xl font-black text-slate-800 group-hover:text-purple-700 transition-colors">{site.stats?.newThisWeek || 0}</span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">This Wk</span>
+                  </div>
+                  <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 group-hover:bg-rose-50 group-hover:border-rose-100 transition-colors duration-300 flex flex-col items-center justify-center relative">
+                    {(site.stats?.unread || 0) > 0 && (
+                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full animate-pulse" />
+                    )}
+                    <span className="text-xl font-black text-slate-800 group-hover:text-rose-700 transition-colors">{site.stats?.unread || 0}</span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Unread</span>
                   </div>
                 </div>
 
