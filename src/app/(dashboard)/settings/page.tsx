@@ -347,29 +347,57 @@ export default function SettingsPage() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-slate-700">Notification Main Icon URL</label>
-                <input 
-                  type="text" 
-                  value={settings?.pushIconUrl || ""} 
-                  onChange={(e) => setSettings({...settings, pushIconUrl: e.target.value})}
-                  onBlur={(e) => saveSettings("pushIconUrl", e.target.value)}
-                  placeholder="https://example.com/logo.png"
-                  className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
-                />
-                <p className="text-xs text-slate-500">The large colorful icon displayed in the notification body.</p>
+                <label className="text-sm font-medium text-slate-700">Notification Main Icon</label>
+                <div className="flex gap-3 items-center">
+                  {settings?.pushIconUrl && (
+                    <img src={settings.pushIconUrl} alt="icon" className="w-10 h-10 object-cover rounded border border-slate-200" />
+                  )}
+                  <input 
+                    type="file" 
+                    accept="image/png, image/jpeg, image/webp"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        const base64String = reader.result as string;
+                        setSettings({...settings, pushIconUrl: base64String});
+                        saveSettings("pushIconUrl", base64String);
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                    className="w-full text-sm rounded-lg border border-slate-200 px-3 py-1.5 outline-none focus:border-indigo-500 transition-colors cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                  />
+                </div>
+                <p className="text-xs text-slate-500">Upload an image (PNG/JPEG). This is the large colorful icon displayed in the notification body.</p>
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-slate-700">Badge Icon URL (Small Monochrome)</label>
-                <input 
-                  type="text" 
-                  value={settings?.pushBadgeUrl || ""} 
-                  onChange={(e) => setSettings({...settings, pushBadgeUrl: e.target.value})}
-                  onBlur={(e) => saveSettings("pushBadgeUrl", e.target.value)}
-                  placeholder="/badge-72x72.png"
-                  className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
-                />
-                <p className="text-xs text-slate-500">The small icon that appears in the Android status bar. Must be monochrome with a transparent background.</p>
+                <label className="text-sm font-medium text-slate-700">Badge Icon (Small Monochrome)</label>
+                <div className="flex gap-3 items-center">
+                  {settings?.pushBadgeUrl && (
+                    <div className="w-10 h-10 rounded border border-slate-200 bg-slate-900 flex items-center justify-center shrink-0">
+                      <img src={settings.pushBadgeUrl} alt="badge" className="w-6 h-6 object-contain" />
+                    </div>
+                  )}
+                  <input 
+                    type="file" 
+                    accept="image/png, image/webp"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        const base64String = reader.result as string;
+                        setSettings({...settings, pushBadgeUrl: base64String});
+                        saveSettings("pushBadgeUrl", base64String);
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                    className="w-full text-sm rounded-lg border border-slate-200 px-3 py-1.5 outline-none focus:border-indigo-500 transition-colors cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                  />
+                </div>
+                <p className="text-xs text-slate-500">Upload a monochrome image with a transparent background for the Android status bar.</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
