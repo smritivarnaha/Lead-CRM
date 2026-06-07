@@ -274,6 +274,11 @@ function sendRowToCRM() {
         $fields[ $id ] = $field['value'];
     }
     
+    // Add Source Tag for Integrations Dashboard
+    $form_settings = $record->get( 'form_settings' );
+    $form_name = isset( $form_settings['form_name'] ) ? $form_settings['form_name'] : 'Form';
+    $fields['source'] = 'WordPress Elementor - ' . $form_name;
+    
     // Auto-detect IP and Page URL
     $fields['page_url'] = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
     $fields['ipAddress'] = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0] : (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '');
