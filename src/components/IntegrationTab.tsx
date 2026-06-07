@@ -258,7 +258,13 @@ function setupAutoSync() {
       .onFormSubmit()
       .create();
       
-  SpreadsheetApp.getUi().alert("🚀 Success! Auto-sync triggers created. New rows will now automatically push to the CRM within 1 minute of being added.");
+  // 3. Create the Change trigger (syncs instantly when external integrations/HTML forms insert data)
+  ScriptApp.newTrigger('syncNewRows')
+      .forSpreadsheet(ss)
+      .onChange()
+      .create();
+      
+  SpreadsheetApp.getUi().alert("🚀 Success! Auto-sync triggers created. New rows added manually, via forms, or by external HTML forms will now automatically push to the CRM instantly!");
 }
 
 function sendRowToCRM() {
