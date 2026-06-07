@@ -214,6 +214,49 @@ export default function SettingsPage() {
     }
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, field: string, maxSize: number = 192) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Check if file is too large before even trying to read it (e.g. > 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image is too large. Please select a smaller file.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > maxSize) {
+            height = Math.round((height * maxSize) / width);
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width = Math.round((width * maxSize) / height);
+            height = maxSize;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const base64String = canvas.toDataURL("image/png");
+          setSettings((prev: any) => ({ ...prev, [field]: base64String }));
+          saveSettings(field, base64String);
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
   const [activeTab, setActiveTab] = useState("push");
 
   return (
@@ -355,17 +398,7 @@ export default function SettingsPage() {
                   <input 
                     type="file" 
                     accept="image/png, image/jpeg, image/webp"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onloadend = () => {
-                        const base64String = reader.result as string;
-                        setSettings({...settings, pushIconUrl: base64String});
-                        saveSettings("pushIconUrl", base64String);
-                      };
-                      reader.readAsDataURL(file);
-                    }}
+                    onChange={(e) => handleImageUpload(e, "pushIconUrl", 192)}
                     className="w-full text-sm rounded-lg border border-slate-200 px-3 py-1.5 outline-none focus:border-indigo-500 transition-colors cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
                   />
                 </div>
@@ -383,17 +416,7 @@ export default function SettingsPage() {
                   <input 
                     type="file" 
                     accept="image/png, image/webp"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onloadend = () => {
-                        const base64String = reader.result as string;
-                        setSettings({...settings, pushBadgeUrl: base64String});
-                        saveSettings("pushBadgeUrl", base64String);
-                      };
-                      reader.readAsDataURL(file);
-                    }}
+                    onChange={(e) => handleImageUpload(e, "pushBadgeUrl", 72)}
                     className="w-full text-sm rounded-lg border border-slate-200 px-3 py-1.5 outline-none focus:border-indigo-500 transition-colors cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
                   />
                 </div>
