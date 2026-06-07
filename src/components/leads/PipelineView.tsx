@@ -5,15 +5,6 @@ import { getLeads, getLeadsByWebsite, updateLeadStatus, logCallAction } from "@/
 import { LeadDetailsModal } from "@/components/leads/LeadDetailsModal";
 import { CallLogModal } from "@/components/leads/CallLogModal";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuCheckboxItem,
-} from "@/components/ui/dropdown-menu";
-import {
   Filter,
   ArrowRightToLine,
   ChevronDown,
@@ -78,22 +69,24 @@ function getScore(lead: Lead) {
 import { KanbanBoard } from "./KanbanBoard";
 
 // --- Custom Stage Selector Component (Bug-Free) ---
-function StageSelector({ lead, stageConfig, handleStatusChange, isMobile = false }: { lead: any, stageConfig: any, handleStatusChange: any, isMobile?: boolean }) {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
+function StageSelector({ currentStatus, onSelect }: { currentStatus: string, onSelect: (status: string) => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setIsOpen(false);
       }
     };
-    if (open) document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open]);
+  }, []);
 
+  const stageConfig = STAGE_STYLE[currentStatus] || STAGE_STYLE.NEW;
+  
   return (
-    <div className="relative w-full" ref={containerRef}>
+    <div className="relative w-full" ref={ref} onClick={(e) => e.stopPropagation()}>
       <button 
         type="button"
         onClick={(e) => { e.stopPropagation(); e.preventDefault(); setOpen(!open); }}
@@ -293,77 +286,72 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
           
           <div className="h-4 w-px bg-[#E5E7EB]" />
           
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-1.5 px-2 py-1 text-[13px] font-semibold text-[#1A1523] hover:bg-[#F7F5FF] rounded transition-colors outline-none">
-              <UsersIcon className="h-4 w-4 text-[#9CA3AF]" />
-              {statusFilter ? STAGE_STYLE[statusFilter]?.label || "Filtered" : "All opportunities"}
-              <ChevronDown className="h-3.5 w-3.5 text-[#9CA3AF] ml-1" strokeWidth={2} />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-48">
-              <DropdownMenuItem onClick={() => setStatusFilter(null)} className={!statusFilter ? "font-bold" : ""}>All opportunities</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel className="text-xs">By Stage</DropdownMenuLabel>
-              {Object.entries(STAGE_STYLE).map(([key, config]) => (
-                <DropdownMenuItem key={key} onClick={() => setStatusFilter(key)} className={statusFilter === key ? "font-bold" : ""}>
-                  <div className={`h-2.5 w-2.5 rounded-full mr-2 ${config.fill === 'bg-transparent' ? config.ring + ' border' : config.fill}`} />
-                  {config.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ToolbarDropdown 
+            label={statusFilter ? STAGE_STYLE[statusFilter]?.label || "Filtered" : "All opportunities"} 
+            icon={UsersIcon} 
+            isActive={true}
+          >
+            <button className={`w-full text-left px-3 py-1.5 text-[13px] hover:bg-slate-50 ${!statusFilter ? "font-bold text-indigo-600 bg-indigo-50/50" : "text-slate-700"}`} onClick={() => setStatusFilter(null)}>
+              All opportunities
+            </button>
+            <div className="h-px bg-slate-100 my-1" />
+            <div className="px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">By Stage</div>
+            {Object.entries(STAGE_STYLE).map(([key, config]) => (
+              <button 
+                key={key} 
+                className={`w-full flex items-center px-3 py-1.5 text-[13px] hover:bg-slate-50 ${statusFilter === key ? "font-bold text-slate-900" : "text-slate-700"}`}
+                onClick={() => setStatusFilter(key)}
+              >
+                <div className={`h-2.5 w-2.5 rounded-full mr-2 shrink-0 ${config.fill === 'bg-transparent' ? config.ring + ' border' : config.fill}`} />
+                <span className="truncate">{config.label}</span>
+              </button>
+            ))}
+          </ToolbarDropdown>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-[13px] font-medium text-[#6B7280]">
           {/* Workable Fields Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-1.5 hover:text-[#1A1523] transition-colors py-1 px-2 rounded hover:bg-slate-50 outline-none">
-              <Columns3 className="h-4 w-4" strokeWidth={1.75} /> Fields
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-48">
-              <DropdownMenuLabel className="text-xs">Visible Columns</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuCheckboxItem checked={cols.name} onCheckedChange={(v) => setCols(p => ({...p, name: v}))}>Name</DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem checked={cols.phone} onCheckedChange={(v) => setCols(p => ({...p, phone: v}))}>Phone Number</DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem checked={cols.email} onCheckedChange={(v) => setCols(p => ({...p, email: v}))}>Email Address</DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem checked={cols.timeInStage} onCheckedChange={(v) => setCols(p => ({...p, timeInStage: v}))}>Time in Stage</DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem checked={cols.stage} onCheckedChange={(v) => setCols(p => ({...p, stage: v}))}>Stage (Status)</DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem checked={cols.closeDate} onCheckedChange={(v) => setCols(p => ({...p, closeDate: v}))}>Close Date</DropdownMenuCheckboxItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ToolbarDropdown label="Fields" icon={Columns3}>
+            <div className="px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Visible Columns</div>
+            <div className="h-px bg-slate-100 my-1" />
+            <label className="flex items-center px-3 py-1.5 text-[13px] text-slate-700 hover:bg-slate-50 cursor-pointer">
+              <input type="checkbox" className="mr-2 rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED]" checked={cols.name} onChange={(e) => setCols(p => ({...p, name: e.target.checked}))} /> Name
+            </label>
+            <label className="flex items-center px-3 py-1.5 text-[13px] text-slate-700 hover:bg-slate-50 cursor-pointer">
+              <input type="checkbox" className="mr-2 rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED]" checked={cols.phone} onChange={(e) => setCols(p => ({...p, phone: e.target.checked}))} /> Phone Number
+            </label>
+            <label className="flex items-center px-3 py-1.5 text-[13px] text-slate-700 hover:bg-slate-50 cursor-pointer">
+              <input type="checkbox" className="mr-2 rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED]" checked={cols.email} onChange={(e) => setCols(p => ({...p, email: e.target.checked}))} /> Email Address
+            </label>
+            <label className="flex items-center px-3 py-1.5 text-[13px] text-slate-700 hover:bg-slate-50 cursor-pointer">
+              <input type="checkbox" className="mr-2 rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED]" checked={cols.timeInStage} onChange={(e) => setCols(p => ({...p, timeInStage: e.target.checked}))} /> Time in Stage
+            </label>
+            <label className="flex items-center px-3 py-1.5 text-[13px] text-slate-700 hover:bg-slate-50 cursor-pointer">
+              <input type="checkbox" className="mr-2 rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED]" checked={cols.stage} onChange={(e) => setCols(p => ({...p, stage: e.target.checked}))} /> Stage (Status)
+            </label>
+            <label className="flex items-center px-3 py-1.5 text-[13px] text-slate-700 hover:bg-slate-50 cursor-pointer">
+              <input type="checkbox" className="mr-2 rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED]" checked={cols.closeDate} onChange={(e) => setCols(p => ({...p, closeDate: e.target.checked}))} /> Close Date
+            </label>
+          </ToolbarDropdown>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-1.5 hover:text-[#1A1523] transition-colors py-1 px-2 rounded hover:bg-slate-50 outline-none">
-              <Filter className="h-4 w-4" strokeWidth={1.75} /> Filters {statusFilter && <span className="flex h-2 w-2 rounded-full bg-[#7C3AED]"></span>}
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-48">
-              <DropdownMenuLabel className="text-xs">Quick Filters</DropdownMenuLabel>
-              <DropdownMenuItem className="text-[13px]" onClick={() => setStatusFilter("NEW")}>Show New Leads</DropdownMenuItem>
-              <DropdownMenuItem className="text-[13px]" onClick={() => setStatusFilter("HOT")}>Show Hot Leads</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-[13px]" onClick={() => setStatusFilter(null)}>Clear all filters</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ToolbarDropdown label="Filters" icon={Filter} indicator={!!statusFilter}>
+            <div className="px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Quick Filters</div>
+            <button className="w-full text-left px-3 py-1.5 text-[13px] text-slate-700 hover:bg-slate-50" onClick={() => setStatusFilter("NEW")}>Show New Leads</button>
+            <button className="w-full text-left px-3 py-1.5 text-[13px] text-slate-700 hover:bg-slate-50" onClick={() => setStatusFilter("HOT")}>Show Hot Leads</button>
+            <div className="h-px bg-slate-100 my-1" />
+            <button className="w-full text-left px-3 py-1.5 text-[13px] text-slate-700 hover:bg-slate-50" onClick={() => setStatusFilter(null)}>Clear all filters</button>
+          </ToolbarDropdown>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-1.5 hover:text-[#1A1523] transition-colors py-1 px-2 rounded hover:bg-slate-50 outline-none">
-              <AlignJustify className="h-4 w-4" strokeWidth={1.75} /> Row height
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-40">
-              <DropdownMenuItem className={`text-[13px] ${rowHeight === 'compact' ? 'font-medium bg-slate-50' : ''}`} onClick={() => setRowHeight('compact')}>Compact</DropdownMenuItem>
-              <DropdownMenuItem className={`text-[13px] ${rowHeight === 'standard' ? 'font-medium bg-slate-50' : ''}`} onClick={() => setRowHeight('standard')}>Standard</DropdownMenuItem>
-              <DropdownMenuItem className={`text-[13px] ${rowHeight === 'comfortable' ? 'font-medium bg-slate-50' : ''}`} onClick={() => setRowHeight('comfortable')}>Comfortable</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ToolbarDropdown label="Row height" icon={AlignJustify}>
+            <button className={`w-full text-left px-3 py-1.5 text-[13px] hover:bg-slate-50 ${rowHeight === 'compact' ? 'font-medium text-indigo-600 bg-indigo-50/50' : 'text-slate-700'}`} onClick={() => setRowHeight('compact')}>Compact</button>
+            <button className={`w-full text-left px-3 py-1.5 text-[13px] hover:bg-slate-50 ${rowHeight === 'standard' ? 'font-medium text-indigo-600 bg-indigo-50/50' : 'text-slate-700'}`} onClick={() => setRowHeight('standard')}>Standard</button>
+            <button className={`w-full text-left px-3 py-1.5 text-[13px] hover:bg-slate-50 ${rowHeight === 'comfortable' ? 'font-medium text-indigo-600 bg-indigo-50/50' : 'text-slate-700'}`} onClick={() => setRowHeight('comfortable')}>Comfortable</button>
+          </ToolbarDropdown>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-1.5 hover:text-[#1A1523] transition-colors py-1 px-2 rounded hover:bg-slate-50 outline-none">
-              <LayoutGrid className="h-4 w-4" strokeWidth={1.75} /> Layout
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-40">
-              <DropdownMenuItem className={`text-[13px] ${viewMode === 'table' ? 'font-medium bg-slate-50' : ''}`} onClick={() => setViewMode('table')}>Table View</DropdownMenuItem>
-              <DropdownMenuItem className={`text-[13px] ${viewMode === 'kanban' ? 'font-medium bg-slate-50' : ''}`} onClick={() => setViewMode('kanban')}>Kanban Board</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ToolbarDropdown label="Layout" icon={LayoutGrid}>
+            <button className={`w-full text-left px-3 py-1.5 text-[13px] hover:bg-slate-50 ${viewMode === 'table' ? 'font-medium text-indigo-600 bg-indigo-50/50' : 'text-slate-700'}`} onClick={() => setViewMode('table')}>Table View</button>
+            <button className={`w-full text-left px-3 py-1.5 text-[13px] hover:bg-slate-50 ${viewMode === 'kanban' ? 'font-medium text-indigo-600 bg-indigo-50/50' : 'text-slate-700'}`} onClick={() => setViewMode('kanban')}>Kanban Board</button>
+          </ToolbarDropdown>
         </div>
       </div>
 
