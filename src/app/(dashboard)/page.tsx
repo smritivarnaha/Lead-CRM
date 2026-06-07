@@ -4,13 +4,15 @@ import { useState, useEffect } from "react";
 import { getWebsites } from "@/actions/websites";
 import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
-import { Building2, Settings, Download, ExternalLink, Activity } from "lucide-react";
+import { Building2, Settings, Download, ExternalLink, Activity, Image as ImageIcon, Smartphone, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export default function DashboardPage() {
   const { user } = useUser();
   const [websites, setWebsites] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [savingId, setSavingId] = useState<string | null>(null);
 
   const role = user?.publicMetadata?.role as string | undefined;
   const userWebsiteId = user?.publicMetadata?.websiteId as string | undefined;
@@ -28,6 +30,70 @@ export default function DashboardPage() {
       setLoading(false);
     });
   }, [isClient, userWebsiteId]);
+
+  const handleSave = async (siteId: string, field: string, value: any) => {
+    setSavingId(siteId);
+    try {
+      const res = await fetch(`/api/websites/${siteId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: value }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Client updated successfully.");
+        setWebsites(prev => prev.map(w => w.id === siteId ? { ...w, [field]: value } : w));
+      } else {
+        toast.error("Failed to update.");
+      }
+    } catch (e) {
+      toast.error("Network error.");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, siteId: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image is too large. Please select a smaller file.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+        const maxSize = 72; // For badge
+        if (width > height) {
+          if (width > maxSize) {
+            height = Math.round((height * maxSize) / width);
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width = Math.round((width * maxSize) / height);
+            height = maxSize;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const base64String = canvas.toDataURL("image/png");
+          handleSave(siteId, "logoUrl", base64String);
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   if (loading) {
     return (
@@ -59,13 +125,25 @@ export default function DashboardPage() {
                 {/* Logo Container with Glow effect */}
                 <div className="relative mb-6 group-hover:scale-105 transition-transform duration-300">
                   <div className="absolute inset-0 bg-indigo-500 blur-xl opacity-20 rounded-full group-hover:opacity-40 transition-opacity duration-300" />
-                  <div className="w-20 h-20 bg-white border border-slate-100 shadow-sm rounded-2xl flex items-center justify-center overflow-hidden relative z-10 p-1">
+                  <div className="w-20 h-20 bg-white border border-slate-100 shadow-sm rounded-2xl flex items-center justify-center overflow-hidden relative z-10 p-1 group/logo">
                     {site.logoUrl ? (
                       <img src={site.logoUrl} alt={site.name} className="w-full h-full object-contain rounded-xl" />
                     ) : (
                       <div className="w-full h-full bg-slate-50 rounded-xl flex items-center justify-center">
                         <Building2 className="w-8 h-8 text-indigo-400" />
                       </div>
+                    )}
+                    {/* Inline Image Upload Overlay */}
+                    {!isClient && (
+                      <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity cursor-pointer text-white">
+                        <input 
+                          type="file" 
+                          accept="image/png, image/webp" 
+                          className="hidden" 
+                          onChange={(e) => handleImageUpload(e, site.id)} 
+                        />
+                        <ImageIcon className="w-6 h-6" />
+                      </label>
                     )}
                   </div>
                 </div>
@@ -89,6 +167,22 @@ export default function DashboardPage() {
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">New This Wk</span>
                   </div>
                 </div>
+
+                {/* Inline Phone Editor for SMS */}
+                {!isClient && (
+                  <div className="w-full mt-6 bg-slate-50/50 rounded-lg p-3 border border-slate-100 flex items-center gap-2">
+                    <Smartphone className="w-4 h-4 text-slate-400 shrink-0" />
+                    <input 
+                      type="text" 
+                      placeholder="Admin Phone (SMS)"
+                      className="bg-transparent border-none outline-none text-sm font-medium text-slate-700 w-full placeholder:text-slate-400"
+                      value={site.adminPhone || ""}
+                      onChange={(e) => setWebsites(prev => prev.map(w => w.id === site.id ? { ...w, adminPhone: e.target.value } : w))}
+                      onBlur={(e) => handleSave(site.id, "adminPhone", e.target.value)}
+                    />
+                    {savingId === site.id && <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin shrink-0" />}
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons */}
