@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { getLeads, getLeadsByWebsite, updateLeadStatus, logCallAction } from "@/actions/leads";
 import { LeadDetailsModal } from "@/components/leads/LeadDetailsModal";
 import { CallLogModal } from "@/components/leads/CallLogModal";
@@ -41,6 +41,7 @@ type Lead = {
   followUpAt?: string | null;
   callNotes?: string | null;
   updatedAt?: string;
+  rawFields?: string | null;
 };
 
 const STAGE_STYLE: Record<string, { label: string; ring: string; fill: string; icon: any }> = {
@@ -237,6 +238,63 @@ export function PipelineView({ websiteId, initialLeads }: { websiteId?: string; 
     closeDate: true,
   });
 
+  // Dynamic custom columns visibility state
+  const [visibleCustomCols, setVisibleCustomCols] = useState<Record<string, boolean>>({});
+
+  // Parse all custom keys from leads' rawFields
+  const customKeys = useMemo(() => {
+    const keysSet = new Set<string>();
+    leads.forEach(lead => {
+      if (lead.rawFields) {
+        try {
+          const parsed = JSON.parse(lead.rawFields);
+          if (parsed && typeof parsed === "object") {
+            Object.keys(parsed).forEach(k => {
+              const lowerK = k.toLowerCase();
+              const isJunkOrTechnical = [
+                "source", "form_name", "form_id", "_wpcf7",
+                "utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term",
+                "utmsource", "utmmedium", "utmcampaign", "utmcontent", "utmterm",
+                "ipaddress", "ip_address", "pageurl", "page_url", "pagetitle", "page_title",
+                "submit", "action", "status", "priority", "temperature", "score", 
+                "createdat", "updatedat", "websiteid", "workspaceid", "assignedtoid", "followupat", "callnotes"
+              ].includes(lowerK) || lowerK.startsWith("_") || lowerK.includes("recaptcha") || lowerK.startsWith("utm_");
+
+              const isStandardContact = [
+                "id", "name", "fullname", "first_name", "last_name", "firstname", "lastname", "naam",
+                "email", "your-email", "email_address", "e-mail", "mail",
+                "phone", "tel", "mobile", "phone_number", "your-phone", "contact", "whatsapp", "number",
+                "message", "your-message", "comments", "query", "description", "msg", "text", "details"
+              ].includes(lowerK);
+              
+              if (!isStandardContact && !isJunkOrTechnical) {
+                keysSet.add(k);
+              }
+            });
+          }
+        } catch (e) {
+          // Ignore JSON parse errors
+        }
+      }
+    });
+    return Array.from(keysSet);
+  }, [leads]);
+
+  // Automatically make new custom columns visible by default when they appear
+  useEffect(() => {
+    setVisibleCustomCols(prev => {
+      const next = { ...prev };
+      let changed = false;
+      customKeys.forEach(key => {
+        if (next[key] === undefined) {
+          next[key] = true;
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [customKeys]);
+
   // Toolbar States
   const [rowHeight, setRowHeight] = useState<"compact" | "standard" | "comfortable">("standard");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
@@ -335,6 +393,18 @@ export function PipelineView({ websiteId, initialLeads }: { websiteId?: string; 
     if (selectedLeadIds.size === leads.length) setSelectedLeadIds(new Set());
     else setSelectedLeadIds(new Set(leads.map(l => l.id)));
   };
+
+  const visibleColsCount = 
+    1 + // Checkbox
+    1 + // Date/Time
+    (cols.name ? 1 : 0) +
+    (cols.phone ? 1 : 0) +
+    (cols.email ? 1 : 0) +
+    (cols.timeInStage ? 1 : 0) +
+    (cols.stage ? 1 : 0) +
+    (cols.closeDate ? 1 : 0) +
+    customKeys.filter(k => visibleCustomCols[k]).length +
+    1; // Actions
 
   const borderClass = "border-[#E8E4F3]";
 
@@ -437,6 +507,22 @@ export function PipelineView({ websiteId, initialLeads }: { websiteId?: string; 
             <label className="flex items-center px-3 py-1.5 text-[13px] text-slate-700 hover:bg-slate-50 cursor-pointer">
               <input type="checkbox" className="mr-2 rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED]" checked={cols.closeDate} onChange={(e) => setCols(p => ({...p, closeDate: e.target.checked}))} /> Close Date
             </label>
+            {customKeys.length > 0 && (
+              <>
+                <div className="h-px bg-slate-100 my-1" />
+                <div className="px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Custom Columns</div>
+                {customKeys.map(key => (
+                  <label key={key} className="flex items-center px-3 py-1.5 text-[13px] text-slate-700 hover:bg-slate-50 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="mr-2 rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED]" 
+                      checked={!!visibleCustomCols[key]} 
+                      onChange={(e) => setVisibleCustomCols(p => ({...p, [key]: e.target.checked}))} 
+                    /> {key}
+                  </label>
+                ))}
+              </>
+            )}
           </ToolbarDropdown>
 
           <ToolbarDropdown label="Filters" icon={Filter} indicator={!!statusFilter}>
@@ -498,6 +584,14 @@ export function PipelineView({ websiteId, initialLeads }: { websiteId?: string; 
                         <div className="flex items-center justify-between">EMAIL<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                       </th>
                     )}
+                    {customKeys.map(key => {
+                      if (!visibleCustomCols[key]) return null;
+                      return (
+                        <th key={key} className={`w-[140px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer`}>
+                          <div className="flex items-center justify-between uppercase">{key}<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
+                        </th>
+                      );
+                    })}
                     {cols.timeInStage && (
                       <th className={`w-[95px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer hidden lg:table-cell`}>
                         <div className="flex items-center justify-between">IN STAGE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
@@ -522,9 +616,9 @@ export function PipelineView({ websiteId, initialLeads }: { websiteId?: string; 
                 {/* BODY */}
                 <tbody className="text-[12.5px]">
                   {loading ? (
-                    <tr><td colSpan={9} className="text-center py-12 text-[#9CA3AF]">Loading data...</td></tr>
+                    <tr><td colSpan={visibleColsCount} className="text-center py-12 text-[#9CA3AF]">Loading data...</td></tr>
                   ) : filteredLeads.length === 0 ? (
-                    <tr><td colSpan={9} className="text-center py-12 text-[#9CA3AF]">No leads found.</td></tr>
+                    <tr><td colSpan={visibleColsCount} className="text-center py-12 text-[#9CA3AF]">No leads found.</td></tr>
                   ) : filteredLeads.map((lead) => {
                     const stage = STAGE_STYLE[lead.status] || STAGE_STYLE.NEW;
                     const heat = HEAT_STYLE[lead.temperature] || HEAT_STYLE.WARM;
@@ -599,6 +693,25 @@ export function PipelineView({ websiteId, initialLeads }: { websiteId?: string; 
                             </div>
                           </td>
                         )}
+                        {customKeys.map(key => {
+                          if (!visibleCustomCols[key]) return null;
+                          let value = "—";
+                          if (lead.rawFields) {
+                            try {
+                              const parsed = JSON.parse(lead.rawFields);
+                              if (parsed && parsed[key] !== undefined && parsed[key] !== null) {
+                                value = String(parsed[key]);
+                              }
+                            } catch (e) {}
+                          }
+                          return (
+                            <td key={key} className={`px-4 py-0 border-r ${borderClass} truncate`}>
+                              <div className="font-medium text-[#1A1523] text-[12.5px] truncate" title={value}>
+                                {value}
+                              </div>
+                            </td>
+                          );
+                        })}
                         {cols.timeInStage && (
                           <td className={`px-4 py-0 border-r ${borderClass} hidden lg:table-cell`}>
                             <div className="flex items-center text-slate-600 font-medium text-[12px]">

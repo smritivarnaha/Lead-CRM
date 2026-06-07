@@ -122,12 +122,20 @@ export async function POST(
     // if explicitly set. We fuzzy-match on key names so it "just works"
     // regardless of how the form is configured.
 
-    const find = (patterns: string[]): string | null => {
+    const find = (patterns: string[], exclude: string[] = []): string | null => {
+      // Try exact matches first
       for (const p of patterns) {
-        const key = Object.keys(body).find(k =>
-          k.toLowerCase() === p.toLowerCase() ||
-          k.toLowerCase().includes(p.toLowerCase())
-        );
+        const key = Object.keys(body).find(k => k.toLowerCase() === p.toLowerCase());
+        if (key && body[key]) return body[key];
+      }
+      // Then partial matches
+      for (const p of patterns) {
+        const key = Object.keys(body).find(k => {
+          const lowerK = k.toLowerCase();
+          if (!lowerK.includes(p.toLowerCase())) return false;
+          if (exclude.some(ex => lowerK.includes(ex.toLowerCase()))) return false;
+          return true;
+        });
         if (key && body[key]) return body[key];
       }
       return null;
@@ -155,17 +163,18 @@ export async function POST(
     const message = cleanStr(find(["message", "your-message", "comments", "query", "description", "msg", "text", "details"]));
 
     // Name: try known keys first, then check for a value that looks like a name
-    // (2-50 chars, no @ sign, not a phone number)
-    const nameByKey = find(["name", "fullName", "full_name", "first_name", "your-name", "contact_name", "naam"]);
+    // (2-50 chars, no @ sign, not a phone number, not an IP address)
+    const nameByKey = find(["name", "fullName", "full_name", "first_name", "your-name", "contact_name", "naam"], ["form", "page", "site", "file", "utm"]);
     const firstLast = [find(["first_name", "firstname"]) || "", find(["last_name", "lastname"]) || ""].join(" ").trim();
     const nameByValue = !nameByKey && !firstLast
       ? Object.entries(body).find(([k, v]) => {
           const s = cleanStr(v);
           return s
-            ? !["email", "phone", "message", "source", "utm", "form", "_"].some(p => k.toLowerCase().includes(p)) &&
+            ? !["email", "phone", "message", "source", "utm", "form", "_", "ip", "address"].some(p => k.toLowerCase().includes(p)) &&
               s.length >= 2 && s.length <= 60 &&
               !s.includes("@") &&
-              !/^\+?[\d\s\-]{7,}$/.test(s)
+              !/^\+?[\d\s\-]{7,}$/.test(s) &&
+              !/^[\d\.\:]+$/.test(s) // exclude IP addresses or numeric-only strings
             : false;
         })?.[1]
       : undefined;

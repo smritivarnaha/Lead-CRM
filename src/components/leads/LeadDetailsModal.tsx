@@ -42,6 +42,38 @@ export function LeadDetailsModal({ lead, onClose }: { lead: any; onClose: () => 
 
   const initials = lead.fullName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
 
+  // Parse all fields from rawFields JSON
+  const customFields: { label: string; value: string }[] = [];
+  const technicalFields: { label: string; value: string }[] = [];
+
+  if (lead.rawFields) {
+    try {
+      const parsed = JSON.parse(lead.rawFields);
+      if (parsed && typeof parsed === "object") {
+        Object.entries(parsed).forEach(([k, v]) => {
+          if (v === undefined || v === null || v === "") return;
+          const lowerK = k.toLowerCase();
+          
+          if (lowerK.includes("recaptcha") || lowerK.startsWith("_") || ["submit", "action", "status", "priority", "temperature", "score", "createdat", "updatedat", "websiteid", "workspaceid", "assignedtoid", "followupat", "callnotes"].includes(lowerK)) return;
+
+          const isStandardContact = ["id", "name", "fullname", "first_name", "last_name", "firstname", "lastname", "naam", "email", "your-email", "email_address", "e-mail", "mail", "phone", "tel", "mobile", "phone_number", "your-phone", "contact", "whatsapp", "number", "message", "your-message", "comments", "query", "description", "msg", "text", "details"].includes(lowerK);
+
+          const isTechnical = ["source", "form_name", "form_id", "ipaddress", "ip_address", "pageurl", "page_url", "pagetitle", "page_title"].includes(lowerK) || lowerK.startsWith("utm_");
+
+          if (isStandardContact) {
+            // skip, already in Details or Header
+          } else if (isTechnical) {
+            technicalFields.push({ label: k, value: String(v) });
+          } else {
+            customFields.push({ label: k, value: String(v) });
+          }
+        });
+      }
+    } catch (e) {
+      // Ignore JSON parse errors
+    }
+  }
+
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[100] flex justify-end" onClick={onClose}>
       <div 
@@ -98,6 +130,28 @@ export function LeadDetailsModal({ lead, onClose }: { lead: any; onClose: () => 
               <InfoRow icon={<Clock className="h-3.5 w-3.5" />} label="Received" value={new Date(lead.createdAt).toLocaleString()} />
             </div>
           </section>
+
+          {customFields.length > 0 && (
+            <section>
+              <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-2">Additional Responses</p>
+              <div className="border border-[#E8E4F3] rounded-xl overflow-hidden shadow-sm">
+                {customFields.map((field, idx) => (
+                  <InfoRow key={idx} icon={<StickyNote className="h-3.5 w-3.5" />} label={field.label} value={field.value} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {technicalFields.length > 0 && (
+            <section>
+              <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-2">Technical & Tracking</p>
+              <div className="border border-[#E8E4F3] rounded-xl overflow-hidden shadow-sm">
+                {technicalFields.map((field, idx) => (
+                  <InfoRow key={idx} icon={<Globe className="h-3.5 w-3.5" />} label={field.label} value={field.value} />
+                ))}
+              </div>
+            </section>
+          )}
 
           {lead.message && (
             <section>

@@ -18,6 +18,7 @@ type Lead = {
   pushSent?: boolean;
   followUpAt?: string | null;
   callNotes?: string | null;
+  rawFields?: string | null;
 };
 
 // Re-use stage config
