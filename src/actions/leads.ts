@@ -142,6 +142,26 @@ export async function deleteLead(leadId: string) {
   }
 }
 
+export async function bulkDeleteLeads(leadIds: string[]) {
+  try {
+    const user = await getAuthenticatedUser();
+    if (!user) return { success: false, error: "Unauthorized" };
+
+    const result = await prisma.lead.deleteMany({
+      where: {
+        id: { in: leadIds },
+        // Ensure CLIENT users can only delete leads for their website
+        ...(user.role === "CLIENT" && user.websiteId ? { websiteId: user.websiteId } : {})
+      }
+    });
+
+    return { success: true, count: result.count };
+  } catch (error) {
+    console.error("Error bulk deleting leads:", error);
+    return { success: false, error: "Failed to bulk delete leads" };
+  }
+}
+
 export async function logCallAction(leadId: string, status: string, callNotes?: string, followUpAt?: Date | null) {
   try {
     const user = await getAuthenticatedUser();

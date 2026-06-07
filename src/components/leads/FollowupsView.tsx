@@ -2,9 +2,9 @@
 
 import React, { useState } from "react";
 import { format, formatDistanceToNow, addDays, addHours, isPast } from "date-fns";
-import { Clock, Calendar, ChevronDown, Phone, Mail, CheckCircle2, ArrowRight } from "lucide-react";
+import { Clock, Calendar, ChevronDown, Phone, Mail, CheckCircle2, ArrowRight, XCircle } from "lucide-react";
 import { toast } from "sonner";
-import { updateLeadFollowup, updateLeadStatus } from "@/actions/leads";
+import { updateLeadFollowup, updateLeadStatus, bulkDeleteLeads } from "@/actions/leads";
 import { LeadDetailsModal } from "./LeadDetailsModal";
 
 const STAGE_STYLE: Record<string, any> = {
@@ -73,6 +73,7 @@ function FollowupTimeSelector({ lead, onUpdate }: { lead: any, onUpdate: (leadId
 
 export function FollowupsView({ initialLeads }: { initialLeads: any[] }) {
   const [leads, setLeads] = useState(initialLeads);
+  const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
   const [selectedLead, setSelectedLead] = useState<any | null>(null);
 
   const borderClass = "border-[#E8E4F3]";
@@ -96,6 +97,34 @@ export function FollowupsView({ initialLeads }: { initialLeads: any[] }) {
     await updateLeadStatus(leadId, terminalStatus);
   };
 
+  const toggleSelectAll = () => {
+    if (selectedLeadIds.length === leads.length) setSelectedLeadIds([]);
+    else setSelectedLeadIds(leads.map(l => l.id));
+  };
+
+  const toggleSelectLead = (id: string) => {
+    if (selectedLeadIds.includes(id)) setSelectedLeadIds(prev => prev.filter(lId => lId !== id));
+    else setSelectedLeadIds(prev => [...prev, id]);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedLeadIds.length === 0) return;
+    if (!confirm(`Are you sure you want to delete ${selectedLeadIds.length} follow-up leads? This action cannot be undone.`)) return;
+
+    try {
+      const res = await bulkDeleteLeads(selectedLeadIds);
+      if (res.success) {
+        setLeads(prev => prev.filter(l => !selectedLeadIds.includes(l.id)));
+        toast.success(`Successfully deleted ${selectedLeadIds.length} leads.`);
+        setSelectedLeadIds([]);
+      } else {
+        toast.error("Failed to delete leads.");
+      }
+    } catch (e) {
+      toast.error("An error occurred while deleting leads.");
+    }
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -110,6 +139,16 @@ export function FollowupsView({ initialLeads }: { initialLeads: any[] }) {
           <table className="w-full text-left whitespace-nowrap" style={{ borderCollapse: "separate", borderSpacing: 0 }}>
             <thead className="text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-white sticky top-0 z-10">
               <tr className={`border-b ${borderClass} ${trHeightClass}`}>
+                <th className={`w-[40px] px-4 py-0 border-r ${borderClass}`}>
+                  <div className="flex items-center justify-center">
+                    <input 
+                      type="checkbox" 
+                      className="rounded-sm border-slate-300 text-[#7C3AED] focus:ring-[#7C3AED]"
+                      checked={leads.length > 0 && selectedLeadIds.length === leads.length}
+                      onChange={toggleSelectAll}
+                    />
+                  </div>
+                </th>
                 <th className={`w-[220px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF]`}>
                   <div className="flex items-center justify-between">LEAD</div>
                 </th>
@@ -130,7 +169,7 @@ export function FollowupsView({ initialLeads }: { initialLeads: any[] }) {
             <tbody className="text-[12.5px] divide-y divide-[#E8E4F3]">
               {sortedLeads.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-5 py-12 text-center text-slate-500">
+                  <td colSpan={6} className="px-5 py-12 text-center text-slate-500">
                     <CheckCircle2 className="h-10 w-10 text-green-400 mx-auto mb-3" />
                     <p className="text-[15px] font-medium text-slate-700">All caught up!</p>
                     <p className="text-[13px] mt-1">No active leads require follow-up right now.</p>
@@ -141,6 +180,14 @@ export function FollowupsView({ initialLeads }: { initialLeads: any[] }) {
                   const stage = STAGE_STYLE[lead.status] || STAGE_STYLE.NEW;
                   return (
                     <tr key={lead.id} className={`${trHeightClass} border-b hover:bg-[#F7F5FF] transition-colors group`}>
+                      <td className={`px-4 py-0 border-r text-center ${borderClass}`}>
+                        <input 
+                          type="checkbox" 
+                          className="rounded-sm border-slate-300 text-[#7C3AED] focus:ring-[#7C3AED]"
+                          checked={selectedLeadIds.includes(lead.id)}
+                          onChange={() => toggleSelectLead(lead.id)}
+                        />
+                      </td>
                       <td className={`px-4 py-1 border-r ${borderClass}`}>
                         <button 
                           onClick={() => setSelectedLead(lead)}
@@ -193,6 +240,18 @@ export function FollowupsView({ initialLeads }: { initialLeads: any[] }) {
           </table>
         </div>
       </div>
+
+      {selectedLeadIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#1A1523] text-white px-4 py-3 rounded-full shadow-2xl flex items-center gap-4 z-50 animate-in slide-in-from-bottom-5">
+          <span className="text-[13px] font-semibold bg-white/10 px-2.5 py-1 rounded-full">
+            {selectedLeadIds.length} selected
+          </span>
+          <div className="h-4 w-px bg-white/20" />
+          <button className="flex items-center gap-2 hover:bg-red-500/20 px-3 py-1.5 rounded-full transition-colors text-red-400 hover:text-red-300" onClick={handleBulkDelete}>
+            <XCircle className="h-4 w-4" /> <span className="text-[13px] font-medium">Delete Selected</span>
+          </button>
+        </div>
+      )}
 
       {selectedLead && (
         <LeadDetailsModal lead={selectedLead} onClose={() => setSelectedLead(null)} />

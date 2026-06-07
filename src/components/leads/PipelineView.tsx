@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { getLeads, getLeadsByWebsite, updateLeadStatus, logCallAction } from "@/actions/leads";
+import { getLeads, getLeadsByWebsite, updateLeadStatus, logCallAction, bulkDeleteLeads } from "@/actions/leads";
 import { LeadDetailsModal } from "@/components/leads/LeadDetailsModal";
 import { CallLogModal } from "@/components/leads/CallLogModal";
 import {
@@ -300,6 +300,25 @@ export function PipelineView({ websiteId, initialLeads }: { websiteId?: string; 
   const [rowHeight, setRowHeight] = useState<"compact" | "standard" | "comfortable">("standard");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   
+  const handleBulkDelete = async () => {
+    if (selectedLeadIds.size === 0) return;
+    if (!confirm(`Are you sure you want to delete ${selectedLeadIds.size} leads? This action cannot be undone.`)) return;
+
+    try {
+      const idsArray = Array.from(selectedLeadIds);
+      const res = await bulkDeleteLeads(idsArray);
+      if (res.success) {
+        setLeads(prev => prev.filter(l => !selectedLeadIds.has(l.id)));
+        toast.success(`Successfully deleted ${selectedLeadIds.size} leads.`);
+        setSelectedLeadIds(new Set());
+      } else {
+        toast.error("Failed to delete leads.");
+      }
+    } catch (e) {
+      toast.error("An error occurred while deleting leads.");
+    }
+  };
+
   const filteredLeads = leads.filter(lead => {
     if (statusFilter === "HOT") {
       return lead.temperature === "HOT";
@@ -799,7 +818,7 @@ export function PipelineView({ websiteId, initialLeads }: { websiteId?: string; 
               handleStatusChange={handleStatusChange} 
               setSelectedLeadIds={setSelectedLeadIds} 
             />
-            <button className="flex items-center gap-2 hover:bg-red-500/20 px-2 sm:px-3 py-1.5 rounded transition-colors text-red-400 hover:text-red-300 ml-1 sm:ml-2" onClick={() => toast("Bulk Delete feature coming soon!")}>
+            <button className="flex items-center gap-2 hover:bg-red-500/20 px-2 sm:px-3 py-1.5 rounded transition-colors text-red-400 hover:text-red-300 ml-1 sm:ml-2" onClick={handleBulkDelete}>
               <XCircle className="h-4 w-4" /> <span className="hidden sm:inline">Delete</span>
             </button>
           </div>
