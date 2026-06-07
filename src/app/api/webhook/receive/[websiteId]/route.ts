@@ -272,8 +272,8 @@ export async function POST(
         title: pushTitle,
         body: pushBody,
         url: "/leads",
-        icon: workspace?.pushIconUrl?.startsWith('data:') ? `${baseUrl}/api/settings/icon` : (workspace?.pushIconUrl?.startsWith('http') ? workspace.pushIconUrl : `${baseUrl}${workspace?.pushIconUrl || "/icon-192.png"}`),
-        badge: workspace?.pushBadgeUrl?.startsWith('data:') ? `${baseUrl}/api/settings/badge` : (workspace?.pushBadgeUrl?.startsWith('http') ? workspace.pushBadgeUrl : `${baseUrl}${workspace?.pushBadgeUrl || "/badge-72x72.png"}`),
+        icon: workspace?.pushIconUrl?.startsWith('data:') ? `${baseUrl}/api/settings/icon?t=${Date.now()}` : (workspace?.pushIconUrl?.startsWith('http') ? workspace.pushIconUrl : `${baseUrl}${workspace?.pushIconUrl || "/icon-192.png"}`),
+        badge: workspace?.pushBadgeUrl?.startsWith('data:') ? `${baseUrl}/api/settings/badge?t=${Date.now()}` : (workspace?.pushBadgeUrl?.startsWith('http') ? workspace.pushBadgeUrl : `${baseUrl}${workspace?.pushBadgeUrl || "/badge-72x72.png"}`),
         actions: [
           { action: "view", title: workspace?.pushCtaLabel || "View Lead", url: workspace?.pushCtaUrl || "/leads" },
           { action: "dismiss", title: "Dismiss" },

@@ -18,8 +18,8 @@ export async function POST(req: Request) {
       title: "Test Notification",
       body: "If you are seeing this, your Web Push is working perfectly!",
       url: "/settings",
-      icon: workspace?.pushIconUrl?.startsWith('data:') ? `${baseUrl}/api/settings/icon` : (workspace?.pushIconUrl?.startsWith('http') ? workspace.pushIconUrl : `${baseUrl}${workspace?.pushIconUrl || "/icon-192.png"}`),
-      badge: workspace?.pushBadgeUrl?.startsWith('data:') ? `${baseUrl}/api/settings/badge` : (workspace?.pushBadgeUrl?.startsWith('http') ? workspace.pushBadgeUrl : `${baseUrl}${workspace?.pushBadgeUrl || "/badge-72x72.png"}`),
+      icon: workspace?.pushIconUrl?.startsWith('data:') ? `${baseUrl}/api/settings/icon?t=${Date.now()}` : (workspace?.pushIconUrl?.startsWith('http') ? workspace.pushIconUrl : `${baseUrl}${workspace?.pushIconUrl || "/icon-192.png"}`),
+      badge: workspace?.pushBadgeUrl?.startsWith('data:') ? `${baseUrl}/api/settings/badge?t=${Date.now()}` : (workspace?.pushBadgeUrl?.startsWith('http') ? workspace.pushBadgeUrl : `${baseUrl}${workspace?.pushBadgeUrl || "/badge-72x72.png"}`),
       actions: [{ action: "dismiss", title: "Dismiss" }]
     });
 
