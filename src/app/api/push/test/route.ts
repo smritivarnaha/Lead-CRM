@@ -3,7 +3,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { sendPushToAll } from "@/lib/push";
 import prisma from "@/lib/prisma";
 
-export async function POST() {
+export async function POST(req: Request) {
   try {
     const user = await currentUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -12,12 +12,14 @@ export async function POST() {
       where: { id: "mock_workspace_id" }
     });
 
+    const baseUrl = new URL(req.url).origin;
+
     await sendPushToAll({
       title: "Test Notification",
       body: "If you are seeing this, your Web Push is working perfectly!",
       url: "/settings",
-      icon: workspace?.pushIconUrl?.startsWith('data:') ? "/api/settings/icon" : (workspace?.pushIconUrl || "/icon-192.png"),
-      badge: workspace?.pushBadgeUrl?.startsWith('data:') ? "/api/settings/badge" : (workspace?.pushBadgeUrl || "/badge-72x72.png"),
+      icon: workspace?.pushIconUrl?.startsWith('data:') ? `${baseUrl}/api/settings/icon` : (workspace?.pushIconUrl?.startsWith('http') ? workspace.pushIconUrl : `${baseUrl}${workspace?.pushIconUrl || "/icon-192.png"}`),
+      badge: workspace?.pushBadgeUrl?.startsWith('data:') ? `${baseUrl}/api/settings/badge` : (workspace?.pushBadgeUrl?.startsWith('http') ? workspace.pushBadgeUrl : `${baseUrl}${workspace?.pushBadgeUrl || "/badge-72x72.png"}`),
       actions: [{ action: "dismiss", title: "Dismiss" }]
     });
 
