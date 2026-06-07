@@ -103,7 +103,7 @@ function StageSelector({ lead, stageConfig, handleStatusChange, isMobile = false
             : "gap-2.5 w-full hover:bg-white p-1.5 rounded"
         }`}
       >
-        <div className={`flex items-center ${isMobile ? "gap-2.5" : ""}`}>
+        <div className={`flex items-center ${isMobile ? "gap-2.5" : "gap-2.5"}`}>
           <div className={`h-3.5 w-3.5 rounded-full border-2 ${stageConfig.ring} ${stageConfig.fill} shrink-0`} />
           <span className={`${isMobile ? "text-[13px] font-semibold text-slate-700" : "text-[#1A1523] font-medium truncate flex-1"}`}>{stageConfig.label}</span>
         </div>
