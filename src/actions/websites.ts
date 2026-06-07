@@ -15,7 +15,10 @@ export async function getWebsites() {
 
     const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
+    const isClient = user.role === "CLIENT" && !!user.websiteId;
+
     const websites = await prisma.website.findMany({
+      where: isClient ? { id: user.websiteId as string } : undefined,
       include: {
         users: {
           where: { role: "CLIENT" },

@@ -39,8 +39,7 @@ export function Sidebar() {
     if (
       isClient &&
       (item.name === "Websites" ||
-        item.name === "Workspaces" ||
-        item.name === "Settings")
+        item.name === "Workspaces")
     )
       return false;
     return true;

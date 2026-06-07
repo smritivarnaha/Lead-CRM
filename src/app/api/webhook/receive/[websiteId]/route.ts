@@ -31,7 +31,7 @@ export async function POST(
   { params }: { params: Promise<{ websiteId: string }> }
 ) {
   try {
-    const { websiteId } = await params;
+    let { websiteId } = await params;
 
     // Parse body — support both JSON and form-encoded (WordPress sends form-encoded)
     let body: Record<string, string> = {};
@@ -54,6 +54,46 @@ export async function POST(
         body = text ? JSON.parse(text) : {};
       } catch {
         body = {};
+      }
+    }
+
+    // --- Automatic Website Detection by Domain ---
+    if (websiteId === "auto") {
+      const siteUrlOrDomain = body.site_url || body.site_domain || body.page_url || body.pageUrl || request.headers.get("referer") || request.headers.get("origin");
+      
+      if (siteUrlOrDomain) {
+        const cleanDomain = siteUrlOrDomain
+          .toLowerCase()
+          .replace(/^(https?:\/\/)?(www\.)?/, "") // remove protocol and www
+          .split('/')[0] // remove path
+          .split(':')[0] // remove port if any
+          .trim();
+        
+        const detectedSite = await prisma.website.findFirst({
+          where: {
+            domain: {
+              contains: cleanDomain,
+              mode: "insensitive"
+            }
+          }
+        });
+        
+        if (detectedSite) {
+          websiteId = detectedSite.id;
+          console.log(`[WEBHOOK AUTO-DETECT] Routed domain ${cleanDomain} to website ID: ${websiteId}`);
+        } else {
+          console.error(`[WEBHOOK AUTO-DETECT FAILED] Could not find website matching domain: ${cleanDomain}`);
+          return NextResponse.json(
+            { success: false, error: `Auto-detection failed: No website registered with domain matching ${cleanDomain}.` },
+            { status: 404, headers: corsHeaders }
+          );
+        }
+      } else {
+        console.error(`[WEBHOOK AUTO-DETECT FAILED] No site_url, referer, or origin found in request.`);
+        return NextResponse.json(
+          { success: false, error: "Auto-detection failed: No domain information found in the request." },
+          { status: 400, headers: corsHeaders }
+        );
       }
     }
 

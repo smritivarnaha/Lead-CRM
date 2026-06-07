@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useUser } from "@clerk/nextjs";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -24,6 +24,9 @@ const navItems = [
 
 export function Header() {
   const pathname = usePathname();
+  const { user } = useUser();
+  const role = user?.publicMetadata?.role as string | undefined;
+  const isClient = role === "CLIENT";
   
   // "idle" = no lead yet, "success" = push sent to mobile, "error" = push failed/nobody subscribed
   const [pushStatus, setPushStatus] = useState<"idle" | "success" | "error">("idle");
@@ -82,22 +85,32 @@ export function Header() {
                   <span className="text-[17px] font-bold tracking-tight text-slate-900">LeadFlow</span>
                 </div>
                 <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-                  {navItems.map((item) => {
-                    const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-                    return (
-                      <Link
-                        key={item.name}
-                        href={item.href}
-                        onClick={() => setIsSheetOpen(false)}
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] font-medium transition-colors ${
-                          isActive ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                        }`}
-                      >
-                        <item.icon className={`h-4 w-4 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
-                        {item.name}
-                      </Link>
-                    );
-                  })}
+                  {navItems
+                    .filter((item) => {
+                      if (
+                        isClient &&
+                        (item.name === "Websites" ||
+                          item.name === "Workspaces")
+                      )
+                        return false;
+                      return true;
+                    })
+                    .map((item) => {
+                      const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+                      return (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          onClick={() => setIsSheetOpen(false)}
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] font-medium transition-colors ${
+                            isActive ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                          }`}
+                        >
+                          <item.icon className={`h-4 w-4 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
+                          {item.name}
+                        </Link>
+                      );
+                    })}
                   <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-start">
                     <UserButton showName />
                   </div>
@@ -119,9 +132,11 @@ export function Header() {
               Pipeline
               {pathname === "/leads" && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-indigo-600" />}
             </Link>
-            <Link href="/websites" className="flex h-full items-center text-[13.5px] font-medium text-slate-500 hover:text-slate-900 transition-colors">
-              Websites
-            </Link>
+            {!isClient && (
+              <Link href="/websites" className="flex h-full items-center text-[13.5px] font-medium text-slate-500 hover:text-slate-900 transition-colors">
+                Websites
+              </Link>
+            )}
             <Link href="/contacts" className="flex h-full items-center text-[13.5px] font-medium text-slate-500 hover:text-slate-900 transition-colors">
               Contacts
             </Link>

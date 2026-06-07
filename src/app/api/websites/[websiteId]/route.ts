@@ -13,6 +13,12 @@ export async function PATCH(
     }
 
     const { websiteId } = await params;
+
+    // Restrict CLIENT users to only updating their assigned websiteId
+    if (user.role === "CLIENT" && user.websiteId !== websiteId) {
+      return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+    }
+
     const body = await request.json();
 
     const data: any = {};

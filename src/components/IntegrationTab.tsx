@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { Copy, Download, LinkIcon } from "lucide-react";
 import { toast } from "sonner";
 
+import { useUser } from "@clerk/nextjs";
+
 export const SVGIcons = {
   WordPress: (props: any) => <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/WordPress_blue_logo.svg/1280px-WordPress_blue_logo.svg.png?_=20170312030453" alt="WordPress" {...props} />,
   GoogleSheets: (props: any) => <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Google_Sheets_2020_Logo.svg/960px-Google_Sheets_2020_Logo.svg.png" alt="Google Sheets" {...props} />,
@@ -20,6 +22,10 @@ export const SVGIcons = {
 };
 
 export default function IntegrationTab({ site, isGlobal = false }: { site: { id: string }, isGlobal?: boolean }) {
+  const { user } = useUser();
+  const role = user?.publicMetadata?.role as string | undefined;
+  const isClient = role === "CLIENT";
+
   const [activeMethod, setActiveMethod] = useState<string>("wordpress");
   const [dynamicSiteId, setDynamicSiteId] = useState<string>(site.id);
   const finalSiteId = dynamicSiteId || site.id;
@@ -46,6 +52,43 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
       });
     }
     setDynamicSiteId(sanitized);
+  };
+
+  const renderWebsiteIdSection = (options: {
+    focusRingColorClass: string;
+    label: string;
+    borderClass?: string;
+    isLargeWidth?: boolean;
+    description?: string;
+  }) => {
+    if (isClient) {
+      return (
+        <div className="mb-5 flex flex-col gap-1.5 text-left">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Website ID</span>
+          <span className="text-xs font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-lg w-fit">
+            {finalSiteId}
+          </span>
+        </div>
+      );
+    }
+
+    if (!isGlobal) return null;
+
+    return (
+      <div className={`mb-5 flex flex-col gap-2 text-left ${options.isLargeWidth ? "w-full max-w-2xl" : ""}`}>
+        <label className="text-sm font-bold text-slate-700 block">{options.label}</label>
+        <input 
+          type="text" 
+          value={dynamicSiteId}
+          onChange={(e) => handleSiteIdChange(e.target.value)}
+          placeholder="YOUR_WEBSITE_ID"
+          className={`w-full ${options.isLargeWidth ? "" : "max-w-md"} border rounded-lg text-sm focus:ring-2 outline-none px-4 py-2 ${options.borderClass || "border-slate-300"} ${options.focusRingColorClass}`}
+        />
+        {options.description && (
+          <p className="text-xs text-slate-500 mt-1">{options.description}</p>
+        )}
+      </div>
+    );
   };
 
   const methods = [
@@ -87,7 +130,7 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
   ];
 
   const CopyBox = ({ code, language = "javascript" }: { code: string, language?: string }) => (
-    <div className="relative group rounded-xl overflow-hidden mt-4 border border-slate-700 shadow-xl">
+    <div className="relative group rounded-xl overflow-hidden mt-4 border border-slate-700 shadow-xl text-left">
       <div className="absolute top-0 w-full flex items-center justify-between px-4 py-2 bg-slate-800/80 border-b border-slate-700 backdrop-blur-sm z-10">
         <span className="text-[11px] font-mono font-medium text-slate-400">{language}</span>
         <button onClick={() => {
@@ -123,7 +166,7 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 sm:p-8 min-h-[400px]">
         
         {activeMethod === "wordpress" && (
-          <div className="animate-in fade-in zoom-in-95 duration-200">
+          <div className="animate-in fade-in zoom-in-95 duration-200 text-left">
             <h3 className="text-xl font-bold text-slate-900 flex items-center gap-3 mb-2">
               <SVGIcons.WordPress className="w-6 h-6 object-contain" /> WordPress Plugin
             </h3>
@@ -137,19 +180,11 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
               </ol>
             </div>
             
-            {isGlobal && (
-              <div className="mb-5 flex flex-col gap-2">
-                <label className="text-sm font-bold text-slate-700">Enter Website ID for Plugin</label>
-                <input 
-                  type="text" 
-                  value={dynamicSiteId}
-                  onChange={(e) => handleSiteIdChange(e.target.value)}
-                  placeholder="e.g. cm1a2b3c4d5e6f"
-                  className="w-full max-w-md border border-slate-300 px-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-                <p className="text-xs text-slate-500">Find this in your Websites list. Required to download the correct plugin.</p>
-              </div>
-            )}
+            {renderWebsiteIdSection({
+              focusRingColorClass: "focus:ring-blue-500",
+              label: "Enter Website ID for Plugin",
+              description: "Find this in your Websites list. Required to download the correct plugin."
+            })}
             
             <a 
               href={`/api/websites/${finalSiteId}/plugin`} 
@@ -168,33 +203,27 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
         )}
 
         {activeMethod === "sheets" && (
-          <div className="animate-in fade-in zoom-in-95 duration-200">
+          <div className="animate-in fade-in zoom-in-95 duration-200 text-left">
             <h3 className="text-xl font-bold text-slate-900 flex items-center gap-3 mb-2">
               <SVGIcons.GoogleSheets className="w-6 h-6 object-contain" /> Google Sheets Sync
             </h3>
-            <p className="text-slate-600 mb-6">Turn any Google Sheet into a live lead database. Perfect for Google Forms or manual entry.</p>
+            <p className="text-slate-600 mb-6">Turn any Google Sheet into a live lead database. Perfect for Google Forms, manual entry, or copy-paste imports.</p>
             
             <div className="bg-[#E6F4EA] border border-[#CEEAD6] rounded-xl p-5 mb-6">
               <ol className="list-decimal ml-4 space-y-3 text-[#0D652D] font-medium text-sm">
                 <li>Open your Google Sheet and click <strong>Extensions ➔ Apps Script</strong>.</li>
                 <li>Paste the code below, replacing everything, and click <strong>Save</strong>.</li>
-                <li>To enable automatic form sync, click the <strong>Triggers</strong> icon (clock) on the left sidebar ➔ <strong>Add Trigger</strong>. Choose <code>onFormSubmitTrigger</code> as the function to run, event source <code>From spreadsheet</code>, and event type <code>On form submit</code>.</li>
-                <li>Refresh your Google Sheet. You will now see a custom <strong>LeadFlow CRM</strong> menu at the top for manual pushes!</li>
+                <li><strong>For Google Forms (Instant Auto-Sync)</strong>: Click the <strong>Triggers</strong> icon (clock) on the left sidebar ➔ <strong>Add Trigger</strong>. Choose <code>onFormSubmitTrigger</code> as the function to run, event source <code>From spreadsheet</code>, and event type <code>On form submit</code>.</li>
+                <li><strong>For Manual Typing & Copy-Pasting (1-Min Auto-Sync)</strong>: Click <strong>Add Trigger</strong> again. Choose <code>syncNewRows</code> as the function to run, event source <code>Time-driven</code>, type of trigger <code>Minutes timer</code>, and select <code>Every minute</code>. This automatically syncs new rows you type or paste without doing anything manually!</li>
+                <li>Refresh your Google Sheet. You will see a custom <strong>LeadFlow CRM</strong> menu at the top, and a <code>CRM Status</code> column will be added automatically to track synced rows!</li>
               </ol>
             </div>
 
-            {isGlobal && (
-              <div className="mb-4">
-                <label className="text-sm font-bold text-slate-700 block mb-1">Enter your Website ID to update the code below dynamically:</label>
-                <input 
-                  type="text" 
-                  value={dynamicSiteId}
-                  onChange={(e) => handleSiteIdChange(e.target.value)}
-                  placeholder="YOUR_WEBSITE_ID"
-                  className="w-full max-w-md border border-[#0F9D58] px-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-[#0F9D58] outline-none"
-                />
-              </div>
-            )}
+            {renderWebsiteIdSection({
+              focusRingColorClass: "focus:ring-[#0F9D58]",
+              borderClass: "border-[#0F9D58]",
+              label: "Enter your Website ID to update the code below dynamically:"
+            })}
             
             <CopyBox language="Google Apps Script (javascript)" code={`const WEBHOOK_URL = '${origin}/api/webhook/receive/${finalSiteId}';
 
@@ -202,6 +231,7 @@ function onOpen() {
   var ui = SpreadsheetApp.getUi();
   ui.createMenu('LeadFlow CRM')
       .addItem('Push Selected Row to CRM', 'sendRowToCRM')
+      .addItem('Sync All Pending Rows Now', 'syncNewRows')
       .addToUi();
 }
 
@@ -209,41 +239,116 @@ function sendRowToCRM() {
   var sheet = SpreadsheetApp.getActiveSheet();
   var row = sheet.getActiveCell().getRow();
   if (row === 1) return SpreadsheetApp.getUi().alert("Please select a data row.");
-  sendRowByNumber(sheet, row);
+  
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var statusColIndex = headers.indexOf("CRM Status") + 1;
+  if (statusColIndex === 0) {
+    statusColIndex = sheet.getLastColumn() + 1;
+    sheet.getRange(1, statusColIndex).setValue("CRM Status");
+  }
+  
+  var success = sendRowByNumber(sheet, row);
+  if (success) {
+    sheet.getRange(row, statusColIndex).setValue("Synced");
+    SpreadsheetApp.getUi().alert("Row successfully sent to CRM!");
+  } else {
+    SpreadsheetApp.getUi().alert("Failed to send row to CRM. Check Apps Script logs.");
+  }
 }
 
-// Automatically triggers when a Google Form linked to this sheet is submitted (via trigger setup)
+// 1. Google Forms Auto-Sync (Instant)
 function onFormSubmitTrigger(e) {
   if (e && e.range) {
     var sheet = e.range.getSheet();
     var row = e.range.getRow();
-    sendRowByNumber(sheet, row);
+    
+    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    var statusColIndex = headers.indexOf("CRM Status") + 1;
+    
+    var success = sendRowByNumber(sheet, row);
+    if (success && statusColIndex > 0) {
+      sheet.getRange(row, statusColIndex).setValue("Synced");
+    }
   }
 }
 
-// Helper function to extract and send data to your CRM
+// 2. Manual/Import Auto-Sync (Runs every minute via trigger)
+function syncNewRows() {
+  var sheet = SpreadsheetApp.getActiveSheet();
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return;
+  
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var statusColIndex = headers.indexOf("CRM Status") + 1;
+  if (statusColIndex === 0) {
+    statusColIndex = sheet.getLastColumn() + 1;
+    sheet.getRange(1, statusColIndex).setValue("CRM Status");
+    headers.push("CRM Status");
+  }
+  
+  var dataRange = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn());
+  var data = dataRange.getValues();
+  
+  for (var i = 0; i < data.length; i++) {
+    var rowNum = i + 2;
+    var rowData = data[i];
+    var status = rowData[statusColIndex - 1];
+    
+    if (status === "Synced") continue;
+    
+    // Check if row has any contact info (ignoring CRM Status column itself)
+    var hasContactInfo = false;
+    for (var j = 0; j < headers.length; j++) {
+      var header = headers[j];
+      if (header && header !== "CRM Status") {
+        var val = rowData[j];
+        var hLower = header.toLowerCase();
+        if ((hLower.includes("name") || hLower.includes("email") || hLower.includes("phone") || hLower.includes("contact")) && val !== "") {
+          hasContactInfo = true;
+        }
+      }
+    }
+    
+    if (!hasContactInfo) continue;
+    
+    var success = sendRowByNumber(sheet, rowNum);
+    if (success) {
+      sheet.getRange(rowNum, statusColIndex).setValue("Synced");
+    }
+  }
+}
+
+// Core helper function to send data
 function sendRowByNumber(sheet, row) {
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
   var values = sheet.getRange(row, 1, 1, sheet.getLastColumn()).getValues()[0];
   
   var payload = {};
   for (var i = 0; i < headers.length; i++) {
-    if (headers[i]) {
-      payload[headers[i]] = values[i];
+    var header = headers[i];
+    if (header && header !== "CRM Status") {
+      payload[header] = values[i];
     }
   }
   
-  UrlFetchApp.fetch(WEBHOOK_URL, {
-    "method": "post",
-    "contentType": "application/json",
-    "payload": JSON.stringify(payload)
-  });
+  try {
+    var response = UrlFetchApp.fetch(WEBHOOK_URL, {
+      "method": "post",
+      "contentType": "application/json",
+      "payload": JSON.stringify(payload),
+      "muteHttpExceptions": true
+    });
+    return response.getResponseCode() === 200 || response.getResponseCode() === 201;
+  } catch (err) {
+    Logger.log("Error sending row: " + err.toString());
+    return false;
+  }
 }`} />
           </div>
         )}
 
         {activeMethod === "html" && (
-          <div className="animate-in fade-in zoom-in-95 duration-200">
+          <div className="animate-in fade-in zoom-in-95 duration-200 text-left">
             <h3 className="text-xl font-bold text-slate-900 flex items-center gap-3 mb-2">
               <SVGIcons.HTML className="w-6 h-6 object-contain" /> Universal HTML Form Snippet
             </h3>
@@ -254,42 +359,26 @@ function sendRowByNumber(sheet, row) {
               This intelligent script automatically listens for any form submission on your website. When a user submits a form, it grabs all the inputs and instantly sends them to your CRM behind the scenes.
             </div>
 
-            {isGlobal && (
-              <div className="mb-4">
-                <label className="text-sm font-bold text-slate-700 block mb-1">Enter your Website ID to update the snippet:</label>
-                <input 
-                  type="text" 
-                  value={dynamicSiteId}
-                  onChange={(e) => handleSiteIdChange(e.target.value)}
-                  placeholder="YOUR_WEBSITE_ID"
-                  className="w-full max-w-md border border-slate-300 px-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-[#E34F26] outline-none"
-                />
-              </div>
-            )}
+            {renderWebsiteIdSection({
+              focusRingColorClass: "focus:ring-[#E34F26]",
+              label: "Enter your Website ID to update the snippet:"
+            })}
 
             <CopyBox language="HTML Snippet (html)" code={"<script>\ndocument.addEventListener('submit', function(e) {\n  const form = e.target.closest('form');\n  if (!form) return;\n  \n  // 1. Automatically grab EVERY field in your HTML form\n  const formData = new FormData(form);\n  const data = Object.fromEntries(formData.entries());\n  data.page_url = window.location.href;\n\n  // 2. Send to CRM silently in the background\n  fetch('" + origin + "/api/webhook/receive/" + finalSiteId + "', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify(data),\n    keepalive: true // Ensures data sends perfectly even if the page redirects\n  }).catch(console.error);\n});\n" + "</sc" + "ript>"} />
           </div>
         )}
 
         {activeMethod === "php" && (
-          <div className="animate-in fade-in zoom-in-95 duration-200">
+          <div className="animate-in fade-in zoom-in-95 duration-200 text-left">
             <h3 className="text-xl font-bold text-slate-900 flex items-center gap-3 mb-2">
               <SVGIcons.PHP className="w-6 h-6 object-contain" /> PHP Snippet (WPCode)
             </h3>
             <p className="text-slate-600 mb-6">For advanced WordPress users. Paste this into your theme's <code>functions.php</code> or using the WPCode snippet plugin for ultra-fast server-side tracking.</p>
             
-            {isGlobal && (
-              <div className="mb-4">
-                <label className="text-sm font-bold text-slate-700 block mb-1">Enter your Website ID to update the snippet:</label>
-                <input 
-                  type="text" 
-                  value={dynamicSiteId}
-                  onChange={(e) => handleSiteIdChange(e.target.value)}
-                  placeholder="YOUR_WEBSITE_ID"
-                  className="w-full max-w-md border border-slate-300 px-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-[#777BB4] outline-none"
-                />
-              </div>
-            )}
+            {renderWebsiteIdSection({
+              focusRingColorClass: "focus:ring-[#777BB4]",
+              label: "Enter your Website ID to update the snippet:"
+            })}
             
             <CopyBox language="PHP (functions.php)" code={`add_action( 'elementor_pro/forms/new_record', function( $record, $handler ) {
     $fields = [];
@@ -317,29 +406,22 @@ function sendRowByNumber(sheet, row) {
         )}
 
         {activeMethod === "webhook" && (
-          <div className="animate-in fade-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-bold text-slate-900 flex items-center gap-3 mb-2">
+          <div className="animate-in fade-in zoom-in-95 duration-200 text-center flex flex-col items-center">
+            <h3 className="text-xl font-bold text-slate-900 flex items-center gap-3 mb-2 self-start">
               <SVGIcons.Webhook className="w-6 h-6 shrink-0" /> Direct Webhook
             </h3>
-            <p className="text-slate-600 mb-6">Connect to third-party automation tools like <strong>Zapier, Make.com, Jotform, or Typeform</strong>.</p>
+            <p className="text-slate-600 mb-6 self-start text-left">Connect to third-party automation tools like <strong>Zapier, Make.com, Jotform, or Typeform</strong>.</p>
             
-            <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-8 flex flex-col items-center justify-center text-center shadow-inner">
+            <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-8 flex flex-col items-center justify-center text-center shadow-inner w-full">
               <p className="text-sm font-semibold text-indigo-900 mb-4">Your Unique Webhook URL</p>
               
-              {isGlobal && (
-                <div className="mb-4 w-full max-w-2xl text-left">
-                  <label className="text-sm font-bold text-slate-700 block mb-1">Enter Website ID:</label>
-                  <input 
-                    type="text" 
-                    value={dynamicSiteId}
-                    onChange={(e) => handleSiteIdChange(e.target.value)}
-                    placeholder="YOUR_WEBSITE_ID"
-                    className="w-full border border-slate-300 px-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                  />
-                </div>
-              )}
+              {renderWebsiteIdSection({
+                focusRingColorClass: "focus:ring-indigo-500",
+                label: "Enter Website ID:",
+                isLargeWidth: true
+              })}
 
-              <div className="flex w-full max-w-2xl items-center bg-white border border-indigo-200 rounded-lg overflow-hidden shadow-sm">
+              <div className="flex w-full max-w-2xl items-center bg-white border border-indigo-200 rounded-lg overflow-hidden shadow-sm mt-2">
                 <code className="flex-1 text-slate-800 font-mono text-[13px] px-4 py-3 text-left overflow-x-auto whitespace-nowrap">
                   {origin}/api/webhook/receive/{finalSiteId}
                 </code>
