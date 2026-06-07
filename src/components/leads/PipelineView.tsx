@@ -215,9 +215,9 @@ function BulkStatusDropdown({ selectedLeadIds, handleStatusChange, setSelectedLe
 }
 // ------------------------------------------------
 
-export function PipelineView({ websiteId }: { websiteId?: string }) {
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(true);
+export function PipelineView({ websiteId, initialLeads }: { websiteId?: string; initialLeads?: Lead[] }) {
+  const [leads, setLeads] = useState<Lead[]>(initialLeads || []);
+  const [loading, setLoading] = useState(!initialLeads);
   const [inspectLead, setInspectLead] = useState<Lead | null>(null);
   const [callLogLead, setCallLogLead] = useState<Lead | null>(null);
   
@@ -258,12 +258,13 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
   ).sort((a, b) => new Date(a.followUpAt!).getTime() - new Date(b.followUpAt!).getTime());
 
   useEffect(() => {
+    if (initialLeads) return;
     const fetchLeads = websiteId ? getLeadsByWebsite(websiteId) : getLeads();
     fetchLeads.then((res) => {
       if (res.success && res.leads) setLeads(res.leads);
       setLoading(false);
     });
-  }, [websiteId]);
+  }, [websiteId, initialLeads]);
 
   useEffect(() => {
     if (leads.length > 0 && typeof window !== "undefined") {

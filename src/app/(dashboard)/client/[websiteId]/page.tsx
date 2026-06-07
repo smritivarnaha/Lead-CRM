@@ -1,13 +1,24 @@
-"use client";
-
 import { PipelineView } from "@/components/leads/PipelineView";
-import { useParams } from "next/navigation";
+import { getLeadsByWebsite } from "@/actions/leads";
+import { getAuthenticatedUser } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
-export default function ClientPipelinePage() {
-  const params = useParams();
-  const websiteId = params.websiteId as string;
+interface PageProps {
+  params: Promise<{ websiteId: string }>;
+}
 
+export default async function ClientPipelinePage({ params }: PageProps) {
+  const { websiteId } = await params;
   if (!websiteId) return null;
 
-  return <PipelineView websiteId={websiteId} />;
+  const user = await getAuthenticatedUser();
+  if (!user) {
+    redirect("/sign-in");
+  }
+
+  // Fetch the leads for this website on the server instantly
+  const res = await getLeadsByWebsite(websiteId);
+  const leads = res.success && res.leads ? res.leads : [];
+
+  return <PipelineView websiteId={websiteId} initialLeads={leads} />;
 }
