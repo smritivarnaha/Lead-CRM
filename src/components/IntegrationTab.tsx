@@ -5,8 +5,8 @@ import { Copy, Download, LinkIcon } from "lucide-react";
 import { toast } from "sonner";
 
 export const SVGIcons = {
-  WordPress: (props: any) => <img src="https://s.w.org/style/images/about/WordPress-logotype-wmark.png" alt="WordPress" {...props} />,
-  GoogleSheets: (props: any) => <img src="https://upload.wikimedia.org/wikipedia/commons/a/ab/Google_Sheets_logo_%282020%29.svg" alt="Google Sheets" {...props} />,
+  WordPress: (props: any) => <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/WordPress_blue_logo.svg/1280px-WordPress_blue_logo.svg.png?_=20170312030453" alt="WordPress" {...props} />,
+  GoogleSheets: (props: any) => <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Google_Sheets_2020_Logo.svg/960px-Google_Sheets_2020_Logo.svg.png" alt="Google Sheets" {...props} />,
   HTML: (props: any) => <img src="https://upload.wikimedia.org/wikipedia/commons/3/38/HTML5_Badge.svg" alt="HTML5" {...props} />,
   PHP: (props: any) => <img src="https://upload.wikimedia.org/wikipedia/commons/2/27/PHP-logo.svg" alt="PHP" {...props} />,
   Webhook: (props: any) => (
@@ -21,6 +21,8 @@ export const SVGIcons = {
 
 export default function IntegrationTab({ site, isGlobal = false }: { site: { id: string }, isGlobal?: boolean }) {
   const [activeMethod, setActiveMethod] = useState<string>("wordpress");
+  const [dynamicSiteId, setDynamicSiteId] = useState<string>(isGlobal ? "" : site.id);
+  const finalSiteId = dynamicSiteId || (isGlobal ? "YOUR_WEBSITE_ID" : site.id);
 
   const methods = [
     {
@@ -105,17 +107,39 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
             
             <div className="bg-[#F0F6FC] border border-[#C8E1FF] rounded-xl p-5 mb-6">
               <ol className="list-decimal ml-4 space-y-3 text-slate-800 font-medium text-sm">
-                <li>{isGlobal ? "Go to your Websites list, and click 'Download Plugin' for your specific client." : "Click the download button below to get your custom-built plugin."}</li>
+                <li>Click the download button below to get your custom-built plugin.</li>
                 <li>Go to the WordPress Admin Dashboard ➔ <strong>Plugins</strong> ➔ <strong>Add New</strong> ➔ <strong>Upload Plugin</strong>.</li>
                 <li>Upload the <code className="bg-white px-1.5 py-0.5 rounded text-xs border border-slate-200">.zip</code> file and click <strong>Activate</strong>. You're done!</li>
               </ol>
             </div>
             
-            {!isGlobal && (
-              <a href={`/api/websites/${site.id}/plugin`} download className="inline-flex items-center justify-center gap-2 bg-[#0073AA] text-white hover:bg-[#005177] px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-md hover:shadow-lg w-full sm:w-auto">
-                <Download className="w-4 h-4" /> Download Custom WP Plugin
-              </a>
+            {isGlobal && (
+              <div className="mb-5 flex flex-col gap-2">
+                <label className="text-sm font-bold text-slate-700">Enter Website ID for Plugin</label>
+                <input 
+                  type="text" 
+                  value={dynamicSiteId}
+                  onChange={(e) => setDynamicSiteId(e.target.value)}
+                  placeholder="e.g. cm1a2b3c4d5e6f"
+                  className="w-full max-w-md border border-slate-300 px-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+                <p className="text-xs text-slate-500">Find this in your Websites list. Required to download the correct plugin.</p>
+              </div>
             )}
+            
+            <a 
+              href={`/api/websites/${finalSiteId}/plugin`} 
+              download 
+              onClick={(e) => {
+                if (finalSiteId === "YOUR_WEBSITE_ID") {
+                  e.preventDefault();
+                  toast.error("Please enter a valid Website ID first.");
+                }
+              }}
+              className={`inline-flex items-center justify-center gap-2 bg-[#0073AA] text-white hover:bg-[#005177] px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-md hover:shadow-lg w-full sm:w-auto ${finalSiteId === "YOUR_WEBSITE_ID" ? "opacity-50 cursor-not-allowed" : ""}`}
+            >
+              <Download className="w-4 h-4" /> Download Custom WP Plugin
+            </a>
           </div>
         )}
 
@@ -133,8 +157,21 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
                 <li>Refresh your Google Sheet. You will now see a custom <strong>LeadFlow CRM</strong> menu at the top!</li>
               </ol>
             </div>
+
+            {isGlobal && (
+              <div className="mb-4">
+                <label className="text-sm font-bold text-slate-700 block mb-1">Enter your Website ID to update the code below dynamically:</label>
+                <input 
+                  type="text" 
+                  value={dynamicSiteId}
+                  onChange={(e) => setDynamicSiteId(e.target.value)}
+                  placeholder="YOUR_WEBSITE_ID"
+                  className="w-full max-w-md border border-[#0F9D58] px-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-[#0F9D58] outline-none"
+                />
+              </div>
+            )}
             
-            <CopyBox language="Google Apps Script (javascript)" code={`const WEBHOOK_URL = 'https://lead-crmsss.vercel.app/api/webhook/receive/${site.id}';
+            <CopyBox language="Google Apps Script (javascript)" code={`const WEBHOOK_URL = 'https://lead-crmsss.vercel.app/api/webhook/receive/${finalSiteId}';
 
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
@@ -177,7 +214,20 @@ function sendRowToCRM() {
               This intelligent script automatically listens for any form submission on your website. When a user submits a form, it grabs all the inputs and instantly sends them to your CRM behind the scenes.
             </div>
 
-            <CopyBox language="HTML Snippet (html)" code={"<script>\ndocument.addEventListener('submit', function(e) {\n  const form = e.target.closest('form');\n  if (!form) return;\n  \n  // 1. Automatically grab EVERY field in your HTML form\n  const formData = new FormData(form);\n  const data = Object.fromEntries(formData.entries());\n  data.page_url = window.location.href;\n\n  // 2. Send to CRM silently in the background\n  fetch('https://lead-crmsss.vercel.app/api/webhook/receive/" + site.id + "', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify(data),\n    keepalive: true // Ensures data sends perfectly even if the page redirects\n  }).catch(console.error);\n});\n" + "</sc" + "ript>"} />
+            {isGlobal && (
+              <div className="mb-4">
+                <label className="text-sm font-bold text-slate-700 block mb-1">Enter your Website ID to update the snippet:</label>
+                <input 
+                  type="text" 
+                  value={dynamicSiteId}
+                  onChange={(e) => setDynamicSiteId(e.target.value)}
+                  placeholder="YOUR_WEBSITE_ID"
+                  className="w-full max-w-md border border-slate-300 px-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-[#E34F26] outline-none"
+                />
+              </div>
+            )}
+
+            <CopyBox language="HTML Snippet (html)" code={"<script>\ndocument.addEventListener('submit', function(e) {\n  const form = e.target.closest('form');\n  if (!form) return;\n  \n  // 1. Automatically grab EVERY field in your HTML form\n  const formData = new FormData(form);\n  const data = Object.fromEntries(formData.entries());\n  data.page_url = window.location.href;\n\n  // 2. Send to CRM silently in the background\n  fetch('https://lead-crmsss.vercel.app/api/webhook/receive/" + finalSiteId + "', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify(data),\n    keepalive: true // Ensures data sends perfectly even if the page redirects\n  }).catch(console.error);\n});\n" + "</sc" + "ript>"} />
           </div>
         )}
 
@@ -187,6 +237,19 @@ function sendRowToCRM() {
               <SVGIcons.PHP className="w-6 h-6 object-contain" /> PHP Snippet (WPCode)
             </h3>
             <p className="text-slate-600 mb-6">For advanced WordPress users. Paste this into your theme's <code>functions.php</code> or using the WPCode snippet plugin for ultra-fast server-side tracking.</p>
+            
+            {isGlobal && (
+              <div className="mb-4">
+                <label className="text-sm font-bold text-slate-700 block mb-1">Enter your Website ID to update the snippet:</label>
+                <input 
+                  type="text" 
+                  value={dynamicSiteId}
+                  onChange={(e) => setDynamicSiteId(e.target.value)}
+                  placeholder="YOUR_WEBSITE_ID"
+                  className="w-full max-w-md border border-slate-300 px-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-[#777BB4] outline-none"
+                />
+              </div>
+            )}
             
             <CopyBox language="PHP (functions.php)" code={`add_action( 'elementor_pro/forms/new_record', function( $record, $handler ) {
     $fields = [];
@@ -199,7 +262,7 @@ function sendRowToCRM() {
     $fields['ipAddress'] = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0] : (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '');
     
     // Post to CRM
-    wp_remote_post( 'https://lead-crmsss.vercel.app/api/webhook/receive/${site.id}', [
+    wp_remote_post( 'https://lead-crmsss.vercel.app/api/webhook/receive/${finalSiteId}', [
         'body' => wp_json_encode($fields),
         'headers' => [ 'Content-Type' => 'application/json' ],
         'blocking' => false
@@ -218,13 +281,26 @@ function sendRowToCRM() {
             <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-8 flex flex-col items-center justify-center text-center shadow-inner">
               <p className="text-sm font-semibold text-indigo-900 mb-4">Your Unique Webhook URL</p>
               
+              {isGlobal && (
+                <div className="mb-4 w-full max-w-2xl text-left">
+                  <label className="text-sm font-bold text-slate-700 block mb-1">Enter Website ID:</label>
+                  <input 
+                    type="text" 
+                    value={dynamicSiteId}
+                    onChange={(e) => setDynamicSiteId(e.target.value)}
+                    placeholder="YOUR_WEBSITE_ID"
+                    className="w-full border border-slate-300 px-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  />
+                </div>
+              )}
+
               <div className="flex w-full max-w-2xl items-center bg-white border border-indigo-200 rounded-lg overflow-hidden shadow-sm">
                 <code className="flex-1 text-slate-800 font-mono text-[13px] px-4 py-3 text-left overflow-x-auto whitespace-nowrap">
-                  https://lead-crmsss.vercel.app/api/webhook/receive/{site.id}
+                  https://lead-crmsss.vercel.app/api/webhook/receive/{finalSiteId}
                 </code>
                 <button 
                   onClick={() => {
-                    navigator.clipboard.writeText(`https://lead-crmsss.vercel.app/api/webhook/receive/${site.id}`);
+                    navigator.clipboard.writeText(`https://lead-crmsss.vercel.app/api/webhook/receive/${finalSiteId}`);
                     toast.success("Webhook URL copied!");
                   }} 
                   className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm flex items-center gap-2 px-6 py-4 h-full transition-colors shrink-0 border-l border-indigo-700"
