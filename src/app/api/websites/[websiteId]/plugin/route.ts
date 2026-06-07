@@ -27,6 +27,10 @@ add_action( 'elementor_pro/forms/new_record', function( $record, $handler ) {
         $fields[ $id ] = $field['value'];
     }
     
+    $form_settings = $record->get( 'form_settings' );
+    $form_name = isset( $form_settings['form_name'] ) ? $form_settings['form_name'] : 'Form';
+    $fields['source'] = 'WordPress Elementor - ' . $form_name;
+    
     $fields['page_url'] = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
     $fields['ipAddress'] = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0] : (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '');
     
@@ -46,6 +50,9 @@ add_action( 'wpcf7_before_send_mail', function( $contact_form, &$abort, $submiss
         $data['page_url'] = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
         $data['ipAddress'] = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0] : (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '');
         $data['_wpcf7'] = true;
+        
+        $form_title = $contact_form->title();
+        $data['source'] = 'WordPress CF7 - ' . $form_title;
         
         $webhook_url = 'https://lead-crmsss.vercel.app/api/webhook/receive/' . $website_id;
         wp_remote_post( $webhook_url, [
