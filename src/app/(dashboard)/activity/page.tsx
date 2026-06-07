@@ -240,68 +240,84 @@ export default function ActivityPage() {
         </div>
       </div>
 
-      {/* Activity Timeline List */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm">
-        
+      {/* Activity Table */}
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         {filteredActivities.length > 0 ? (
-          <div className="relative border-l border-slate-100 ml-4 pl-8 space-y-8 py-2">
-            
-            {filteredActivities.map((act) => (
-              <div 
-                key={act.id} 
-                className="relative flex flex-col sm:flex-row sm:items-start justify-between gap-4 group/item hover:bg-slate-50/40 p-3 rounded-xl -ml-11 pl-11 transition-all duration-200"
-              >
-                {/* Timeline node icon */}
-                <div className="absolute left-0.5 top-3">
-                  {getActivityIcon(act.type)}
-                </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold text-[11px] uppercase tracking-wider font-sans">
+                  <th className="px-6 py-4">Action / Event</th>
+                  <th className="px-6 py-4">Website</th>
+                  <th className="px-6 py-4 font-sans">Description & Details</th>
+                  <th className="px-6 py-4 text-center">Time</th>
+                  <th className="px-6 py-4 text-right">Link</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-sans">
+                {filteredActivities.map((act) => (
+                  <tr key={act.id} className="hover:bg-slate-50/50 transition-colors">
+                    {/* Action Column */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        {getActivityIcon(act.type)}
+                        <span className="font-bold text-slate-900 text-sm whitespace-nowrap">{act.title}</span>
+                      </div>
+                    </td>
+                    
+                    {/* Website Column */}
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-50 text-slate-600 border border-slate-100 uppercase tracking-wide">
+                        {act.websiteName}
+                      </span>
+                    </td>
+                    
+                    {/* Description & Details Column */}
+                    <td className="px-6 py-4">
+                      <div className="space-y-1">
+                        <p className="text-slate-600 text-xs leading-relaxed">{act.description}</p>
+                        {act.meta && (
+                          <div className="bg-slate-50/80 border border-slate-100 rounded-xl p-3 mt-1.5 text-xs text-slate-700 font-sans space-y-1 max-w-lg shadow-inner">
+                            {act.meta.content && (
+                              <p className="font-medium italic text-slate-800">"{act.meta.content}"</p>
+                            )}
+                            {(act.meta.phone || act.meta.email || act.meta.temperature) && (
+                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-500 font-semibold mt-1">
+                                {act.meta.phone && <span>📞 {act.meta.phone}</span>}
+                                {act.meta.email && <span>✉️ {act.meta.email}</span>}
+                                {act.meta.temperature && (
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                    act.meta.temperature === "HOT" ? "bg-red-50 text-red-600" :
+                                    act.meta.temperature === "WARM" ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"
+                                  }`}>
+                                    {act.meta.temperature}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </td>
 
-                {/* Left content block */}
-                <div className="space-y-1.5 flex-1 max-w-xl">
-                  <div className="flex items-center flex-wrap gap-2.5">
-                    <h4 className="font-bold text-slate-900 text-sm">{act.title}</h4>
-                    <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full uppercase tracking-wide">
-                      {act.websiteName}
-                    </span>
-                  </div>
-                  <p className="text-slate-600 text-xs leading-relaxed">{act.description}</p>
-                  
-                  {/* Additional Metadata card */}
-                  {act.meta && (
-                    <div className="bg-slate-50/80 border border-slate-100 rounded-xl p-3.5 mt-2.5 text-xs text-slate-700 shadow-inner font-sans space-y-1">
-                      {act.meta.content && (
-                        <p className="font-medium italic text-slate-800">"{act.meta.content}"</p>
-                      )}
-                      {act.meta.phone && <p>📞 Phone: <span className="font-semibold text-slate-900">{act.meta.phone}</span></p>}
-                      {act.meta.email && <p>✉️ Email: <span className="font-semibold text-slate-900">{act.meta.email}</span></p>}
-                      {act.meta.temperature && (
-                        <div className="flex items-center gap-1.5 mt-1.5">
-                          <span>Temperature:</span>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                            act.meta.temperature === "HOT" ? "bg-red-50 text-red-600" :
-                            act.meta.temperature === "WARM" ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"
-                          }`}>
-                            {act.meta.temperature}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                    {/* Time Column */}
+                    <td className="px-6 py-4 text-center">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 whitespace-nowrap">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>{formatRelativeTime(act.timestamp)}</span>
+                      </span>
+                    </td>
 
-                {/* Right time & action block */}
-                <div className="flex sm:flex-col items-start sm:items-end justify-between sm:justify-start gap-2 shrink-0">
-                  <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-400">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>{formatRelativeTime(act.timestamp)}</span>
-                  </div>
-                  
-                  <Link href={act.link} className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline">
-                    View Lead <ArrowUpRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </div>
-            ))}
+                    {/* Link Column */}
+                    <td className="px-6 py-4 text-right">
+                      <Link href={act.link} className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline whitespace-nowrap">
+                        View Lead <ArrowUpRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center">

@@ -98,8 +98,8 @@ export default function ClientSettingsPage() {
   return (
     <div className="flex-1 p-8 bg-[#FAFAFA] overflow-y-auto">
       <div className="max-w-2xl mx-auto space-y-6">
-        <Button variant="ghost" className="mb-4 -ml-4" onClick={() => router.push("/")}>
-          <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
+        <Button variant="ghost" className="mb-4 -ml-4" onClick={() => router.back()}>
+          <ArrowLeft className="w-4 h-4 mr-2" /> Back
         </Button>
 
         <div>
