@@ -217,13 +217,19 @@ export default function WebsitesPage() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 max-w-[320px]">
-                    <code className="text-slate-700 text-xs truncate font-medium mr-3">
-                      https://lead-crmsss.vercel.app/api/webhook/receive/{site.id}
-                    </code>
-                    <button onClick={() => copyWebhook(site.id)} className="text-slate-400 hover:text-indigo-600 transition-colors shrink-0" title="Copy Webhook URL">
-                      <Copy className="h-4 w-4" />
-                    </button>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 max-w-[320px]">
+                      <code className="text-slate-700 text-xs truncate font-medium mr-3">
+                        https://lead-crmsss.vercel.app/api/webhook/receive/{site.id}
+                      </code>
+                      <button onClick={() => copyWebhook(site.id)} className="text-slate-400 hover:text-indigo-600 transition-colors shrink-0" title="Copy Webhook URL">
+                        <Copy className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <a href={`/api/websites/${site.id}/plugin`} download className="flex items-center gap-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-800 px-3 py-2 rounded-lg text-xs font-bold transition-colors border border-indigo-200 shadow-sm shrink-0">
+                      <Download className="w-3.5 h-3.5" />
+                      WP Plugin
+                    </a>
                   </div>
                 </TableCell>
                 <TableCell>
