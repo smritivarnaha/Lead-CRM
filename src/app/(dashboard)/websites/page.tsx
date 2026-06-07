@@ -217,11 +217,11 @@ export default function WebsitesPage() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2">
-                    <code className="bg-slate-100 text-slate-800 px-3 py-1.5 rounded-md text-xs truncate max-w-[250px]">
+                  <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 max-w-[320px]">
+                    <code className="text-slate-700 text-xs truncate font-medium mr-3">
                       https://lead-crmsss.vercel.app/api/webhook/receive/{site.id}
                     </code>
-                    <button onClick={() => copyWebhook(site.id)} className="text-slate-400 hover:text-blue-600 transition-colors" title="Copy Webhook URL">
+                    <button onClick={() => copyWebhook(site.id)} className="text-slate-400 hover:text-indigo-600 transition-colors shrink-0" title="Copy Webhook URL">
                       <Copy className="h-4 w-4" />
                     </button>
                   </div>

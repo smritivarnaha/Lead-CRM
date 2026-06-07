@@ -446,21 +446,32 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
                         )}
                         {cols.stage && (
                           <td className={`px-5 py-0 border-r ${borderClass}`}>
-                            <div className="relative flex items-center gap-2.5 w-full hover:bg-white p-1.5 rounded cursor-pointer">
-                              <select 
-                                value={lead.status}
-                                onChange={(e) => handleStatusChange(lead.id, e.target.value)}
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                title="Change Status"
-                              >
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button type="button" className="flex items-center gap-2.5 w-full hover:bg-white p-1.5 rounded outline-none cursor-pointer text-left">
+                                  <div className={`h-3.5 w-3.5 rounded-full border-2 ${stage.ring} ${stage.fill} shrink-0`} />
+                                  <span className="text-[#1A1523] font-medium truncate flex-1">{stage.label}</span>
+                                  <ChevronDown className="h-3 w-3 text-[#9CA3AF] shrink-0" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="start" className="w-48 z-50">
+                                <DropdownMenuLabel className="text-xs">Update Status</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
                                 {Object.entries(STAGE_STYLE).map(([statusKey, config]) => (
-                                  <option key={statusKey} value={statusKey}>{config.label}</option>
+                                  <DropdownMenuItem 
+                                    key={statusKey} 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleStatusChange(lead.id, statusKey);
+                                    }}
+                                    className="text-[13px] flex items-center gap-2 cursor-pointer py-2"
+                                  >
+                                    <div className={`h-3 w-3 rounded-full border-2 ${config.ring} ${config.fill}`} />
+                                    {config.label}
+                                  </DropdownMenuItem>
                                 ))}
-                              </select>
-                              <div className={`h-3.5 w-3.5 rounded-full border-2 ${stage.ring} ${stage.fill}`} />
-                              <span className="text-[#1A1523] font-medium truncate flex-1 text-left">{stage.label}</span>
-                              <ChevronDown className="h-3 w-3 text-[#9CA3AF]" />
-                            </div>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </td>
                         )}
                         {cols.closeDate && (
@@ -530,23 +541,34 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
                     </div>
                     
                     <div className="flex flex-col gap-2">
-                      <div className="relative flex items-center justify-between w-full bg-slate-50 border border-slate-200 hover:bg-slate-100 p-2.5 rounded-lg transition-colors cursor-pointer">
-                        <select 
-                          value={lead.status}
-                          onChange={(e) => handleStatusChange(lead.id, e.target.value)}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                          title="Change Status"
-                        >
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button type="button" className="flex items-center justify-between w-full bg-slate-50 border border-slate-200 hover:bg-slate-100 p-2.5 rounded-lg outline-none transition-colors cursor-pointer text-left">
+                            <div className="flex items-center gap-2.5">
+                              <div className={`h-3 w-3 rounded-full border-2 ${stage.ring} ${stage.fill} shrink-0`} />
+                              <span className="text-[13px] font-semibold text-slate-700">{stage.label}</span>
+                            </div>
+                            <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-[calc(100vw-3rem)] z-50">
+                          <DropdownMenuLabel className="text-xs">Update Status</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
                           {Object.entries(STAGE_STYLE).map(([statusKey, config]) => (
-                            <option key={statusKey} value={statusKey}>{config.label}</option>
+                            <DropdownMenuItem 
+                              key={statusKey} 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStatusChange(lead.id, statusKey);
+                              }}
+                              className="flex items-center gap-2.5 p-3 text-sm cursor-pointer"
+                            >
+                              <div className={`h-3 w-3 rounded-full border-2 ${config.ring} ${config.fill}`} />
+                              {config.label}
+                            </DropdownMenuItem>
                           ))}
-                        </select>
-                        <div className="flex items-center gap-2.5">
-                          <div className={`h-3 w-3 rounded-full border-2 ${stage.ring} ${stage.fill}`} />
-                          <span className="text-[13px] font-semibold text-slate-700">{stage.label}</span>
-                        </div>
-                        <ChevronDown className="h-4 w-4 text-slate-400" />
-                      </div>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
 
                     <div className="flex items-center gap-2 pt-1">
