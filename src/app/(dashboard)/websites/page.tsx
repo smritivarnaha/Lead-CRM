@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Globe, Copy, CheckCircle2, X, UserPlus, KeyRound } from "lucide-react";
+import { Globe, Copy, CheckCircle2, X, UserPlus, KeyRound, Download } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getWebsites, createWebsite, createClientLogin, resetClientPassword, deleteClientLogin } from "@/actions/websites";
 
