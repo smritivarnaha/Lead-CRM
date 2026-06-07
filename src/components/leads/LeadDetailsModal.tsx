@@ -92,7 +92,9 @@ export function LeadDetailsModal({ lead, onClose }: { lead: any; onClose: () => 
               <InfoRow icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={lead.email || "—"} />
               <InfoRow icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={lead.phone || "—"} />
               <InfoRow icon={<Globe className="h-3.5 w-3.5" />} label="Website" value={lead.website?.name || "—"} />
+              <InfoRow icon={<Globe className="h-3.5 w-3.5" />} label="Page URL" value={lead.pageUrl || "—"} />
               <InfoRow icon={<Tag className="h-3.5 w-3.5" />} label="Source" value={lead.source || "—"} />
+              <InfoRow icon={<MapPin className="h-3.5 w-3.5" />} label="IP Address" value={lead.ipAddress || "—"} />
               <InfoRow icon={<Clock className="h-3.5 w-3.5" />} label="Received" value={new Date(lead.createdAt).toLocaleString()} />
             </div>
           </section>

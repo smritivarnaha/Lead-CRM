@@ -98,6 +98,7 @@ model Lead {
   source      String?
   pageUrl     String?   // URL of page where form was submitted
   pageTitle   String?   // Title of page where form was submitted
+  ipAddress   String?   // IP address of the form submitter
   rawFields   String?   // JSON string of all raw form fields
   utmSource   String?
   utmMedium   String?

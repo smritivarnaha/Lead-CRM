@@ -220,7 +220,7 @@ export default function ClientSettingsPage() {
                   <div className="relative group">
                     <div className="absolute top-2 right-2 flex items-center gap-2">
                       <button onClick={() => {
-                        navigator.clipboard.writeText(`add_action( 'elementor_pro/forms/new_record', function( $record, $handler ) {\n    wp_remote_post( 'https://lead-crmsss.vercel.app/api/webhook/receive/${site.id}', [\n        'body' => wp_json_encode(array_map(function($f){return $f['value'];}, $record->get('fields'))),\n        'headers' => [ 'Content-Type' => 'application/json' ],\n        'blocking' => false\n    ]);\n}, 10, 2 );`);
+                        navigator.clipboard.writeText(`add_action( 'elementor_pro/forms/new_record', function( $record, $handler ) {\n    $fields = [];\n    foreach ( $record->get( 'fields' ) as $id => $field ) {\n        $fields[ $id ] = $field['value'];\n    }\n    $fields['page_url'] = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';\n    $fields['ipAddress'] = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0] : (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '');\n    wp_remote_post( 'https://lead-crmsss.vercel.app/api/webhook/receive/${site.id}', [\n        'body' => wp_json_encode($fields),\n        'headers' => [ 'Content-Type' => 'application/json' ],\n        'blocking' => false\n    ]);\n}, 10, 2 );`);
                         toast.success("Snippet copied!");
                       }} className="p-1.5 bg-slate-700/50 hover:bg-slate-700 text-slate-200 rounded transition-colors backdrop-blur-sm" title="Copy code">
                         <Copy className="w-3.5 h-3.5" />
@@ -233,6 +233,9 @@ export default function ClientSettingsPage() {
     foreach ( $record->get( 'fields' ) as $id => $field ) {
         $fields[ $id ] = $field['value'];
     }
+    $fields['page_url'] = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
+    $fields['ipAddress'] = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0] : (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '');
+    
     wp_remote_post( 'https://lead-crmsss.vercel.app/api/webhook/receive/${site.id}', [
         'body' => wp_json_encode($fields),
         'headers' => [ 'Content-Type' => 'application/json' ],

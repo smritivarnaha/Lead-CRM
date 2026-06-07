@@ -132,6 +132,10 @@ export async function POST(
     const utmMedium   = body.utm_medium   || null;
     const utmCampaign = body.utm_campaign || null;
 
+    const ipAddress = request.headers.get("x-forwarded-for")?.split(',')[0].trim() || request.headers.get("x-real-ip") || null;
+    const pageUrl = body.pageUrl || body.page_url || request.headers.get("referer") || null;
+    const pageTitle = body.pageTitle || body.page_title || null;
+
     // --- Smart Lead Routing ---
     // If the message or source contains certain keywords, try to assign to a specific user.
     let assignedToId: string | null = null;
@@ -171,6 +175,9 @@ export async function POST(
         utmSource,
         utmMedium,
         utmCampaign,
+        pageUrl,
+        pageTitle,
+        ipAddress,
         rawFields: JSON.stringify(body),
         status: "NEW",
         priority: "NORMAL",

@@ -27,7 +27,8 @@ add_action( 'elementor_pro/forms/new_record', function( $record, $handler ) {
         $fields[ $id ] = $field['value'];
     }
     
-    $fields['sourceUrl'] = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
+    $fields['page_url'] = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
+    $fields['ipAddress'] = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0] : (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '');
     
     $webhook_url = 'https://lead-crmsss.vercel.app/api/webhook/receive/' . $website_id;
     
@@ -42,7 +43,8 @@ add_action( 'wpcf7_before_send_mail', function( $contact_form, &$abort, $submiss
     $website_id = '${websiteId}';
     if ( $submission ) {
         $data = $submission->get_posted_data();
-        $data['sourceUrl'] = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
+        $data['page_url'] = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
+        $data['ipAddress'] = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0] : (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '');
         $data['_wpcf7'] = true;
         
         $webhook_url = 'https://lead-crmsss.vercel.app/api/webhook/receive/' . $website_id;
