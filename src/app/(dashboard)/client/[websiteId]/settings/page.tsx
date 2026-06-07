@@ -284,7 +284,7 @@ export default function ClientSettingsPage() {
                   <div className="relative group">
                     <div className="absolute top-2 right-2 flex items-center gap-2">
                       <button onClick={() => {
-                        navigator.clipboard.writeText(`<script>\ndocument.addEventListener('submit', function(e) {\n  const form = e.target.closest('form');\n  if (!form) return;\n  \n  // Convert all form fields automatically\n  const formData = new FormData(form);\n  const data = Object.fromEntries(formData.entries());\n  data.page_url = window.location.href;\n\n  // Send to CRM in the background\n  fetch('https://lead-crmsss.vercel.app/api/webhook/receive/${site.id}', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify(data),\n    keepalive: true // Ensures it sends even if page redirects\n  }).catch(console.error);\n});\n</script>`);
+                        navigator.clipboard.writeText(`<script>\ndocument.addEventListener('submit', function(e) {\n  const form = e.target.closest('form');\n  if (!form) return;\n  \n  // Convert all form fields automatically\n  const formData = new FormData(form);\n  const data = Object.fromEntries(formData.entries());\n  data.page_url = window.location.href;\n\n  // Send to CRM in the background\n  fetch('https://lead-crmsss.vercel.app/api/webhook/receive/${site.id}', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify(data),\n    keepalive: true\n  }).catch(console.error);\n});\n</script>`);
                         toast.success("Universal Snippet copied!");
                       }} className="p-1.5 bg-slate-700/50 hover:bg-slate-700 text-slate-200 rounded transition-colors backdrop-blur-sm" title="Copy code">
                         <Copy className="w-3.5 h-3.5" />
@@ -311,6 +311,82 @@ document.addEventListener('submit', function(e) {
   }).catch(console.error);
 });
 </script>`}
+                      </code>
+                    </pre>
+                  </div>
+                </div>
+              </div>
+
+              {/* Method 5: Google Sheets */}
+              <div>
+                <h4 className="text-base font-bold text-slate-900 flex items-center gap-2 mb-3">
+                  <span className="w-6 h-6 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-xs">5</span> 
+                  Method 5: Google Sheets (Auto-Sync)
+                </h4>
+                <div className="ml-8 text-sm text-slate-600 space-y-4">
+                  <p>Turn any Google Sheet into a lead source! This script adds a custom "LeadFlow CRM" menu to your Google Sheet so you can manually push rows, AND it automatically pushes new Google Forms submissions.</p>
+                  <ol className="list-decimal ml-4 space-y-2 text-slate-700 mb-4">
+                    <li>Open your Google Sheet and click <strong>Extensions ➔ Apps Script</strong>.</li>
+                    <li>Paste the code below, replacing everything, and click <strong>Save</strong>.</li>
+                    <li>Refresh your Google Sheet. You will see a new <strong>LeadFlow CRM</strong> menu at the top!</li>
+                  </ol>
+                  <div className="relative group">
+                    <div className="absolute top-2 right-2 flex items-center gap-2">
+                      <button onClick={() => {
+                        navigator.clipboard.writeText(`const WEBHOOK_URL = 'https://lead-crmsss.vercel.app/api/webhook/receive/${site.id}';\n\nfunction onOpen() {\n  var ui = SpreadsheetApp.getUi();\n  ui.createMenu('LeadFlow CRM')\n      .addItem('Push Selected Row to CRM', 'sendRowToCRM')\n      .addToUi();\n}\n\nfunction sendRowToCRM() {\n  var sheet = SpreadsheetApp.getActiveSheet();\n  var row = sheet.getActiveCell().getRow();\n  if (row === 1) return SpreadsheetApp.getUi().alert("Please select a data row (not the header).");\n  \n  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];\n  var values = sheet.getRange(row, 1, 1, sheet.getLastColumn()).getValues()[0];\n  \n  var payload = {};\n  for (var i = 0; i < headers.length; i++) {\n    if (headers[i]) payload[headers[i]] = values[i];\n  }\n  \n  UrlFetchApp.fetch(WEBHOOK_URL, {\n    "method": "post",\n    "contentType": "application/json",\n    "payload": JSON.stringify(payload)\n  });\n  SpreadsheetApp.getUi().alert("Row " + row + " successfully sent to LeadFlow CRM!");\n}\n\n// Add a Trigger for "On form submit" to use this automatically\nfunction onFormSubmit(e) {\n  var sheet = SpreadsheetApp.getActiveSheet();\n  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];\n  \n  var payload = {};\n  for (var i = 0; i < headers.length; i++) {\n    if (headers[i]) payload[headers[i]] = e.values[i];\n  }\n  \n  UrlFetchApp.fetch(WEBHOOK_URL, {\n    "method": "post",\n    "contentType": "application/json",\n    "payload": JSON.stringify(payload)\n  });\n}`);
+                        toast.success("Apps Script copied!");
+                      }} className="p-1.5 bg-slate-700/50 hover:bg-slate-700 text-slate-200 rounded transition-colors backdrop-blur-sm" title="Copy code">
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <pre className="bg-[#1E1E1E] text-slate-300 p-4 rounded-lg text-[13px] overflow-x-auto leading-relaxed font-mono max-h-96">
+                      <code className="language-javascript">
+{`const WEBHOOK_URL = 'https://lead-crmsss.vercel.app/api/webhook/receive/${site.id}';
+
+function onOpen() {
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu('LeadFlow CRM')
+      .addItem('Push Selected Row to CRM', 'sendRowToCRM')
+      .addToUi();
+}
+
+function sendRowToCRM() {
+  var sheet = SpreadsheetApp.getActiveSheet();
+  var row = sheet.getActiveCell().getRow();
+  if (row === 1) return SpreadsheetApp.getUi().alert("Please select a data row (not the header).");
+  
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var values = sheet.getRange(row, 1, 1, sheet.getLastColumn()).getValues()[0];
+  
+  var payload = {};
+  for (var i = 0; i < headers.length; i++) {
+    if (headers[i]) payload[headers[i]] = values[i];
+  }
+  
+  UrlFetchApp.fetch(WEBHOOK_URL, {
+    "method": "post",
+    "contentType": "application/json",
+    "payload": JSON.stringify(payload)
+  });
+  SpreadsheetApp.getUi().alert("Row " + row + " successfully sent to LeadFlow CRM!");
+}
+
+// Optional: Set up an "On form submit" trigger in Apps Script to run this automatically!
+function onFormSubmit(e) {
+  var sheet = SpreadsheetApp.getActiveSheet();
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  
+  var payload = {};
+  for (var i = 0; i < headers.length; i++) {
+    if (headers[i]) payload[headers[i]] = e.values[i];
+  }
+  
+  UrlFetchApp.fetch(WEBHOOK_URL, {
+    "method": "post",
+    "contentType": "application/json",
+    "payload": JSON.stringify(payload)
+  });
+}`}
                       </code>
                     </pre>
                   </div>
