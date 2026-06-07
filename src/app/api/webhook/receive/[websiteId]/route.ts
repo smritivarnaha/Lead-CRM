@@ -271,8 +271,8 @@ export async function POST(
         title: pushTitle,
         body: pushBody,
         url: "/leads",
-        icon: workspace?.pushIconUrl || "/icon-192.png",
-        badge: workspace?.pushBadgeUrl || "/badge-72x72.png",
+        icon: workspace?.pushIconUrl?.startsWith('data:') ? "/api/settings/icon" : (workspace?.pushIconUrl || "/icon-192.png"),
+        badge: workspace?.pushBadgeUrl?.startsWith('data:') ? "/api/settings/badge" : (workspace?.pushBadgeUrl || "/badge-72x72.png"),
         actions: [
           { action: "view", title: workspace?.pushCtaLabel || "View Lead", url: workspace?.pushCtaUrl || "/leads" },
           { action: "dismiss", title: "Dismiss" },

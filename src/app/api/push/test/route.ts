@@ -16,8 +16,8 @@ export async function POST() {
       title: "Test Notification",
       body: "If you are seeing this, your Web Push is working perfectly!",
       url: "/settings",
-      icon: workspace?.pushIconUrl || "/icon-192.png",
-      badge: workspace?.pushBadgeUrl || "/badge-72x72.png",
+      icon: workspace?.pushIconUrl?.startsWith('data:') ? "/api/settings/icon" : (workspace?.pushIconUrl || "/icon-192.png"),
+      badge: workspace?.pushBadgeUrl?.startsWith('data:') ? "/api/settings/badge" : (workspace?.pushBadgeUrl || "/badge-72x72.png"),
       actions: [{ action: "dismiss", title: "Dismiss" }]
     });
 
