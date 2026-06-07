@@ -284,30 +284,33 @@ export default function ClientSettingsPage() {
                   <div className="relative group">
                     <div className="absolute top-2 right-2 flex items-center gap-2">
                       <button onClick={() => {
-                        navigator.clipboard.writeText(`const formData = {\n  name: document.getElementById('name').value,\n  email: document.getElementById('email').value,\n  phone: document.getElementById('phone').value,\n  message: document.getElementById('message').value,\n  page_url: window.location.href\n};\n\nfetch('https://lead-crmsss.vercel.app/api/webhook/receive/${site.id}', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify(formData)\n})\n.then(response => response.json())\n.then(data => console.log('Lead captured!'))\n.catch(error => console.error('Error:', error));`);
-                        toast.success("Snippet copied!");
+                        navigator.clipboard.writeText(`<script>\ndocument.addEventListener('submit', function(e) {\n  const form = e.target.closest('form');\n  if (!form) return;\n  \n  // Convert all form fields automatically\n  const formData = new FormData(form);\n  const data = Object.fromEntries(formData.entries());\n  data.page_url = window.location.href;\n\n  // Send to CRM in the background\n  fetch('https://lead-crmsss.vercel.app/api/webhook/receive/${site.id}', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify(data),\n    keepalive: true // Ensures it sends even if page redirects\n  }).catch(console.error);\n});\n</script>`);
+                        toast.success("Universal Snippet copied!");
                       }} className="p-1.5 bg-slate-700/50 hover:bg-slate-700 text-slate-200 rounded transition-colors backdrop-blur-sm" title="Copy code">
                         <Copy className="w-3.5 h-3.5" />
                       </button>
                     </div>
                     <pre className="bg-[#1E1E1E] text-slate-300 p-4 rounded-lg text-[13px] overflow-x-auto leading-relaxed font-mono">
-                      <code className="language-javascript">
-{`const formData = {
-  name: document.getElementById('name').value,
-  email: document.getElementById('email').value,
-  phone: document.getElementById('phone').value,
-  message: document.getElementById('message').value,
-  page_url: window.location.href
-};
+                      <code className="language-html">
+{`<script>
+document.addEventListener('submit', function(e) {
+  const form = e.target.closest('form');
+  if (!form) return;
+  
+  // 1. Automatically grab EVERY field in your HTML form
+  const formData = new FormData(form);
+  const data = Object.fromEntries(formData.entries());
+  data.page_url = window.location.href;
 
-fetch('https://lead-crmsss.vercel.app/api/webhook/receive/${site.id}', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(formData)
-})
-.then(response => response.json())
-.then(data => console.log('Lead captured!'))
-.catch(error => console.error('Error:', error));`}
+  // 2. Send to CRM silently in the background
+  fetch('https://lead-crmsss.vercel.app/api/webhook/receive/${site.id}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    keepalive: true // Ensures data sends even if page redirects to a "Thank You" page
+  }).catch(console.error);
+});
+</script>`}
                       </code>
                     </pre>
                   </div>
