@@ -470,8 +470,8 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
               <table className="w-full text-left border-collapse" style={{ tableLayout: "fixed" }}>
                 {/* HEADERS */}
                 <thead className={`sticky top-0 bg-[#F7F5FF] z-10 border-b border-[#E8E4F3] shadow-[0_1px_0_#E8E4F3]`}>
-                  <tr className="h-[40px] text-[10.5px] font-bold text-[#6B7280] uppercase tracking-wider">
-                    <th className={`w-[45px] px-4 py-0 border-r ${borderClass} text-center font-normal`}>
+                  <tr className="h-[40px] text-[11px] font-bold text-[#6B7280] uppercase tracking-wider">
+                    <th className={`w-[40px] px-4 py-0 border-r ${borderClass} text-center font-normal`}>
                       <input 
                         type="checkbox" 
                         checked={filteredLeads.length > 0 && selectedLeadIds.size === filteredLeads.length}
@@ -479,11 +479,11 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
                         className="rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED]" 
                       />
                     </th>
-                    <th className={`w-[95px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer`}>
+                    <th className={`w-[75px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer`}>
                       <div className="flex items-center justify-between">DATE/TIME<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                     </th>
                     {cols.name && (
-                      <th className={`w-[160px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer`}>
+                      <th className={`w-[170px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer`}>
                         <div className="flex items-center justify-between">NAME<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                       </th>
                     )}
@@ -498,12 +498,12 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
                       </th>
                     )}
                     {cols.timeInStage && (
-                      <th className={`w-[90px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer hidden lg:table-cell`}>
+                      <th className={`w-[95px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer hidden lg:table-cell`}>
                         <div className="flex items-center justify-between">IN STAGE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                       </th>
                     )}
                     {cols.stage && (
-                      <th className={`w-[150px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer`}>
+                      <th className={`w-[155px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer`}>
                         <div className="flex items-center justify-between">STAGE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                       </th>
                     )}
@@ -519,7 +519,7 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
                 </thead>
 
                 {/* BODY */}
-                <tbody className="text-[12px]">
+                <tbody className="text-[12.5px]">
                   {loading ? (
                     <tr><td colSpan={9} className="text-center py-12 text-[#9CA3AF]">Loading data...</td></tr>
                   ) : filteredLeads.length === 0 ? (
@@ -551,10 +551,10 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
                           />
                         </td>
                         <td className={`px-4 py-1 border-r ${borderClass}`}>
-                          <div className="font-bold text-[#1A1523] text-[11px] leading-tight">
+                          <div className="font-bold text-[#1A1523] text-[11.5px] leading-tight">
                             {new Date(lead.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                           </div>
-                          <div className="text-[10px] text-[#6B7280] leading-none mt-0.5 font-medium">
+                          <div className="text-[10.5px] text-[#6B7280] leading-none mt-0.5 font-medium">
                             {new Date(lead.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </div>
                         </td>
@@ -565,10 +565,10 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
                                 {char}
                               </div>
                               <div className="min-w-0">
-                                <div className="font-bold text-[#1A1523] hover:text-[#7C3AED] truncate text-[12px] leading-tight">
+                                <div className="font-bold text-[#1A1523] hover:text-[#7C3AED] truncate text-[12.8px] leading-tight">
                                   {lead.fullName}
                                 </div>
-                                <div className="text-[10.5px] text-[#6B7280] truncate leading-tight mt-0.5 flex items-center gap-1">
+                                <div className="text-[11px] text-[#6B7280] truncate leading-tight mt-0.5 flex items-center gap-1">
                                   <span>{lead.source || "Website Form"}</span>
                                   {(lead.smsSent || lead.pushSent) && (
                                     <>
@@ -586,21 +586,21 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
                         )}
                         {cols.phone && (
                           <td className={`px-4 py-0 border-r ${borderClass}`}>
-                            <div className="font-semibold text-[#1A1523] text-[12px] truncate">
+                            <div className="font-semibold text-[#1A1523] text-[12.5px] truncate">
                               {lead.phone ? lead.phone : <span className="text-[#9CA3AF] font-normal italic text-[11px]">No phone</span>}
                             </div>
                           </td>
                         )}
                         {cols.email && (
                           <td className={`px-4 py-0 border-r ${borderClass} hidden lg:table-cell`}>
-                            <div className="font-medium text-[#1A1523] text-[12px] truncate">
+                            <div className="font-medium text-[#1A1523] text-[12.5px] truncate">
                               {lead.email ? lead.email : <span className="text-[#9CA3AF] font-normal italic text-[11px]">No email</span>}
                             </div>
                           </td>
                         )}
                         {cols.timeInStage && (
                           <td className={`px-4 py-0 border-r ${borderClass} hidden lg:table-cell`}>
-                            <div className="flex items-center text-slate-600 font-medium text-[11.5px]">
+                            <div className="flex items-center text-slate-600 font-medium text-[12px]">
                               <Clock className="w-3 h-3 mr-1 text-slate-400" />
                               {lead.updatedAt ? Math.max(0, Math.floor((new Date().getTime() - new Date(lead.updatedAt).getTime()) / (1000 * 3600 * 24))) : 0}d
                             </div>
@@ -612,7 +612,7 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
                           </td>
                         )}
                         {cols.closeDate && (
-                          <td className={`px-4 py-0 border-r font-medium text-[#1A1523] text-[12px] ${borderClass}`}>
+                          <td className={`px-4 py-0 border-r font-medium text-[#1A1523] text-[12.5px] ${borderClass}`}>
                             {new Date(lead.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                           </td>
                         )}
