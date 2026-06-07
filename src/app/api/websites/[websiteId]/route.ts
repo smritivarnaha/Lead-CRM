@@ -16,6 +16,7 @@ export async function PATCH(
     const body = await request.json();
 
     const data: any = {};
+    if (body.name !== undefined) data.name = body.name;
     if (body.logoUrl !== undefined) data.logoUrl = body.logoUrl;
     if (body.adminPhone !== undefined) data.adminPhone = body.adminPhone;
 

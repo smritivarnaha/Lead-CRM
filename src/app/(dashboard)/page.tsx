@@ -142,12 +142,24 @@ export default function DashboardPage() {
                     )}
                   </div>
                   
-                  <div className="text-right">
-                    <h3 className="text-lg font-bold text-slate-900 leading-tight">
-                      {site.name}
-                    </h3>
-                    <a href={site.domain.startsWith('http') ? site.domain : `https://${site.domain}`} target="_blank" rel="noreferrer" className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center justify-end mt-1">
-                      {site.domain} <ExternalLink className="w-3 h-3 ml-1 opacity-70" />
+                  <div className="text-right flex-1 ml-4 overflow-hidden">
+                    {!isClient ? (
+                      <input 
+                        type="text"
+                        value={site.name}
+                        onChange={(e) => setWebsites(prev => prev.map(w => w.id === site.id ? { ...w, name: e.target.value } : w))}
+                        onBlur={(e) => handleSave(site.id, "name", e.target.value)}
+                        className="text-lg font-bold text-slate-900 leading-tight text-right w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:outline-none transition-colors truncate"
+                        placeholder="Brand Name"
+                        title="Edit Brand Name"
+                      />
+                    ) : (
+                      <h3 className="text-lg font-bold text-slate-900 leading-tight truncate">
+                        {site.name}
+                      </h3>
+                    )}
+                    <a href={site.domain.startsWith('http') ? site.domain : `https://${site.domain}`} target="_blank" rel="noreferrer" className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center justify-end mt-1 truncate">
+                      <span className="truncate">{site.domain}</span> <ExternalLink className="w-3 h-3 ml-1 opacity-70 flex-shrink-0" />
                     </a>
                   </div>
                 </div>
