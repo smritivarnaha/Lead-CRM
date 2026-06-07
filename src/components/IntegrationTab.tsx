@@ -213,9 +213,8 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
               <ol className="list-decimal ml-4 space-y-3 text-[#0D652D] font-medium text-sm">
                 <li>Open your Google Sheet and click <strong>Extensions ➔ Apps Script</strong>.</li>
                 <li>Paste the code below, replacing everything, and click <strong>Save</strong>.</li>
-                <li><strong>For Google Forms (Instant Auto-Sync)</strong>: Click the <strong>Triggers</strong> icon (clock) on the left sidebar ➔ <strong>Add Trigger</strong>. Choose <code>onFormSubmitTrigger</code> as the function to run, event source <code>From spreadsheet</code>, and event type <code>On form submit</code>.</li>
-                <li><strong>For Manual Typing & Copy-Pasting (1-Min Auto-Sync)</strong>: Click <strong>Add Trigger</strong> again. Choose <code>syncNewRows</code> as the function to run, event source <code>Time-driven</code>, type of trigger <code>Minutes timer</code>, and select <code>Every minute</code>. This automatically syncs new rows you type or paste without doing anything manually!</li>
-                <li>Refresh your Google Sheet. You will see a custom <strong>LeadFlow CRM</strong> menu at the top, and a <code>CRM Status</code> column will be added automatically to track synced rows!</li>
+                <li>Refresh your Google Sheet (press F5 or reload the page). You will see a custom <strong>LeadFlow CRM</strong> menu at the top.</li>
+                <li>Click <strong>LeadFlow CRM ➔ 🚀 Enable Auto-Sync Triggers (Run Once)</strong>. This will run a quick setup script, prompt you to authorize your Google account once, and automatically configure all background timers and form submission triggers. No manual trigger setup required!</li>
               </ol>
             </div>
 
@@ -230,9 +229,36 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
   ui.createMenu('LeadFlow CRM')
+      .addItem('🚀 Enable Auto-Sync Triggers (Run Once)', 'setupAutoSync')
+      .addSeparator()
       .addItem('Push Selected Row to CRM', 'sendRowToCRM')
       .addItem('Sync All Pending Rows Now', 'syncNewRows')
       .addToUi();
+}
+
+// Automatically configures the triggers for you programmatically so you don't have to do it manually!
+function setupAutoSync() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  // Clean up any existing triggers to avoid duplicates
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    ScriptApp.deleteTrigger(triggers[i]);
+  }
+  
+  // 1. Create the Time-driven minute trigger (syncs manual typing / copy-paste rows every minute)
+  ScriptApp.newTrigger('syncNewRows')
+      .timeBased()
+      .everyMinutes(1)
+      .create();
+      
+  // 2. Create the Form submission trigger (syncs new form submissions instantly)
+  ScriptApp.newTrigger('onFormSubmitTrigger')
+      .forSpreadsheet(ss)
+      .onFormSubmit()
+      .create();
+      
+  SpreadsheetApp.getUi().alert("🚀 Success! Auto-sync triggers created. New rows will now automatically push to the CRM within 1 minute of being added.");
 }
 
 function sendRowToCRM() {
