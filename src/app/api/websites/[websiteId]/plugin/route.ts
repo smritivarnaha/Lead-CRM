@@ -6,6 +6,7 @@ export async function GET(
   { params }: { params: Promise<{ websiteId: string }> }
 ) {
   const { websiteId } = await params;
+  const { origin } = new URL(request.url);
   
   const phpContent = `<?php
 /**
@@ -34,7 +35,7 @@ add_action( 'elementor_pro/forms/new_record', function( $record, $handler ) {
     $fields['page_url'] = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
     $fields['ipAddress'] = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0] : (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '');
     
-    $webhook_url = 'https://lead-crmsss.vercel.app/api/webhook/receive/' . $website_id;
+    $webhook_url = '${origin}/api/webhook/receive/' . $website_id;
     
     wp_remote_post( $webhook_url, [
         'body' => $fields, // WP handles urlencoding automatically
@@ -54,7 +55,7 @@ add_action( 'wpcf7_before_send_mail', function( $contact_form, &$abort, $submiss
         $form_title = $contact_form->title();
         $data['source'] = 'WordPress CF7 - ' . $form_title;
         
-        $webhook_url = 'https://lead-crmsss.vercel.app/api/webhook/receive/' . $website_id;
+        $webhook_url = '${origin}/api/webhook/receive/' . $website_id;
         wp_remote_post( $webhook_url, [
             'body' => $data,
             'blocking' => false

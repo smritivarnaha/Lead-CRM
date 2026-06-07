@@ -25,6 +25,7 @@ type Website = {
 
 export default function WebsitesPage() {
   const [websites, setWebsites] = useState<Website[]>([]);
+  const [origin, setOrigin] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -62,6 +63,9 @@ export default function WebsitesPage() {
 
   useEffect(() => {
     fetchSites();
+    if (typeof window !== "undefined") {
+      setOrigin(window.location.origin);
+    }
   }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -168,14 +172,16 @@ export default function WebsitesPage() {
 
   const copyCredentials = (credentials: { email: string, password: string } | null) => {
     if (!credentials) return;
+    const currentOrigin = typeof window !== "undefined" ? window.location.origin : "https://leadflow.app";
     navigator.clipboard.writeText(
-      `Login URL: https://lead-crmsss.vercel.app/sign-in\nEmail: ${credentials.email}\nPassword: ${credentials.password}`
+      `Login URL: ${currentOrigin}/sign-in\nEmail: ${credentials.email}\nPassword: ${credentials.password}`
     );
     alert("Credentials copied to clipboard!");
   };
 
   const copyWebhook = (id: string) => {
-    const url = `https://lead-crmsss.vercel.app/api/webhook/receive/${id}`;
+    const currentOrigin = typeof window !== "undefined" ? window.location.origin : "https://leadflow.app";
+    const url = `${currentOrigin}/api/webhook/receive/${id}`;
     navigator.clipboard.writeText(url);
     alert("Webhook URL copied to clipboard!");
   };
@@ -220,7 +226,7 @@ export default function WebsitesPage() {
                   <div className="flex items-center gap-3">
                     <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 max-w-[320px]">
                       <code className="text-slate-700 text-xs truncate font-medium mr-3">
-                        https://lead-crmsss.vercel.app/api/webhook/receive/{site.id}
+                        {origin}/api/webhook/receive/{site.id}
                       </code>
                       <button onClick={() => copyWebhook(site.id)} className="text-slate-400 hover:text-indigo-600 transition-colors shrink-0" title="Copy Webhook URL">
                         <Copy className="h-4 w-4" />
@@ -345,7 +351,7 @@ export default function WebsitesPage() {
                   <p className="text-sm font-semibold text-green-800 mb-3">✅ Client account created!</p>
                   <p className="text-xs text-green-700 mb-1">Share these credentials with your client:</p>
                   <div className="bg-white rounded border border-green-200 p-3 mt-2 font-mono text-xs text-slate-800 space-y-1">
-                    <p><span className="text-slate-500">Login URL:</span> https://lead-crmsss.vercel.app/sign-in</p>
+                    <p><span className="text-slate-500">Login URL:</span> {origin}/sign-in</p>
                     <p><span className="text-slate-500">Email:</span> {createdCredentials.email}</p>
                     <p><span className="text-slate-500">Password:</span> {createdCredentials.password}</p>
                   </div>

@@ -281,13 +281,17 @@ export async function POST(
       const defaultActionUrl = `/client/${websiteId}?leadId=${newLead.id}`;
       let resolvedActionUrl = defaultActionUrl;
       
-      if (workspace?.pushCtaUrl && workspace.pushCtaUrl !== "/leads") {
+      if (workspace?.pushCtaUrl && workspace.pushCtaUrl.trim() !== "") {
         let customUrl = workspace.pushCtaUrl
           .replace(/\[websiteId\]/g, websiteId)
-          .replace(/\{\{websiteId\}\}/g, websiteId);
+          .replace(/\{\{websiteId\}\}/g, websiteId)
+          .replace(/\[leadId\]/g, newLead.id)
+          .replace(/\{\{leadId\}\}/g, newLead.id);
         
         if (customUrl.startsWith("/")) {
-          customUrl += (customUrl.includes("?") ? "&" : "?") + `leadId=${newLead.id}`;
+          if (!customUrl.includes("leadId=")) {
+            customUrl += (customUrl.includes("?") ? "&" : "?") + `leadId=${newLead.id}`;
+          }
         }
         resolvedActionUrl = customUrl;
       }

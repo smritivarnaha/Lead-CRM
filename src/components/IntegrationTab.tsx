@@ -23,6 +23,13 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
   const [activeMethod, setActiveMethod] = useState<string>("wordpress");
   const [dynamicSiteId, setDynamicSiteId] = useState<string>(site.id);
   const finalSiteId = dynamicSiteId || site.id;
+  const [origin, setOrigin] = useState("https://leadflow.app");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setOrigin(window.location.origin);
+    }
+  }, []);
 
   useEffect(() => {
     if (site.id) {
@@ -171,7 +178,8 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
               <ol className="list-decimal ml-4 space-y-3 text-[#0D652D] font-medium text-sm">
                 <li>Open your Google Sheet and click <strong>Extensions ➔ Apps Script</strong>.</li>
                 <li>Paste the code below, replacing everything, and click <strong>Save</strong>.</li>
-                <li>Refresh your Google Sheet. You will now see a custom <strong>LeadFlow CRM</strong> menu at the top!</li>
+                <li>To enable automatic form sync, click the <strong>Triggers</strong> icon (clock) on the left sidebar ➔ <strong>Add Trigger</strong>. Choose <code>onFormSubmitTrigger</code> as the function to run, event source <code>From spreadsheet</code>, and event type <code>On form submit</code>.</li>
+                <li>Refresh your Google Sheet. You will now see a custom <strong>LeadFlow CRM</strong> menu at the top for manual pushes!</li>
               </ol>
             </div>
 
@@ -188,7 +196,7 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
               </div>
             )}
             
-            <CopyBox language="Google Apps Script (javascript)" code={`const WEBHOOK_URL = 'https://lead-crmsss.vercel.app/api/webhook/receive/${finalSiteId}';
+            <CopyBox language="Google Apps Script (javascript)" code={`const WEBHOOK_URL = '${origin}/api/webhook/receive/${finalSiteId}';
 
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
@@ -201,13 +209,28 @@ function sendRowToCRM() {
   var sheet = SpreadsheetApp.getActiveSheet();
   var row = sheet.getActiveCell().getRow();
   if (row === 1) return SpreadsheetApp.getUi().alert("Please select a data row.");
-  
+  sendRowByNumber(sheet, row);
+}
+
+// Automatically triggers when a Google Form linked to this sheet is submitted (via trigger setup)
+function onFormSubmitTrigger(e) {
+  if (e && e.range) {
+    var sheet = e.range.getSheet();
+    var row = e.range.getRow();
+    sendRowByNumber(sheet, row);
+  }
+}
+
+// Helper function to extract and send data to your CRM
+function sendRowByNumber(sheet, row) {
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
   var values = sheet.getRange(row, 1, 1, sheet.getLastColumn()).getValues()[0];
   
   var payload = {};
   for (var i = 0; i < headers.length; i++) {
-    if (headers[i]) payload[headers[i]] = values[i];
+    if (headers[i]) {
+      payload[headers[i]] = values[i];
+    }
   }
   
   UrlFetchApp.fetch(WEBHOOK_URL, {
@@ -244,7 +267,7 @@ function sendRowToCRM() {
               </div>
             )}
 
-            <CopyBox language="HTML Snippet (html)" code={"<script>\ndocument.addEventListener('submit', function(e) {\n  const form = e.target.closest('form');\n  if (!form) return;\n  \n  // 1. Automatically grab EVERY field in your HTML form\n  const formData = new FormData(form);\n  const data = Object.fromEntries(formData.entries());\n  data.page_url = window.location.href;\n\n  // 2. Send to CRM silently in the background\n  fetch('https://lead-crmsss.vercel.app/api/webhook/receive/" + finalSiteId + "', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify(data),\n    keepalive: true // Ensures data sends perfectly even if the page redirects\n  }).catch(console.error);\n});\n" + "</sc" + "ript>"} />
+            <CopyBox language="HTML Snippet (html)" code={"<script>\ndocument.addEventListener('submit', function(e) {\n  const form = e.target.closest('form');\n  if (!form) return;\n  \n  // 1. Automatically grab EVERY field in your HTML form\n  const formData = new FormData(form);\n  const data = Object.fromEntries(formData.entries());\n  data.page_url = window.location.href;\n\n  // 2. Send to CRM silently in the background\n  fetch('" + origin + "/api/webhook/receive/" + finalSiteId + "', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify(data),\n    keepalive: true // Ensures data sends perfectly even if the page redirects\n  }).catch(console.error);\n});\n" + "</sc" + "ript>"} />
           </div>
         )}
 
@@ -284,7 +307,7 @@ function sendRowToCRM() {
     $fields['ipAddress'] = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0] : (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '');
     
     // Post to CRM
-    wp_remote_post( 'https://lead-crmsss.vercel.app/api/webhook/receive/${finalSiteId}', [
+    wp_remote_post( '${origin}/api/webhook/receive/${finalSiteId}', [
         'body' => wp_json_encode($fields),
         'headers' => [ 'Content-Type' => 'application/json' ],
         'blocking' => false
@@ -318,11 +341,11 @@ function sendRowToCRM() {
 
               <div className="flex w-full max-w-2xl items-center bg-white border border-indigo-200 rounded-lg overflow-hidden shadow-sm">
                 <code className="flex-1 text-slate-800 font-mono text-[13px] px-4 py-3 text-left overflow-x-auto whitespace-nowrap">
-                  https://lead-crmsss.vercel.app/api/webhook/receive/{finalSiteId}
+                  {origin}/api/webhook/receive/{finalSiteId}
                 </code>
                 <button 
                   onClick={() => {
-                    navigator.clipboard.writeText(`https://lead-crmsss.vercel.app/api/webhook/receive/${finalSiteId}`);
+                    navigator.clipboard.writeText(`${origin}/api/webhook/receive/${finalSiteId}`);
                     toast.success("Webhook URL copied!");
                   }} 
                   className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm flex items-center gap-2 px-6 py-4 h-full transition-colors shrink-0 border-l border-indigo-700"

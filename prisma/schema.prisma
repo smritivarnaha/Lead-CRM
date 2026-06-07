@@ -22,7 +22,7 @@ model Workspace {
   pushIconUrl       String? @default("/icon-192.png")
   pushBadgeUrl      String? @default("/icon-192.png")
   pushCtaLabel      String? @default("View Lead")
-  pushCtaUrl        String? @default("/leads")
+  pushCtaUrl        String? @default("/client/[websiteId]")
 
   // SMS Auto-Reply Settings (Fast2SMS)
   smsAutoReplyEnabled Boolean @default(false)
