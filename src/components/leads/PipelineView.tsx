@@ -447,10 +447,12 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
                         {cols.stage && (
                           <td className={`px-5 py-0 border-r ${borderClass}`}>
                             <DropdownMenu>
-                              <DropdownMenuTrigger className="flex items-center gap-2.5 w-full hover:bg-white p-1 rounded outline-none">
-                                <div className={`h-3.5 w-3.5 rounded-full border-2 ${stage.ring} ${stage.fill}`} />
-                                <span className="text-[#1A1523] font-medium truncate flex-1 text-left">{stage.label}</span>
-                                <ChevronDown className="h-3 w-3 text-[#9CA3AF]" />
+                              <DropdownMenuTrigger asChild>
+                                <button className="flex items-center gap-2.5 w-full hover:bg-white p-1.5 rounded outline-none cursor-pointer">
+                                  <div className={`h-3.5 w-3.5 rounded-full border-2 ${stage.ring} ${stage.fill}`} />
+                                  <span className="text-[#1A1523] font-medium truncate flex-1 text-left">{stage.label}</span>
+                                  <ChevronDown className="h-3 w-3 text-[#9CA3AF]" />
+                                </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="start" className="w-48">
                                 <DropdownMenuLabel className="text-xs">Update Status</DropdownMenuLabel>
@@ -537,12 +539,14 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
                     
                     <div className="flex flex-col gap-2">
                       <DropdownMenu>
-                        <DropdownMenuTrigger className="flex items-center justify-between w-full bg-slate-50 border border-slate-200 hover:bg-slate-100 p-2.5 rounded-lg outline-none transition-colors">
-                          <div className="flex items-center gap-2.5">
-                            <div className={`h-3 w-3 rounded-full border-2 ${stage.ring} ${stage.fill}`} />
-                            <span className="text-[13px] font-semibold text-slate-700">{stage.label}</span>
-                          </div>
-                          <ChevronDown className="h-4 w-4 text-slate-400" />
+                        <DropdownMenuTrigger asChild>
+                          <button className="flex items-center justify-between w-full bg-slate-50 border border-slate-200 hover:bg-slate-100 p-2.5 rounded-lg outline-none transition-colors cursor-pointer">
+                            <div className="flex items-center gap-2.5">
+                              <div className={`h-3 w-3 rounded-full border-2 ${stage.ring} ${stage.fill}`} />
+                              <span className="text-[13px] font-semibold text-slate-700">{stage.label}</span>
+                            </div>
+                            <ChevronDown className="h-4 w-4 text-slate-400" />
+                          </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" className="w-[calc(100vw-3rem)]">
                           <DropdownMenuLabel className="text-xs">Update Status</DropdownMenuLabel>
