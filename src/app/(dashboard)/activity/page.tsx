@@ -17,6 +17,14 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export default function ActivityPage() {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
@@ -157,7 +165,7 @@ export default function ActivityPage() {
 
         <button 
           onClick={fetchLogs} 
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl shadow-sm transition-colors self-start sm:self-auto"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-[#E8E4F3] hover:bg-[#F3F0FF] hover:text-[#7C3AED] text-slate-700 text-xs font-bold rounded-xl shadow-sm transition-all self-start sm:self-auto"
         >
           <RefreshCw className="w-3.5 h-3.5" /> Refresh Log
         </button>
@@ -165,8 +173,8 @@ export default function ActivityPage() {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-700">
+        <div className="bg-white rounded-2xl border border-[#E8E4F3] p-5 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-[#F7F5FF] flex items-center justify-center text-[#7C3AED]">
             <Activity className="w-6 h-6" />
           </div>
           <div>
@@ -175,8 +183,8 @@ export default function ActivityPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
+        <div className="bg-white rounded-2xl border border-[#E8E4F3] p-5 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-[#FFFBEB] flex items-center justify-center text-[#F59E0B]">
             <MessageSquare className="w-6 h-6" />
           </div>
           <div>
@@ -185,8 +193,8 @@ export default function ActivityPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+        <div className="bg-white rounded-2xl border border-[#E8E4F3] p-5 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-[#EDE9FE] flex items-center justify-center text-[#7C3AED]">
             <Bell className="w-6 h-6" />
           </div>
           <div>
@@ -197,31 +205,31 @@ export default function ActivityPage() {
       </div>
 
       {/* Filter Toolbar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-[#E8E4F3] rounded-2xl p-4 shadow-sm">
         
         {/* Type Filter Buttons */}
         <div className="flex flex-wrap gap-1">
           <button
             onClick={() => setActiveFilter("all")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeFilter === "all" ? "bg-slate-900 text-white" : "text-slate-500 hover:text-slate-800"}`}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeFilter === "all" ? "bg-[#7C3AED] text-white" : "text-slate-500 hover:text-slate-800 hover:bg-[#F3F0FF]"}`}
           >
             All Activity
           </button>
           <button
             onClick={() => setActiveFilter("leads")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeFilter === "leads" ? "bg-blue-50 text-blue-600" : "text-slate-500 hover:text-slate-800"}`}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeFilter === "leads" ? "bg-[#EFF6FF] text-[#3B82F6]" : "text-slate-500 hover:text-[#3B82F6] hover:bg-[#EFF6FF]"}`}
           >
             Leads Only
           </button>
           <button
             onClick={() => setActiveFilter("notes")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeFilter === "notes" ? "bg-amber-50 text-amber-600" : "text-slate-500 hover:text-slate-800"}`}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeFilter === "notes" ? "bg-[#FFFBEB] text-[#F59E0B]" : "text-slate-500 hover:text-[#F59E0B] hover:bg-[#FFFBEB]"}`}
           >
             Call Logs / Notes
           </button>
           <button
             onClick={() => setActiveFilter("alerts")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeFilter === "alerts" ? "bg-indigo-50 text-indigo-600" : "text-slate-500 hover:text-slate-800"}`}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeFilter === "alerts" ? "bg-[#EDE9FE] text-[#7C3AED]" : "text-slate-500 hover:text-[#7C3AED] hover:bg-[#EDE9FE]"}`}
           >
             System Alerts
           </button>
@@ -234,91 +242,84 @@ export default function ActivityPage() {
             placeholder="Search activity description..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200 focus:bg-white transition-all"
+            className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-[#E8E4F3] rounded-xl text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#EDE9FE] focus:bg-white focus:border-[#7C3AED] transition-all"
           />
           <Search className="absolute left-3.5 top-3.5 w-3.5 h-3.5 text-slate-400" />
         </div>
       </div>
 
       {/* Activity Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-white border border-[#E8E4F3] rounded-2xl shadow-sm overflow-hidden mt-4">
         {filteredActivities.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold text-[11px] uppercase tracking-wider font-sans">
-                  <th className="px-6 py-4">Action / Event</th>
-                  <th className="px-6 py-4">Website</th>
-                  <th className="px-6 py-4 font-sans">Description & Details</th>
-                  <th className="px-6 py-4 text-center">Time</th>
-                  <th className="px-6 py-4 text-right">Link</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-sans">
-                {filteredActivities.map((act) => (
-                  <tr key={act.id} className="hover:bg-slate-50/50 transition-colors">
-                    {/* Action Column */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        {getActivityIcon(act.type)}
-                        <span className="font-bold text-slate-900 text-sm whitespace-nowrap">{act.title}</span>
-                      </div>
-                    </td>
-                    
-                    {/* Website Column */}
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-50 text-slate-600 border border-slate-100 uppercase tracking-wide">
-                        {act.websiteName}
-                      </span>
-                    </td>
-                    
-                    {/* Description & Details Column */}
-                    <td className="px-6 py-4">
-                      <div className="space-y-1">
-                        <p className="text-slate-600 text-xs leading-relaxed">{act.description}</p>
-                        {act.meta && (
-                          <div className="bg-slate-50/80 border border-slate-100 rounded-xl p-3 mt-1.5 text-xs text-slate-700 font-sans space-y-1 max-w-lg shadow-inner">
-                            {act.meta.content && (
-                              <p className="font-medium italic text-slate-800">"{act.meta.content}"</p>
-                            )}
-                            {(act.meta.phone || act.meta.email || act.meta.temperature) && (
-                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-500 font-semibold mt-1">
-                                {act.meta.phone && <span>📞 {act.meta.phone}</span>}
-                                {act.meta.email && <span>✉️ {act.meta.email}</span>}
-                                {act.meta.temperature && (
-                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                    act.meta.temperature === "HOT" ? "bg-red-50 text-red-600" :
-                                    act.meta.temperature === "WARM" ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"
-                                  }`}>
-                                    {act.meta.temperature}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </td>
+          <Table>
+            <TableHeader className="bg-[#F7F5FF] border-b border-[#E8E4F3]">
+              <TableRow>
+                <TableHead className="font-bold text-slate-700 text-xs">Action / Event</TableHead>
+                <TableHead className="font-bold text-slate-700 text-xs">Website</TableHead>
+                <TableHead className="font-bold text-slate-700 text-xs">Description & Details</TableHead>
+                <TableHead className="font-bold text-slate-700 text-xs text-center">Time</TableHead>
+                <TableHead className="font-bold text-slate-700 text-xs text-right">Link</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredActivities.map((act) => (
+                <TableRow key={act.id} className="hover:bg-[#F3F0FF]/50 border-b border-[#E8E4F3]">
+                  <TableCell className="align-middle">
+                    <div className="flex items-center gap-3">
+                      {getActivityIcon(act.type)}
+                      <span className="font-bold text-slate-900 text-[13px] whitespace-nowrap">{act.title}</span>
+                    </div>
+                  </TableCell>
+                  
+                  <TableCell className="align-middle">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-[#F7F5FF] text-slate-600 border border-[#E8E4F3] uppercase tracking-wide">
+                      {act.websiteName}
+                    </span>
+                  </TableCell>
+                  
+                  <TableCell className="align-middle">
+                    <div className="space-y-1">
+                      <p className="text-slate-600 text-xs leading-relaxed">{act.description}</p>
+                      {act.meta && (
+                        <div className="bg-slate-50/80 border border-[#E8E4F3] rounded-xl p-3 mt-1.5 text-xs text-slate-700 font-sans space-y-1 max-w-lg shadow-inner">
+                          {act.meta.content && (
+                            <p className="font-medium italic text-slate-800">"{act.meta.content}"</p>
+                          )}
+                          {(act.meta.phone || act.meta.email || act.meta.temperature) && (
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-500 font-semibold mt-1">
+                              {act.meta.phone && <span>📞 {act.meta.phone}</span>}
+                              {act.meta.email && <span>✉️ {act.meta.email}</span>}
+                              {act.meta.temperature && (
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                  act.meta.temperature === "HOT" ? "bg-red-50 text-red-600" :
+                                  act.meta.temperature === "WARM" ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"
+                                }`}>
+                                  {act.meta.temperature}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
 
-                    {/* Time Column */}
-                    <td className="px-6 py-4 text-center">
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 whitespace-nowrap">
-                        <Clock className="w-3.5 h-3.5" />
-                        <span>{formatRelativeTime(act.timestamp)}</span>
-                      </span>
-                    </td>
+                  <TableCell className="text-center align-middle">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 whitespace-nowrap">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>{formatRelativeTime(act.timestamp)}</span>
+                    </span>
+                  </TableCell>
 
-                    {/* Link Column */}
-                    <td className="px-6 py-4 text-right">
-                      <Link href={act.link} className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline whitespace-nowrap">
-                        View Lead <ArrowUpRight className="w-3.5 h-3.5" />
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                  <TableCell className="text-right align-middle">
+                    <Link href={act.link} className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-[#7C3AED] hover:underline whitespace-nowrap">
+                      View Lead <ArrowUpRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 mb-4">

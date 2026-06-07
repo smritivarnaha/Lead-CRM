@@ -335,7 +335,7 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
     else setSelectedLeadIds(new Set(leads.map(l => l.id)));
   };
 
-  const borderClass = "border-[#E5E7EB]";
+  const borderClass = "border-[#E8E4F3]";
 
   return (
     <div className="flex flex-col h-full w-full bg-white relative overflow-hidden">
@@ -381,21 +381,21 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
       {/* ─── TOOLBAR ─── */}
       <div 
         className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-8 py-3 bg-white border-b gap-3 sm:gap-0"
-        style={{ borderColor: "#E5E7EB", flexShrink: 0 }}
+        style={{ borderColor: "#E8E4F3", flexShrink: 0 }}
       >
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto pb-1 sm:pb-0">
           <button className="flex items-center justify-center w-7 h-7 text-[#9CA3AF] hover:text-[#1A1523] hover:bg-slate-100 rounded transition-colors">
             <ArrowRightToLine className="h-4 w-4" strokeWidth={2} />
           </button>
           
-          <div className="h-4 w-px bg-[#E5E7EB]" />
+          <div className="h-4 w-px bg-[#E8E4F3]" />
           
           <ToolbarDropdown 
             label={statusFilter ? STAGE_STYLE[statusFilter]?.label || "Filtered" : "All opportunities"} 
             icon={UsersIcon} 
             isActive={true}
           >
-            <button className={`w-full text-left px-3 py-1.5 text-[13px] hover:bg-slate-50 ${!statusFilter ? "font-bold text-indigo-600 bg-indigo-50/50" : "text-slate-700"}`} onClick={() => setStatusFilter(null)}>
+            <button className={`w-full text-left px-3 py-1.5 text-[13px] hover:bg-slate-50 ${!statusFilter ? "font-bold text-indigo-600 bg-[#F7F5FF] text-[#7C3AED]" : "text-slate-700"}`} onClick={() => setStatusFilter(null)}>
               All opportunities
             </button>
             <div className="h-px bg-slate-100 my-1" />
@@ -469,9 +469,9 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
             <div className="hidden md:block">
               <table className="w-full text-left border-collapse" style={{ tableLayout: "fixed" }}>
                 {/* HEADERS */}
-                <thead className={`sticky top-0 bg-white z-10 border-b shadow-[0_1px_0_#E5E7EB]`}>
-                  <tr className="h-[48px] text-[11.5px] font-semibold text-[#6B7280] uppercase tracking-wider">
-                    <th className={`w-[56px] px-6 py-0 border-r ${borderClass} text-center font-normal`}>
+                <thead className={`sticky top-0 bg-[#F7F5FF] z-10 border-b border-[#E8E4F3] shadow-[0_1px_0_#E8E4F3]`}>
+                  <tr className="h-[40px] text-[10.5px] font-bold text-[#6B7280] uppercase tracking-wider">
+                    <th className={`w-[45px] px-4 py-0 border-r ${borderClass} text-center font-normal`}>
                       <input 
                         type="checkbox" 
                         checked={filteredLeads.length > 0 && selectedLeadIds.size === filteredLeads.length}
@@ -479,48 +479,51 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
                         className="rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED]" 
                       />
                     </th>
+                    <th className={`w-[95px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer`}>
+                      <div className="flex items-center justify-between">DATE/TIME<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
+                    </th>
                     {cols.name && (
-                      <th className={`w-[260px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                      <th className={`w-[160px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer`}>
                         <div className="flex items-center justify-between">NAME<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                       </th>
                     )}
                     {cols.phone && (
-                      <th className={`w-[140px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                      <th className={`w-[110px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer`}>
                         <div className="flex items-center justify-between">PHONE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                       </th>
                     )}
                     {cols.email && (
-                      <th className={`w-[200px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer hidden lg:table-cell`}>
+                      <th className={`w-[160px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer hidden lg:table-cell`}>
                         <div className="flex items-center justify-between">EMAIL<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                       </th>
                     )}
                     {cols.timeInStage && (
-                      <th className={`w-[120px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer hidden lg:table-cell`}>
+                      <th className={`w-[90px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer hidden lg:table-cell`}>
                         <div className="flex items-center justify-between">IN STAGE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                       </th>
                     )}
                     {cols.stage && (
-                      <th className={`w-[240px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                      <th className={`w-[150px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer`}>
                         <div className="flex items-center justify-between">STAGE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                       </th>
                     )}
                     {cols.closeDate && (
-                      <th className={`w-[120px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer`}>
+                      <th className={`w-[90px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer`}>
                         <div className="flex items-center justify-between">CLOSE DATE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                       </th>
                     )}
-                    <th className={`w-[140px] px-0 py-0 ${borderClass}`}>
+                    <th className={`w-[100px] px-0 py-0 ${borderClass}`}>
                       <div className="flex items-center justify-center">ACTIONS</div>
                     </th>
                   </tr>
                 </thead>
 
                 {/* BODY */}
-                <tbody className="text-[13px]">
+                <tbody className="text-[12px]">
                   {loading ? (
-                    <tr><td colSpan={8} className="text-center py-12 text-[#9CA3AF]">Loading data...</td></tr>
+                    <tr><td colSpan={9} className="text-center py-12 text-[#9CA3AF]">Loading data...</td></tr>
                   ) : filteredLeads.length === 0 ? (
-                    <tr><td colSpan={8} className="text-center py-12 text-[#9CA3AF]">No leads found.</td></tr>
+                    <tr><td colSpan={9} className="text-center py-12 text-[#9CA3AF]">No leads found.</td></tr>
                   ) : filteredLeads.map((lead) => {
                     const stage = STAGE_STYLE[lead.status] || STAGE_STYLE.NEW;
                     const heat = HEAT_STYLE[lead.temperature] || HEAT_STYLE.WARM;
@@ -531,15 +534,15 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
                     const idx = char.charCodeAt(0) % colors.length;
                     const logoBg = colors[idx];
                     
-                    const trHeightClass = rowHeight === "compact" ? "h-[48px]" : rowHeight === "comfortable" ? "h-[80px]" : "h-[64px]";
+                    const trHeightClass = rowHeight === "compact" ? "h-[40px]" : rowHeight === "comfortable" ? "h-[68px]" : "h-[50px]";
                     
                     return (
                       <tr 
                         key={lead.id} 
                         className={`${trHeightClass} border-b hover:bg-[#F7F5FF] transition-colors`}
-                        style={{ borderColor: "#E5E7EB" }}
+                        style={{ borderColor: "#E8E4F3" }}
                       >
-                        <td className={`px-6 py-0 border-r text-center ${borderClass}`}>
+                        <td className={`px-4 py-0 border-r text-center ${borderClass}`}>
                           <input 
                             type="checkbox" 
                             checked={selectedLeadIds.has(lead.id)}
@@ -547,24 +550,32 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
                             className="rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED] cursor-pointer" 
                           />
                         </td>
+                        <td className={`px-4 py-1 border-r ${borderClass}`}>
+                          <div className="font-bold text-[#1A1523] text-[11px] leading-tight">
+                            {new Date(lead.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          </div>
+                          <div className="text-[10px] text-[#6B7280] leading-none mt-0.5 font-medium">
+                            {new Date(lead.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </td>
                         {cols.name && (
-                          <td className={`px-5 py-0 border-r truncate ${borderClass} cursor-pointer`} onClick={() => setInspectLead(lead)}>
-                            <div className="flex items-center gap-3">
-                              <div className="flex items-center justify-center h-7 w-7 rounded-md text-[12px] font-bold text-[#1A1523] flex-shrink-0 shadow-sm" style={{ background: logoBg }}>
+                          <td className={`px-4 py-1 border-r truncate ${borderClass} cursor-pointer`} onClick={() => setInspectLead(lead)}>
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center justify-center h-6 w-6 rounded text-[10px] font-bold text-[#1A1523] flex-shrink-0 shadow-sm" style={{ background: logoBg }}>
                                 {char}
                               </div>
                               <div className="min-w-0">
-                                <div className="font-semibold text-[#1A1523] hover:text-[#7C3AED] truncate leading-tight">
+                                <div className="font-bold text-[#1A1523] hover:text-[#7C3AED] truncate text-[12px] leading-tight">
                                   {lead.fullName}
                                 </div>
-                                <div className="text-[12px] text-[#6B7280] truncate leading-tight mt-0.5 flex items-center gap-1.5">
+                                <div className="text-[10.5px] text-[#6B7280] truncate leading-tight mt-0.5 flex items-center gap-1">
                                   <span>{lead.source || "Website Form"}</span>
                                   {(lead.smsSent || lead.pushSent) && (
                                     <>
                                       <span className="text-gray-300">•</span>
-                                      <div className="flex items-center gap-1 bg-[#F7F5FF] px-1.5 py-0.5 rounded border border-[#E8E4F3]" title="Alerts Sent">
-                                        {lead.smsSent && <Phone className="h-3 w-3 text-indigo-500" />}
-                                        {lead.pushSent && <BellRing className="h-3 w-3 text-indigo-500" />}
+                                      <div className="flex items-center gap-0.5 bg-[#F7F5FF] px-1 py-0.2 rounded border border-[#E8E4F3]" title="Alerts Sent">
+                                        {lead.smsSent && <Phone className="h-2.5 w-2.5 text-indigo-500" />}
+                                        {lead.pushSent && <BellRing className="h-2.5 w-2.5 text-indigo-500" />}
                                       </div>
                                     </>
                                   )}
@@ -574,54 +585,54 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
                           </td>
                         )}
                         {cols.phone && (
-                          <td className={`px-5 py-0 border-r ${borderClass}`}>
-                            <div className="font-medium text-[#1A1523] truncate">
-                              {lead.phone ? lead.phone : <span className="text-[#9CA3AF] font-normal italic">No phone</span>}
+                          <td className={`px-4 py-0 border-r ${borderClass}`}>
+                            <div className="font-semibold text-[#1A1523] text-[12px] truncate">
+                              {lead.phone ? lead.phone : <span className="text-[#9CA3AF] font-normal italic text-[11px]">No phone</span>}
                             </div>
                           </td>
                         )}
                         {cols.email && (
-                          <td className={`px-5 py-0 border-r ${borderClass} hidden lg:table-cell`}>
-                            <div className="font-medium text-[#1A1523] truncate">
-                              {lead.email ? lead.email : <span className="text-[#9CA3AF] font-normal italic">No email</span>}
+                          <td className={`px-4 py-0 border-r ${borderClass} hidden lg:table-cell`}>
+                            <div className="font-medium text-[#1A1523] text-[12px] truncate">
+                              {lead.email ? lead.email : <span className="text-[#9CA3AF] font-normal italic text-[11px]">No email</span>}
                             </div>
                           </td>
                         )}
                         {cols.timeInStage && (
-                          <td className={`px-5 py-0 border-r ${borderClass} hidden lg:table-cell`}>
-                            <div className="flex items-center text-slate-600 font-medium">
-                              <Clock className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
-                              {lead.updatedAt ? Math.max(0, Math.floor((new Date().getTime() - new Date(lead.updatedAt).getTime()) / (1000 * 3600 * 24))) : 0} days
+                          <td className={`px-4 py-0 border-r ${borderClass} hidden lg:table-cell`}>
+                            <div className="flex items-center text-slate-600 font-medium text-[11.5px]">
+                              <Clock className="w-3 h-3 mr-1 text-slate-400" />
+                              {lead.updatedAt ? Math.max(0, Math.floor((new Date().getTime() - new Date(lead.updatedAt).getTime()) / (1000 * 3600 * 24))) : 0}d
                             </div>
                           </td>
                         )}
                         {cols.stage && (
-                          <td className={`px-5 py-0 border-r ${borderClass}`}>
+                          <td className={`px-4 py-0 border-r ${borderClass}`}>
                             <StageSelector lead={lead} stageConfig={stage} handleStatusChange={handleStatusChange} />
                           </td>
                         )}
                         {cols.closeDate && (
-                          <td className={`px-5 py-0 border-r font-medium text-[#1A1523] ${borderClass}`}>
+                          <td className={`px-4 py-0 border-r font-medium text-[#1A1523] text-[12px] ${borderClass}`}>
                             {new Date(lead.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                           </td>
                         )}
-                        <td className="px-5 py-0">
-                          <div className="flex items-center justify-center gap-1.5">
+                        <td className="px-4 py-0">
+                          <div className="flex items-center justify-center gap-1">
                             {lead.email ? (
-                              <a href={`mailto:${lead.email}`} className="w-8 h-8 rounded-lg bg-white border border-[#E5E7EB] hover:bg-[#F3F0FF] hover:border-[#7C3AED] hover:text-[#7C3AED] flex items-center justify-center transition-all text-[#6B7280] shadow-sm" title="Send Email">
-                                <Mail className="h-3.5 w-3.5" />
+                              <a href={`mailto:${lead.email}`} className="w-7 h-7 rounded-lg bg-white border border-[#E8E4F3] hover:bg-[#F3F0FF] hover:border-[#7C3AED] hover:text-[#7C3AED] flex items-center justify-center transition-all text-[#6B7280] shadow-sm" title="Send Email">
+                                <Mail className="h-3 w-3" />
                               </a>
                             ) : (
-                              <div className="w-8 h-8 rounded-lg border border-transparent flex items-center justify-center text-gray-200"><Mail className="h-3.5 w-3.5" /></div>
+                              <div className="w-7 h-7 rounded-lg border border-transparent flex items-center justify-center text-gray-200"><Mail className="h-3 w-3" /></div>
                             )}
                             {lead.phone ? (
-                              <a href={`tel:${lead.phone}`} onClick={() => setCallLogLead(lead)} className="w-8 h-8 rounded-lg bg-white border border-[#E5E7EB] hover:bg-[#ECFDF5] hover:border-[#10B981] hover:text-[#10B981] flex items-center justify-center transition-all text-[#6B7280] shadow-sm" title="Call Contact">
-                                <Phone className="h-3.5 w-3.5" />
+                              <a href={`tel:${lead.phone}`} onClick={() => setCallLogLead(lead)} className="w-7 h-7 rounded-lg bg-white border border-[#E8E4F3] hover:bg-[#ECFDF5] hover:border-[#10B981] hover:text-[#10B981] flex items-center justify-center transition-all text-[#6B7280] shadow-sm" title="Call Contact">
+                                <Phone className="h-3 w-3" />
                               </a>
                             ) : (
-                              <div className="w-8 h-8 rounded-lg border border-transparent flex items-center justify-center text-gray-200"><Phone className="h-3.5 w-3.5" /></div>
+                              <div className="w-7 h-7 rounded-lg border border-transparent flex items-center justify-center text-gray-200"><Phone className="h-3 w-3" /></div>
                             )}
-                            <button onClick={() => setInspectLead(lead)} className="w-8 h-8 rounded-lg bg-white border border-[#E5E7EB] hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 flex items-center justify-center transition-all text-[#6B7280] shadow-sm" title="View Full Details">
+                            <button onClick={() => setInspectLead(lead)} className="w-7 h-7 rounded-lg bg-white border border-[#E8E4F3] hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 flex items-center justify-center transition-all text-[#6B7280] shadow-sm" title="View Full Details">
                               <Eye className="h-3.5 w-3.5" />
                             </button>
                           </div>
@@ -647,15 +658,19 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
                 const logoBg = colors[idx];
                 
                 return (
-                  <div key={lead.id} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col gap-3">
+                  <div key={lead.id} className="bg-white border border-[#E8E4F3] rounded-xl p-4 shadow-sm flex flex-col gap-3">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3" onClick={() => setInspectLead(lead)}>
                         <div className="flex items-center justify-center h-10 w-10 rounded-lg text-[14px] font-bold text-[#1A1523] flex-shrink-0" style={{ background: logoBg }}>
                           {char}
                         </div>
                         <div className="min-w-0">
-                          <div className="font-bold text-[#1A1523] truncate text-[15px]">{lead.fullName}</div>
+                          <div className="font-bold text-[#1A1523] truncate text-[14.5px]">{lead.fullName}</div>
                           <div className="text-[12px] text-slate-500 truncate mt-0.5">{lead.phone || lead.email || "No contact info"}</div>
+                          {/* Mobile Date/Time display */}
+                          <div className="text-[10.5px] text-[#7C3AED] font-semibold mt-1">
+                            Submitted: {new Date(lead.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })} at {new Date(lead.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
                         </div>
                       </div>
                       <input 
@@ -670,19 +685,28 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
                       <StageSelector lead={lead} stageConfig={stage} handleStatusChange={handleStatusChange} isMobile={true} />
                     </div>
 
-                    <div className="flex items-center gap-2 pt-1">
-                      <button onClick={() => setInspectLead(lead)} className="flex-1 flex items-center justify-center gap-2 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-slate-700 text-[13px] font-semibold transition-colors">
-                        <Eye className="h-4 w-4" /> View
+                    {/* Responsive Grid for all options */}
+                    <div className="grid grid-cols-3 gap-2 pt-1">
+                      <button onClick={() => setInspectLead(lead)} className="flex items-center justify-center gap-1.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-slate-700 text-[12px] font-bold transition-colors">
+                        <Eye className="h-3.5 w-3.5" /> View
                       </button>
-                      {lead.phone && (
-                        <a href={`tel:${lead.phone}`} onClick={() => setCallLogLead(lead)} className="flex-1 flex items-center justify-center gap-2 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-emerald-700 text-[13px] font-semibold transition-colors">
-                          <Phone className="h-4 w-4" /> Call
+                      {lead.phone ? (
+                        <a href={`tel:${lead.phone}`} onClick={() => setCallLogLead(lead)} className="flex items-center justify-center gap-1.5 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-emerald-700 text-[12px] font-bold transition-colors">
+                           <Phone className="h-3.5 w-3.5" /> Call
                         </a>
+                      ) : (
+                        <div className="flex items-center justify-center gap-1.5 py-2 bg-slate-50/50 border border-slate-100 rounded-lg text-slate-300 text-[12px] font-bold cursor-not-allowed">
+                           <Phone className="h-3.5 w-3.5" /> Call
+                        </div>
                       )}
-                      {lead.email && !lead.phone && (
-                        <a href={`mailto:${lead.email}`} className="flex-1 flex items-center justify-center gap-2 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-indigo-700 text-[13px] font-semibold transition-colors">
-                          <Mail className="h-4 w-4" /> Email
+                      {lead.email ? (
+                        <a href={`mailto:${lead.email}`} className="flex items-center justify-center gap-1.5 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-indigo-700 text-[12px] font-bold transition-colors">
+                          <Mail className="h-3.5 w-3.5" /> Email
                         </a>
+                      ) : (
+                        <div className="flex items-center justify-center gap-1.5 py-2 bg-slate-50/50 border border-slate-100 rounded-lg text-slate-300 text-[12px] font-bold cursor-not-allowed">
+                          <Mail className="h-3.5 w-3.5" /> Email
+                        </div>
                       )}
                     </div>
                   </div>
