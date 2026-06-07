@@ -539,7 +539,7 @@ export function PipelineView({ websiteId, initialLeads }: { websiteId?: string; 
       </div>
 
       {/* ─── CONTENT ─── */}
-      <div className="flex-1 overflow-auto bg-white relative">
+      <div className="flex-1 overflow-auto bg-white relative min-h-[500px] pb-48">
         {viewMode === "kanban" ? (
           <KanbanBoard leads={filteredLeads} onStatusChange={handleStatusChange} onInspect={setInspectLead} onCallLog={setCallLogLead} />
         ) : (

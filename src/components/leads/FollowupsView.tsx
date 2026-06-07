@@ -136,7 +136,7 @@ export function FollowupsView({ initialLeads }: { initialLeads: any[] }) {
       </div>
 
       <div className={`bg-white rounded-2xl border ${borderClass} shadow-sm overflow-hidden`}>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto min-h-[500px] pb-48">
           <table className="w-full text-left whitespace-nowrap" style={{ borderCollapse: "separate", borderSpacing: 0 }}>
             <thead className="text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-white sticky top-0 z-10">
               <tr className={`border-b ${borderClass} ${trHeightClass}`}>
