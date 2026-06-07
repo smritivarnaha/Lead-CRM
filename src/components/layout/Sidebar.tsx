@@ -14,6 +14,7 @@ import {
   Users,
   HelpCircle,
   BookOpen,
+  Link2,
 } from "lucide-react";
 
 const navItems = [
@@ -21,6 +22,7 @@ const navItems = [
   { name: "Lead Pipeline",href: "/leads",       icon: Users },
   { name: "Websites",     href: "/websites",    icon: Globe },
   { name: "Analytics",    href: "/analytics",   icon: BarChart3 },
+  { name: "Integrations", href: "/integrations",icon: Link2 },
   { name: "Workspaces",   href: "/workspaces",  icon: Briefcase },
   { name: "Activity",     href: "/activity",    icon: Activity },
   { name: "Settings",     href: "/settings",    icon: Settings },
