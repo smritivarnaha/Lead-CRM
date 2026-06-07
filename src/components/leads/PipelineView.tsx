@@ -68,8 +68,8 @@ function getScore(lead: Lead) {
 
 import { KanbanBoard } from "./KanbanBoard";
 
-// --- Custom Stage Selector Component (Bug-Free) ---
-function StageSelector({ currentStatus, onSelect }: { currentStatus: string, onSelect: (status: string) => void }) {
+// --- Custom Stage Selector Component ---
+function StageSelector({ lead, stageConfig, handleStatusChange, isMobile = false }: { lead: any, stageConfig: any, handleStatusChange: any, isMobile?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   
@@ -83,13 +83,11 @@ function StageSelector({ currentStatus, onSelect }: { currentStatus: string, onS
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const stageConfig = STAGE_STYLE[currentStatus] || STAGE_STYLE.NEW;
-  
   return (
     <div className="relative w-full" ref={ref} onClick={(e) => e.stopPropagation()}>
       <button 
         type="button"
-        onClick={(e) => { e.stopPropagation(); e.preventDefault(); setOpen(!open); }}
+        onClick={(e) => { e.stopPropagation(); e.preventDefault(); setIsOpen(!isOpen); }}
         className={`flex items-center outline-none cursor-pointer text-left transition-colors ${
           isMobile 
             ? "justify-between w-full bg-slate-50 border border-slate-200 hover:bg-slate-100 p-2.5 rounded-lg" 
@@ -103,7 +101,7 @@ function StageSelector({ currentStatus, onSelect }: { currentStatus: string, onS
         <ChevronDown className={`${isMobile ? "h-4 w-4 text-slate-400 shrink-0" : "h-3 w-3 text-[#9CA3AF] shrink-0"}`} />
       </button>
 
-      {open && (
+      {isOpen && (
         <div className={`absolute left-0 mt-1 bg-white border border-slate-200 shadow-xl rounded-lg z-[100] p-1 flex flex-col gap-0.5 ${isMobile ? "w-full" : "w-48 top-full"}`}>
           <div className="px-2 py-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100 mb-1">Update Status</div>
           {Object.entries(STAGE_STYLE).map(([statusKey, config]) => (
@@ -113,13 +111,15 @@ function StageSelector({ currentStatus, onSelect }: { currentStatus: string, onS
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
+                setIsOpen(false);
                 handleStatusChange(lead.id, statusKey);
-                setOpen(false);
               }}
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] font-medium text-slate-700 hover:bg-slate-50 rounded cursor-pointer text-left transition-colors"
+              className={`flex items-center gap-2.5 px-2.5 py-2 w-full text-left rounded-md transition-colors ${
+                lead.status === statusKey ? "bg-[#F7F5FF] font-bold text-[#1A1523]" : "hover:bg-slate-50 text-slate-700 font-medium"
+              }`}
             >
-              <div className={`h-3 w-3 rounded-full border-2 ${config.ring} ${config.fill} shrink-0`} />
-              {config.label}
+              <div className={`h-2.5 w-2.5 rounded-full border-2 shrink-0 ${config.ring} ${config.fill}`} />
+              <span className="text-[13px] truncate">{config.label}</span>
             </button>
           ))}
         </div>
