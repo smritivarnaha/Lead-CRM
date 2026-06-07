@@ -181,12 +181,23 @@ export async function POST(
 
     const fullName = cleanStr(nameByKey || firstLast || nameByValue) || "Unknown";
 
-    const source = cleanStr(
-      body.source ||
-      body.form_name ||
-      body.form_id ||
-      (body["_wpcf7"] ? "WordPress Form" : "Website Form")
-    );
+    // Advanced Source Detection
+    const userAgent = request.headers.get("user-agent") || "";
+    let detectedSource = "";
+    
+    if (userAgent.includes("Google-Apps-Script") || body.source?.toLowerCase() === "google sheets" || body.source?.toLowerCase() === "sheets") {
+      detectedSource = "Google Sheets";
+    } else if (userAgent.includes("WordPress") || body["_wpcf7"]) {
+      detectedSource = "WordPress";
+    } else if (userAgent.includes("Zapier")) {
+      detectedSource = "Zapier";
+    } else if (userAgent.includes("Make") || userAgent.includes("Integromat")) {
+      detectedSource = "Make.com";
+    } else {
+      detectedSource = body.source || body.form_name || body.form_id || "Website Form";
+    }
+
+    const source = cleanStr(detectedSource);
     const utmSource   = cleanStr(body.utm_source);
     const utmMedium   = cleanStr(body.utm_medium);
     const utmCampaign = cleanStr(body.utm_campaign);
