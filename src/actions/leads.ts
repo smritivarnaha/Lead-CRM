@@ -162,3 +162,20 @@ export async function logCallAction(leadId: string, status: string, callNotes?: 
     return { success: false, error: "Failed to log call" };
   }
 }
+
+export async function updateLeadFollowup(leadId: string, followUpAt: Date | null) {
+  try {
+    const user = await getAuthenticatedUser();
+    if (!user) return { success: false, error: "Unauthorized" };
+
+    const updatedLead = await prisma.lead.update({
+      where: { id: leadId },
+      data: { followUpAt },
+    });
+
+    return { success: true, lead: JSON.parse(JSON.stringify(updatedLead)) };
+  } catch (error) {
+    console.error("Error updating followup date:", error);
+    return { success: false, error: "Failed to update followup date" };
+  }
+}
