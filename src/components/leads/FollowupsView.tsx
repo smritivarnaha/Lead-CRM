@@ -40,7 +40,8 @@ function FollowupTimeSelector({ lead, onUpdate }: { lead: any, onUpdate: (leadId
   return (
     <div className="relative">
       <button 
-        onClick={() => setIsOpen(!isOpen)}
+        type="button"
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsOpen(!isOpen); }}
         className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors text-[13px] font-medium w-full justify-between ${
           lead.followUpAt 
             ? isOverdue 
@@ -61,10 +62,10 @@ function FollowupTimeSelector({ lead, onUpdate }: { lead: any, onUpdate: (leadId
       {isOpen && (
         <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 shadow-xl rounded-xl p-1 z-50">
           <div className="px-2 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Quick Snooze</div>
-          <button onClick={() => handleSetTime(1)} className="w-full text-left px-3 py-2 text-[13px] hover:bg-slate-50 rounded-md text-slate-700">+ 1 Hour</button>
-          <button onClick={() => handleSetTime(24)} className="w-full text-left px-3 py-2 text-[13px] hover:bg-slate-50 rounded-md text-slate-700">+ 1 Day (Tomorrow)</button>
-          <button onClick={() => handleSetTime(24 * 3)} className="w-full text-left px-3 py-2 text-[13px] hover:bg-slate-50 rounded-md text-slate-700">+ 3 Days</button>
-          <button onClick={() => handleSetTime(24 * 7)} className="w-full text-left px-3 py-2 text-[13px] hover:bg-slate-50 rounded-md text-slate-700">+ 1 Week</button>
+          <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSetTime(1); }} className="w-full text-left px-3 py-2 text-[13px] hover:bg-slate-50 rounded-md text-slate-700">+ 1 Hour</button>
+          <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSetTime(24); }} className="w-full text-left px-3 py-2 text-[13px] hover:bg-slate-50 rounded-md text-slate-700">+ 1 Day (Tomorrow)</button>
+          <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSetTime(24 * 3); }} className="w-full text-left px-3 py-2 text-[13px] hover:bg-slate-50 rounded-md text-slate-700">+ 3 Days</button>
+          <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSetTime(24 * 7); }} className="w-full text-left px-3 py-2 text-[13px] hover:bg-slate-50 rounded-md text-slate-700">+ 1 Week</button>
         </div>
       )}
     </div>
@@ -217,14 +218,16 @@ export function FollowupsView({ initialLeads }: { initialLeads: any[] }) {
                       <td className={`px-4 py-0 ${borderClass}`}>
                         <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button 
-                            onClick={() => handleMarkResolved(lead.id, "CONVERTED")}
+                            type="button"
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleMarkResolved(lead.id, "CONVERTED"); }}
                             className="h-7 w-7 rounded border border-green-200 bg-green-50 text-green-600 flex items-center justify-center hover:bg-green-100 transition-colors"
                             title="Mark Converted"
                           >
                             <CheckCircle2 className="h-4 w-4" />
                           </button>
                           <button 
-                            onClick={() => handleMarkResolved(lead.id, "LOST")}
+                            type="button"
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleMarkResolved(lead.id, "LOST"); }}
                             className="h-7 w-7 rounded border border-red-200 bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors"
                             title="Mark Junk/Lost"
                           >
