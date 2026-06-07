@@ -273,6 +273,47 @@ export default function ClientSettingsPage() {
                 </div>
               </div>
 
+              {/* Method 4: Custom HTML/Javascript */}
+              <div>
+                <h4 className="text-base font-bold text-slate-900 flex items-center gap-2 mb-3">
+                  <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs">4</span> 
+                  Method 4: Custom HTML / Javascript
+                </h4>
+                <div className="ml-8 text-sm text-slate-600 space-y-4">
+                  <p>If you are using a custom HTML website or a platform like Webflow/Framer, use this Javascript snippet to instantly send form data to the CRM without refreshing the page.</p>
+                  <div className="relative group">
+                    <div className="absolute top-2 right-2 flex items-center gap-2">
+                      <button onClick={() => {
+                        navigator.clipboard.writeText(`const formData = {\n  name: document.getElementById('name').value,\n  email: document.getElementById('email').value,\n  phone: document.getElementById('phone').value,\n  message: document.getElementById('message').value,\n  page_url: window.location.href\n};\n\nfetch('https://lead-crmsss.vercel.app/api/webhook/receive/${site.id}', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify(formData)\n})\n.then(response => response.json())\n.then(data => console.log('Lead captured!'))\n.catch(error => console.error('Error:', error));`);
+                        toast.success("Snippet copied!");
+                      }} className="p-1.5 bg-slate-700/50 hover:bg-slate-700 text-slate-200 rounded transition-colors backdrop-blur-sm" title="Copy code">
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <pre className="bg-[#1E1E1E] text-slate-300 p-4 rounded-lg text-[13px] overflow-x-auto leading-relaxed font-mono">
+                      <code className="language-javascript">
+{`const formData = {
+  name: document.getElementById('name').value,
+  email: document.getElementById('email').value,
+  phone: document.getElementById('phone').value,
+  message: document.getElementById('message').value,
+  page_url: window.location.href
+};
+
+fetch('https://lead-crmsss.vercel.app/api/webhook/receive/${site.id}', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(formData)
+})
+.then(response => response.json())
+.then(data => console.log('Lead captured!'))
+.catch(error => console.error('Error:', error));`}
+                      </code>
+                    </pre>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
         )}
