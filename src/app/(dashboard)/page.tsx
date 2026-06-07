@@ -194,18 +194,18 @@ export default function DashboardPage() {
 
               {/* Action Buttons */}
               <div className="p-4 bg-slate-50/50 border-t border-slate-100 flex gap-3 backdrop-blur-sm">
-                <Link href={`/client/${site.id}`} className="flex-1">
+                <a href={`/client/${site.id}`} className="flex-1">
                   <Button className="w-full bg-slate-900 hover:bg-indigo-600 text-white font-semibold shadow-md transition-all duration-300">
                     <Activity className="w-4 h-4 mr-2" />
                     Open Pipeline
                   </Button>
-                </Link>
+                </a>
                 {!isClient && (
-                  <Link href={`/client/${site.id}/settings`}>
+                  <a href={`/client/${site.id}/settings`}>
                     <Button variant="outline" className="px-3 border-slate-200 text-slate-600 hover:bg-white hover:text-indigo-600 hover:border-indigo-200 transition-all duration-300 shadow-sm">
                       <Settings className="w-4 h-4" />
                     </Button>
-                  </Link>
+                  </a>
                 )}
               </div>
             </div>

@@ -135,12 +135,12 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
       if (res.success) {
         toast.success("Lead status updated to " + (STAGE_STYLE[newStatus]?.label || newStatus));
       } else {
-        toast.error("Failed to update status. Refreshing...");
-        setTimeout(() => window.location.reload(), 1000);
+        toast.error("Failed to update status. Please do a hard refresh (Ctrl+R).");
+        // Revert optimistic update
+        setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: prev.find(p => p.id === leadId)?.status || newStatus } : l));
       }
     } catch (e) {
-      toast.error("Update applied! Syncing with server...");
-      setTimeout(() => window.location.reload(), 1000);
+      toast.error("Network sync failed. Please do a hard refresh (Ctrl+R) to get the latest app version.");
     }
   };
 
@@ -158,12 +158,10 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
         toast.success("Call logged successfully!");
         setLeads(prev => prev.map(l => l.id === leadId ? res.lead : l));
       } else {
-        toast.error("Failed to log call. Syncing...");
-        setTimeout(() => window.location.reload(), 1000);
+        toast.error("Failed to log call. Please do a hard refresh (Ctrl+R).");
       }
     } catch (e) {
-      toast.error("Update applied! Syncing with server...");
-      setTimeout(() => window.location.reload(), 1000);
+      toast.error("Network sync failed. Please do a hard refresh (Ctrl+R) to get the latest app version.");
     }
   };
 
