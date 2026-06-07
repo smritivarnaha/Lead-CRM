@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { useUser, UserButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import {
   Activity,
@@ -124,6 +124,11 @@ export function Sidebar() {
           <BookOpen className="h-3.5 w-3.5" strokeWidth={1.75} />
           Documentation
         </button>
+      </div>
+
+      {/* User profile & Log out */}
+      <div className="mx-3 mb-4 mt-auto border-t border-[#E8E4F3] pt-4 flex items-center justify-between">
+        <UserButton showName />
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { UserButton } from "@clerk/nextjs";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -97,6 +98,9 @@ export function Header() {
                       </Link>
                     );
                   })}
+                  <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-start">
+                    <UserButton showName />
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>
@@ -155,9 +159,12 @@ export function Header() {
             </TooltipContent>
           </Tooltip>
 
-          <Link href="/settings" className="hidden md:block text-xs font-medium text-slate-500 hover:text-slate-900 transition-colors">
+          <Link href="/settings" className="hidden md:block text-xs font-medium text-slate-500 hover:text-slate-900 transition-colors mr-1">
             Settings
           </Link>
+          <div className="flex items-center">
+            <UserButton />
+          </div>
         </div>
       </div>
     </header>
