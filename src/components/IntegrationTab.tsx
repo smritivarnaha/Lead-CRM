@@ -264,7 +264,7 @@ function setupAutoSync() {
       .onChange()
       .create();
       
-  SpreadsheetApp.getUi().alert("🚀 Success! Auto-sync triggers created. New rows added manually, via forms, or by external HTML forms will now automatically push to the CRM instantly!");
+  SpreadsheetApp.getActiveSpreadsheet().toast("🚀 Success! Auto-sync triggers created. New rows added manually, via forms, or by external HTML forms will now automatically push to the CRM instantly!", "LeadFlow CRM", 5);
 }
 
 function sendRowToCRM() {
@@ -359,12 +359,14 @@ function syncNewRows() {
     var dataRange = sheet.getRange(2, 1, lastRow - 1, lastCol);
     var data = dataRange.getValues();
     
-    for (var i = 0; i < data.length; i++) {
+    for (var i = data.length - 1; i >= 0; i--) {
       var rowNum = i + 2;
       var rowData = data[i];
       var status = rowData[statusColIndex - 1];
       
-      if (status === "Synced") continue;
+      if (status === "Synced") {
+        break; // Stop scanning once we hit already synced history
+      }
       
       // Check if row has any contact info
       var hasContactInfo = false;
