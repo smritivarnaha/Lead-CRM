@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Bell, BellRing, BellOff, Smartphone, X, Link as LinkIcon, Download, Copy, Code2 } from "lucide-react";
 import { toast } from "sonner";
+import IntegrationTab from "@/components/IntegrationTab";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 
@@ -676,81 +677,7 @@ export default function SettingsPage() {
 
         {/* ─── INTEGRATION GUIDE TAB ─── */}
         {activeTab === "integration" && (
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="p-6 bg-slate-50 border-b border-slate-200">
-              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <LinkIcon className="w-5 h-5 text-indigo-600" /> Global Integration Guide
-              </h3>
-              <p className="text-sm text-slate-600 mt-2 leading-relaxed">
-                Learn how to connect your clients' websites to LeadFlow. Each client gets their own specific Webhook URL and Plugin.
-              </p>
-            </div>
-            
-            <div className="p-6 space-y-10">
-              {/* Method 1: WordPress Plugin */}
-              <div>
-                <h4 className="text-base font-bold text-slate-900 flex items-center gap-2 mb-3">
-                  <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs">1</span> 
-                  Method 1: One-Click WP Plugin (Recommended)
-                </h4>
-                <div className="ml-8 text-sm text-slate-600 space-y-4">
-                  <p>We automatically generate a custom WordPress plugin for each website that integrates with <strong>Elementor Pro Forms</strong> and <strong>Contact Form 7</strong> seamlessly.</p>
-                  <ol className="list-decimal ml-4 space-y-2 text-slate-700 bg-slate-50 p-4 rounded-lg border border-slate-100">
-                    <li>Go to the <strong>Websites</strong> tab in the left sidebar.</li>
-                    <li>Find your client's website in the table.</li>
-                    <li>Click the <strong>WP Plugin</strong> button next to their Webhook URL to download their customized `.zip` file.</li>
-                    <li>Log into their WordPress Admin Dashboard ➔ <strong>Plugins</strong> ➔ <strong>Add New</strong> ➔ <strong>Upload Plugin</strong>.</li>
-                    <li>Upload the `.zip` file and click <strong>Activate</strong>.</li>
-                  </ol>
-                </div>
-              </div>
-
-              {/* Method 2: Manual PHP Snippet */}
-              <div>
-                <h4 className="text-base font-bold text-slate-900 flex items-center gap-2 mb-3">
-                  <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs">2</span> 
-                  Method 2: Manual PHP Snippet
-                </h4>
-                <div className="ml-8 text-sm text-slate-600 space-y-4">
-                  <p>If you don't want to install the custom plugin, you can paste this snippet into the <strong>WPCode</strong> plugin or <code>functions.php</code> file. Ensure you replace <code>YOUR_WEBSITE_ID</code> with the ID from the Websites table.</p>
-                  <div className="relative group">
-                    <pre className="bg-[#1E1E1E] text-slate-300 p-4 rounded-lg text-[13px] overflow-x-auto leading-relaxed font-mono">
-                      <code className="language-php">
-{`add_action( 'elementor_pro/forms/new_record', function( $record, $handler ) {
-    $fields = [];
-    foreach ( $record->get( 'fields' ) as $id => $field ) {
-        $fields[ $id ] = $field['value'];
-    }
-    wp_remote_post( 'https://lead-crmsss.vercel.app/api/webhook/receive/YOUR_WEBSITE_ID', [
-        'body' => wp_json_encode($fields),
-        'headers' => [ 'Content-Type' => 'application/json' ],
-        'blocking' => false
-    ]);
-}, 10, 2 );`}
-                      </code>
-                    </pre>
-                  </div>
-                </div>
-              </div>
-
-              {/* Method 3: Direct Webhook */}
-              <div>
-                <h4 className="text-base font-bold text-slate-900 flex items-center gap-2 mb-3">
-                  <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs">3</span> 
-                  Method 3: Direct Webhook URL
-                </h4>
-                <div className="ml-8 text-sm text-slate-600 space-y-4">
-                  <p>You can find the unique webhook URL for every client directly in the <strong>Websites</strong> table. Use this if you are pasting directly into individual Elementor forms or Zapier.</p>
-                  <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 max-w-xl">
-                    <code className="text-slate-800 font-mono text-[13px] truncate mr-4">
-                      https://lead-crmsss.vercel.app/api/webhook/receive/YOUR_WEBSITE_ID
-                    </code>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          </div>
+          <IntegrationTab site={{ id: "YOUR_WEBSITE_ID" }} isGlobal={true} />
         )}
       </div>
 
