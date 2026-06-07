@@ -117,96 +117,87 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {websites.map((site) => (
-            <div key={site.id} className="group relative bg-white rounded-2xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-100 transition-all duration-300 overflow-hidden flex flex-col hover:-translate-y-1">
-              {/* Decorative top gradient bar */}
-              <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              
-              <div className="p-8 flex-1 flex flex-col items-center text-center relative z-10">
-                {/* Logo Container with Glow effect */}
-                <div className="relative mb-6 group-hover:scale-105 transition-transform duration-300">
-                  <div className="absolute inset-0 bg-indigo-500 blur-xl opacity-20 rounded-full group-hover:opacity-40 transition-opacity duration-300" />
-                  <div className="w-20 h-20 bg-white border border-slate-100 shadow-sm rounded-2xl flex items-center justify-center overflow-hidden relative z-10 p-1 group/logo">
-                    {site.logoUrl ? (
-                      <img src={site.logoUrl} alt={site.name} className="w-full h-full object-contain rounded-xl" />
-                    ) : (
-                      <div className="w-full h-full bg-slate-50 rounded-xl flex items-center justify-center">
-                        <Building2 className="w-8 h-8 text-indigo-400" />
-                      </div>
-                    )}
-                    {/* Inline Image Upload Overlay */}
+            <div key={site.id} className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col">
+              <div className="p-6 flex-1 flex flex-col">
+                <div className="flex items-start justify-between mb-6">
+                  {/* Logo Container */}
+                  <div className="relative group/logo">
+                    <div className="w-16 h-16 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden p-1">
+                      {site.logoUrl ? (
+                        <img src={site.logoUrl} alt={site.name} className="w-full h-full object-contain rounded-md" />
+                      ) : (
+                        <Building2 className="w-6 h-6 text-slate-400" />
+                      )}
+                    </div>
                     {!isClient && (
-                      <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity cursor-pointer text-white">
+                      <label className="absolute -bottom-2 -right-2 w-7 h-7 bg-white border border-slate-200 rounded-full flex items-center justify-center shadow-sm cursor-pointer hover:bg-slate-50 transition-colors" title="Upload Badge Logo">
                         <input 
                           type="file" 
                           accept="image/png, image/webp" 
                           className="hidden" 
                           onChange={(e) => handleImageUpload(e, site.id)} 
                         />
-                        <ImageIcon className="w-6 h-6" />
+                        <ImageIcon className="w-3.5 h-3.5 text-slate-600" />
                       </label>
                     )}
                   </div>
+                  
+                  <div className="text-right">
+                    <h3 className="text-lg font-bold text-slate-900 leading-tight">
+                      {site.name}
+                    </h3>
+                    <a href={site.domain.startsWith('http') ? site.domain : `https://${site.domain}`} target="_blank" rel="noreferrer" className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center justify-end mt-1">
+                      {site.domain} <ExternalLink className="w-3 h-3 ml-1 opacity-70" />
+                    </a>
+                  </div>
                 </div>
 
-                <h3 className="text-xl font-extrabold text-slate-900 tracking-tight mb-1 group-hover:text-indigo-600 transition-colors">
-                  {site.name}
-                </h3>
-                
-                <a href={site.domain.startsWith('http') ? site.domain : `https://${site.domain}`} target="_blank" rel="noreferrer" className="text-sm font-medium text-slate-500 hover:text-indigo-600 flex items-center transition-colors">
-                  {site.domain} <ExternalLink className="w-3 h-3 ml-1 opacity-50" />
-                </a>
-
-                {/* Premium Stats Section */}
-                <div className="w-full mt-8 grid grid-cols-3 gap-3">
-                  <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 group-hover:bg-indigo-50 group-hover:border-indigo-100 transition-colors duration-300 flex flex-col items-center justify-center">
-                    <span className="text-xl font-black text-slate-800 group-hover:text-indigo-700 transition-colors">{site.stats?.total || 0}</span>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Total</span>
+                {/* Stats Section */}
+                <div className="grid grid-cols-3 gap-2 mb-6">
+                  <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 flex flex-col items-center justify-center">
+                    <span className="text-lg font-bold text-slate-800">{site.stats?.total || 0}</span>
+                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mt-0.5">Total</span>
                   </div>
-                  <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 group-hover:bg-purple-50 group-hover:border-purple-100 transition-colors duration-300 flex flex-col items-center justify-center">
-                    <span className="text-xl font-black text-slate-800 group-hover:text-purple-700 transition-colors">{site.stats?.newThisWeek || 0}</span>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">This Wk</span>
+                  <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 flex flex-col items-center justify-center">
+                    <span className="text-lg font-bold text-slate-800">{site.stats?.newThisWeek || 0}</span>
+                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mt-0.5">This Wk</span>
                   </div>
-                  <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 group-hover:bg-rose-50 group-hover:border-rose-100 transition-colors duration-300 flex flex-col items-center justify-center relative">
+                  <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 flex flex-col items-center justify-center relative">
                     {(site.stats?.unread || 0) > 0 && (
-                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full animate-pulse" />
+                      <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full animate-pulse" />
                     )}
-                    <span className="text-xl font-black text-slate-800 group-hover:text-rose-700 transition-colors">{site.stats?.unread || 0}</span>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Unread</span>
+                    <span className="text-lg font-bold text-slate-800">{site.stats?.unread || 0}</span>
+                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mt-0.5">Unread</span>
                   </div>
                 </div>
 
                 {/* Inline Phone Editor for SMS */}
                 {!isClient && (
-                  <div className="w-full mt-6 bg-slate-50/50 rounded-lg p-3 border border-slate-100 flex items-center gap-2">
-                    <Smartphone className="w-4 h-4 text-slate-400 shrink-0" />
-                    <input 
-                      type="text" 
-                      placeholder="Admin Phone (SMS)"
-                      className="bg-transparent border-none outline-none text-sm font-medium text-slate-700 w-full placeholder:text-slate-400"
-                      value={site.adminPhone || ""}
-                      onChange={(e) => setWebsites(prev => prev.map(w => w.id === site.id ? { ...w, adminPhone: e.target.value } : w))}
-                      onBlur={(e) => handleSave(site.id, "adminPhone", e.target.value)}
-                    />
-                    {savingId === site.id && <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin shrink-0" />}
+                  <div className="mt-auto">
+                    <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5 block">Admin SMS Phone</label>
+                    <div className="bg-white rounded-md border border-slate-200 flex items-center px-2.5 py-2 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all">
+                      <Smartphone className="w-4 h-4 text-slate-400 mr-2" />
+                      <input 
+                        type="text" 
+                        placeholder="e.g. +1234567890"
+                        className="bg-transparent border-none outline-none text-sm font-medium text-slate-800 w-full placeholder:text-slate-300"
+                        value={site.adminPhone || ""}
+                        onChange={(e) => setWebsites(prev => prev.map(w => w.id === site.id ? { ...w, adminPhone: e.target.value } : w))}
+                        onBlur={(e) => handleSave(site.id, "adminPhone", e.target.value)}
+                      />
+                      {savingId === site.id && <div className="w-3.5 h-3.5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin ml-2" />}
+                    </div>
                   </div>
                 )}
               </div>
 
               {/* Action Buttons */}
-              <div className="p-4 bg-slate-50/50 border-t border-slate-100 flex gap-3 backdrop-blur-sm">
-                <a href={`/client/${site.id}`} className="flex-1">
-                  <Button className="w-full bg-slate-900 hover:bg-indigo-600 text-white font-semibold shadow-md transition-all duration-300">
-                    <Activity className="w-4 h-4 mr-2" />
+              <div className="p-4 bg-slate-50 border-t border-slate-200 rounded-b-xl">
+                <a href={`/client/${site.id}`} className="block">
+                  <Button className="w-full bg-slate-900 hover:bg-slate-800 text-white shadow-sm">
                     Open Pipeline
                   </Button>
                 </a>
-                {!isClient && (
-                  <a href={`/client/${site.id}/settings`}>
-                    <Button variant="outline" className="px-3 border-slate-200 text-slate-600 hover:bg-white hover:text-indigo-600 hover:border-indigo-200 transition-all duration-300 shadow-sm">
-                      <Settings className="w-4 h-4" />
-                    </Button>
-                  </a>
-                )}
               </div>
             </div>
           ))}

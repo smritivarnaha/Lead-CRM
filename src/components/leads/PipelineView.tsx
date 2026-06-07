@@ -520,6 +520,11 @@ export function PipelineView({ websiteId }: { websiteId?: string }) {
                           <div className="font-bold text-[#1A1523] truncate text-[15px]">{lead.fullName}</div>
                           <div className="text-[12px] text-slate-500 truncate mt-0.5">{lead.phone || lead.email || "No contact info"}</div>
                         </div>
+                      </div>
+                      <input 
+                        type="checkbox" 
+                        checked={selectedLeadIds.has(lead.id)}
+                        onChange={() => toggleSelection(lead.id)}
                         className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600" 
                       />
                     </div>
