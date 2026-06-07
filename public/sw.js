@@ -51,16 +51,19 @@ self.addEventListener('notificationclick', function(event) {
       targetUrl = clickedAction.url;
     }
 
+    // Force it to be an absolute URL
+    const absoluteUrl = new URL(targetUrl, self.location.origin).href;
+
     event.waitUntil(
       clients.matchAll({ type: 'window' }).then(function(clientList) {
         for (var i = 0; i < clientList.length; i++) {
           var client = clientList[i];
-          if (client.url.includes(targetUrl) && 'focus' in client) {
+          if (client.url === absoluteUrl && 'focus' in client) {
             return client.focus();
           }
         }
         if (clients.openWindow) {
-          return clients.openWindow(targetUrl);
+          return clients.openWindow(absoluteUrl);
         }
       })
     );

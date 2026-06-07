@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getLeads, updateLeadStatus, logCallAction } from "@/actions/leads";
+import { getLeads, getLeadsByWebsite, updateLeadStatus, logCallAction } from "@/actions/leads";
 import { LeadDetailsModal } from "@/components/leads/LeadDetailsModal";
 import { CallLogModal } from "@/components/leads/CallLogModal";
 import {
@@ -49,6 +49,7 @@ type Lead = {
   pushSent?: boolean;
   followUpAt?: string | null;
   callNotes?: string | null;
+  updatedAt?: string;
 };
 
 const STAGE_STYLE: Record<string, { label: string; ring: string; fill: string; icon: any }> = {
@@ -76,7 +77,7 @@ function getScore(lead: Lead) {
 
 import { KanbanBoard } from "./KanbanBoard";
 
-export function PipelineView() {
+export function PipelineView({ websiteId }: { websiteId?: string }) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [inspectLead, setInspectLead] = useState<Lead | null>(null);
@@ -93,7 +94,7 @@ export function PipelineView() {
     name: true,
     phone: true,
     email: true,
-    ohs: true,
+    timeInStage: true,
     stage: true,
     closeDate: true,
   });
@@ -119,11 +120,12 @@ export function PipelineView() {
   ).sort((a, b) => new Date(a.followUpAt!).getTime() - new Date(b.followUpAt!).getTime());
 
   useEffect(() => {
-    getLeads().then((res) => {
+    const fetchLeads = websiteId ? getLeadsByWebsite(websiteId) : getLeads();
+    fetchLeads.then((res) => {
       if (res.success && res.leads) setLeads(res.leads);
       setLoading(false);
     });
-  }, []);
+  }, [websiteId]);
 
   const handleStatusChange = async (leadId: string, newStatus: string) => {
     try {
@@ -266,7 +268,7 @@ export function PipelineView() {
               <DropdownMenuCheckboxItem checked={cols.name} onCheckedChange={(v) => setCols(p => ({...p, name: v}))}>Name</DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem checked={cols.phone} onCheckedChange={(v) => setCols(p => ({...p, phone: v}))}>Phone Number</DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem checked={cols.email} onCheckedChange={(v) => setCols(p => ({...p, email: v}))}>Email Address</DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem checked={cols.ohs} onCheckedChange={(v) => setCols(p => ({...p, ohs: v}))}>OHS Score</DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={cols.timeInStage} onCheckedChange={(v) => setCols(p => ({...p, timeInStage: v}))}>Time in Stage</DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem checked={cols.stage} onCheckedChange={(v) => setCols(p => ({...p, stage: v}))}>Stage (Status)</DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem checked={cols.closeDate} onCheckedChange={(v) => setCols(p => ({...p, closeDate: v}))}>Close Date</DropdownMenuCheckboxItem>
             </DropdownMenuContent>
@@ -343,9 +345,9 @@ export function PipelineView() {
                         <div className="flex items-center justify-between">EMAIL<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                       </th>
                     )}
-                    {cols.ohs && (
-                      <th className={`w-[100px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer hidden lg:table-cell`}>
-                        <div className="flex items-center justify-between">OHS<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
+                    {cols.timeInStage && (
+                      <th className={`w-[120px] px-5 py-0 border-r ${borderClass} hover:bg-slate-50 cursor-pointer hidden lg:table-cell`}>
+                        <div className="flex items-center justify-between">IN STAGE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                       </th>
                     )}
                     {cols.stage && (
@@ -436,13 +438,11 @@ export function PipelineView() {
                             </div>
                           </td>
                         )}
-                        {cols.ohs && (
+                        {cols.timeInStage && (
                           <td className={`px-5 py-0 border-r ${borderClass} hidden lg:table-cell`}>
-                            <div className="flex justify-end pr-3">
-                              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-[#E5E7EB] bg-white shadow-sm">
-                                <span className={`h-1.5 w-1.5 rounded-full ${heat.dot}`} />
-                                <span className="text-[12px] font-bold text-[#1A1523]">{score}</span>
-                              </div>
+                            <div className="flex items-center text-slate-600 font-medium">
+                              <Clock className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
+                              {lead.updatedAt ? Math.max(0, Math.floor((new Date().getTime() - new Date(lead.updatedAt).getTime()) / (1000 * 3600 * 24))) : 0} days
                             </div>
                           </td>
                         )}

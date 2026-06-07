@@ -51,6 +51,50 @@ export async function getLeads() {
   }
 }
 
+export async function getLeadsByWebsite(websiteId: string) {
+  try {
+    const user = await currentUser();
+    if (!user) return { success: false, error: "Unauthorized" };
+
+    const leads = await prisma.lead.findMany({
+      where: { websiteId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        phone: true,
+        city: true,
+        state: true,
+        message: true,
+        source: true,
+        formName: true,
+        utmSource: true,
+        utmMedium: true,
+        utmCampaign: true,
+        utmContent: true,
+        utmTerm: true,
+        status: true,
+        priority: true,
+        temperature: true,
+        score: true,
+        createdAt: true,
+        followUpAt: true,
+        rawFields: true,
+        smsSent: true,
+        pushSent: true,
+        callNotes: true,
+        website: { select: { id: true, name: true, domain: true } },
+      },
+    });
+
+    return { success: true, leads: JSON.parse(JSON.stringify(leads)) };
+  } catch (error) {
+    console.error("Error fetching leads by website:", error);
+    return { success: false, error: "Failed to fetch leads" };
+  }
+}
+
 export async function updateLeadStatus(leadId: string, status: string) {
   try {
     const user = await currentUser();

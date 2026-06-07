@@ -56,6 +56,8 @@ model Website {
   webhookUrl  String   @unique @default(cuid())
   apiKey      String?
   isActive    Boolean  @default(true)
+  logoUrl     String?  // Client's specific logo (used for push badge)
+  adminPhone  String?  // Client's specific phone for SMS alerts
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

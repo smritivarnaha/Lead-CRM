@@ -192,7 +192,8 @@ export async function POST(
     });
 
     // Handle SMS Admin Alerts via Fast2SMS
-    if (workspace?.smsAutoReplyEnabled && workspace?.fast2smsApiKey && workspace?.adminPhone) {
+    const targetPhone = existingSite.adminPhone || workspace?.adminPhone;
+    if (workspace?.smsAutoReplyEnabled && workspace?.fast2smsApiKey && targetPhone) {
       try {
         const smsTemplate = workspace.smsTemplate || "🔥 New Lead: {{name}} has just submitted a form!";
         const smsMessage = smsTemplate
@@ -200,7 +201,7 @@ export async function POST(
           .replace(/{{source}}/g, source || "Website");
 
         // Clean the admin phone number (Fast2SMS expects 10 digits usually)
-        const cleanPhone = workspace.adminPhone.replace(/\D/g, "").slice(-10);
+        const cleanPhone = targetPhone.replace(/\D/g, "").slice(-10);
 
         if (cleanPhone.length === 10) {
           const smsRes = await fetch("https://www.fast2sms.com/dev/bulkV2", {
@@ -268,12 +269,14 @@ export async function POST(
         ? workspace.pushBodyTemplate.replace(/{{name}}/g, fullName)
         : contactLine || "A new lead just arrived.";
 
+      const clientBadgeUrl = existingSite.logoUrl || workspace?.pushBadgeUrl;
+
       pushStatus = await sendPushToAll({
         title: pushTitle,
         body: pushBody,
         url: "/leads",
         icon: workspace?.pushIconUrl?.startsWith('data:') ? `${baseUrl}/api/settings/icon?t=${Date.now()}` : (workspace?.pushIconUrl?.startsWith('http') ? workspace.pushIconUrl : `${baseUrl}${workspace?.pushIconUrl || "/icon-192.png"}`),
-        badge: workspace?.pushBadgeUrl?.startsWith('data:') ? `${baseUrl}/api/settings/badge?t=${Date.now()}` : (workspace?.pushBadgeUrl?.startsWith('http') ? workspace.pushBadgeUrl : `${baseUrl}${workspace?.pushBadgeUrl || "/badge-72x72.png"}`),
+        badge: clientBadgeUrl?.startsWith('data:') ? `${baseUrl}/api/settings/client-badge?siteId=${websiteId}&t=${Date.now()}` : (clientBadgeUrl?.startsWith('http') ? clientBadgeUrl : `${baseUrl}${clientBadgeUrl || "/badge-72x72.png"}`),
         actions: [
           { action: "view", title: workspace?.pushCtaLabel || "View Lead", url: workspace?.pushCtaUrl || "/leads" },
           { action: "dismiss", title: "Dismiss" },
