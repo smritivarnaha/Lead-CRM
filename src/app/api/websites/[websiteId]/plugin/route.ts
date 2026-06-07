@@ -57,7 +57,7 @@ add_action( 'wpcf7_before_send_mail', function( $contact_form, &$abort, $submiss
   const zip = new JSZip();
   zip.folder("leadflow-crm-integration")?.file("leadflow-crm-integration.php", phpContent);
   
-  const zipBuffer = await zip.generateAsync({ type: "uint8array" });
+  const zipBuffer = await zip.generateAsync({ type: "arraybuffer" });
   
   return new NextResponse(zipBuffer, {
     headers: {
