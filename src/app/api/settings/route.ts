@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
+export const dynamic = 'force-dynamic';
+
 const WORKSPACE_ID = "mock_workspace_id"; // Single tenant for now
 
 export async function GET() {
