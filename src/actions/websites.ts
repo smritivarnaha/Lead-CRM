@@ -82,8 +82,51 @@ export async function createWebsite(data: { name: string; domain: string }) {
       });
     }
 
+    // Generate custom slug-based website ID
+    let domainName = data.domain
+      .toLowerCase()
+      .replace(/^(https?:\/\/)?(www\.)?/, "") // remove protocol and www
+      .split(".")[0]; // keep only the main name before first dot
+    
+    // Sanitize domainName to keep only alphanumeric and hyphens
+    domainName = domainName.replace(/[^a-z0-9-]/g, "");
+    
+    if (!domainName) {
+      // Fallback to name slug if domain part is empty
+      domainName = data.name
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, "");
+    }
+    
+    if (!domainName) {
+      domainName = "site";
+    }
+    
+    let customSiteId = "";
+    let isUnique = false;
+    let attempts = 0;
+    
+    while (!isUnique && attempts < 10) {
+      const randomNum = Math.floor(1000 + Math.random() * 9000);
+      customSiteId = `${domainName}-${randomNum}`;
+      
+      const existing = await prisma.website.findUnique({
+        where: { id: customSiteId }
+      });
+      
+      if (!existing) {
+        isUnique = true;
+      }
+      attempts++;
+    }
+    
+    if (!customSiteId) {
+      customSiteId = `${domainName}-${Math.floor(10000 + Math.random() * 90000)}`;
+    }
+
     const newSite = await prisma.website.create({
       data: {
+        id: customSiteId,
         name: data.name,
         domain: data.domain,
         workspaceId: "mock_workspace_id", 
