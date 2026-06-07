@@ -75,6 +75,9 @@ export function FollowupsView({ initialLeads }: { initialLeads: any[] }) {
   const [leads, setLeads] = useState(initialLeads);
   const [selectedLead, setSelectedLead] = useState<any | null>(null);
 
+  const borderClass = "border-[#E8E4F3]";
+  const trHeightClass = "h-[46px]";
+
   // Sort leads: Overdue first, then upcoming, then no follow-up date
   const sortedLeads = [...leads].sort((a, b) => {
     if (!a.followUpAt && !b.followUpAt) return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -102,19 +105,29 @@ export function FollowupsView({ initialLeads }: { initialLeads: any[] }) {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className={`bg-white rounded-2xl border ${borderClass} shadow-sm overflow-hidden`}>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm whitespace-nowrap">
-            <thead className="bg-[#F7F5FF] border-b border-slate-200">
-              <tr>
-                <th className="px-5 py-3 font-semibold text-slate-700">Lead</th>
-                <th className="px-5 py-3 font-semibold text-slate-700">Contact</th>
-                <th className="px-5 py-3 font-semibold text-slate-700">Current Status</th>
-                <th className="px-5 py-3 font-semibold text-slate-700 w-48">Next Follow-up</th>
-                <th className="px-5 py-3 font-semibold text-slate-700 w-32">Quick Resolve</th>
+          <table className="w-full text-left whitespace-nowrap" style={{ borderCollapse: "separate", borderSpacing: 0 }}>
+            <thead className="text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-white sticky top-0 z-10">
+              <tr className={`border-b ${borderClass} ${trHeightClass}`}>
+                <th className={`w-[220px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF]`}>
+                  <div className="flex items-center justify-between">LEAD</div>
+                </th>
+                <th className={`w-[200px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF]`}>
+                  <div className="flex items-center justify-between">CONTACT</div>
+                </th>
+                <th className={`w-[155px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF]`}>
+                  <div className="flex items-center justify-between">STATUS</div>
+                </th>
+                <th className={`w-[180px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF]`}>
+                  <div className="flex items-center justify-between">NEXT FOLLOW-UP</div>
+                </th>
+                <th className={`w-[100px] px-0 py-0 ${borderClass}`}>
+                  <div className="flex items-center justify-center">RESOLVE</div>
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="text-[12.5px] divide-y divide-[#E8E4F3]">
               {sortedLeads.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-5 py-12 text-center text-slate-500">
@@ -127,45 +140,45 @@ export function FollowupsView({ initialLeads }: { initialLeads: any[] }) {
                 sortedLeads.map(lead => {
                   const stage = STAGE_STYLE[lead.status] || STAGE_STYLE.NEW;
                   return (
-                    <tr key={lead.id} className="hover:bg-slate-50 transition-colors group">
-                      <td className="px-5 py-4">
+                    <tr key={lead.id} className={`${trHeightClass} border-b hover:bg-[#F7F5FF] transition-colors group`}>
+                      <td className={`px-4 py-1 border-r ${borderClass}`}>
                         <button 
                           onClick={() => setSelectedLead(lead)}
-                          className="font-semibold text-[#1A1523] hover:text-[#7C3AED] transition-colors"
+                          className="font-bold text-[#1A1523] text-[12.5px] hover:text-[#7C3AED] transition-colors truncate block"
                         >
                           {lead.fullName}
                         </button>
-                        <div className="text-[12px] text-slate-500 mt-0.5">
+                        <div className="text-[10.5px] text-[#9CA3AF] mt-0.5">
                           Added {formatDistanceToNow(new Date(lead.createdAt), { addSuffix: true })}
                         </div>
                       </td>
-                      <td className="px-5 py-4">
-                        <div className="flex flex-col gap-1 text-[13px] text-slate-600">
-                          {lead.phone && <div className="flex items-center gap-1.5"><Phone className="h-3 w-3" /> {lead.phone}</div>}
-                          {lead.email && <div className="flex items-center gap-1.5"><Mail className="h-3 w-3" /> {lead.email}</div>}
+                      <td className={`px-4 py-1 border-r ${borderClass}`}>
+                        <div className="flex flex-col gap-0.5 text-[11.5px] text-[#6B7280]">
+                          {lead.phone ? <div className="flex items-center gap-1.5"><Phone className="h-3 w-3" /> {lead.phone}</div> : <span className="text-[#9CA3AF] italic text-[11px]">No phone</span>}
+                          {lead.email ? <div className="flex items-center gap-1.5"><Mail className="h-3 w-3" /> <span className="truncate max-w-[150px]">{lead.email}</span></div> : <span className="text-[#9CA3AF] italic text-[11px]">No email</span>}
                         </div>
                       </td>
-                      <td className="px-5 py-4">
+                      <td className={`px-4 py-0 border-r ${borderClass}`}>
                         <div className="flex items-center gap-2">
-                          <div className={`h-2.5 w-2.5 rounded-full border-2 ${stage.ring} ${stage.fill}`} />
-                          <span className="font-medium text-slate-700 text-[13px]">{stage.label}</span>
+                          <div className={`h-2 w-2 rounded-full border-2 ${stage.ring} ${stage.fill}`} />
+                          <span className="font-semibold text-[#1A1523] text-[11.5px]">{stage.label}</span>
                         </div>
                       </td>
-                      <td className="px-5 py-4">
+                      <td className={`px-4 py-0 border-r ${borderClass}`}>
                         <FollowupTimeSelector lead={lead} onUpdate={handleUpdateFollowup} />
                       </td>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <td className={`px-4 py-0 ${borderClass}`}>
+                        <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button 
                             onClick={() => handleMarkResolved(lead.id, "CONVERTED")}
-                            className="h-8 w-8 rounded-full bg-green-50 text-green-600 flex items-center justify-center hover:bg-green-100 transition-colors"
+                            className="h-7 w-7 rounded border border-green-200 bg-green-50 text-green-600 flex items-center justify-center hover:bg-green-100 transition-colors"
                             title="Mark Converted"
                           >
                             <CheckCircle2 className="h-4 w-4" />
                           </button>
                           <button 
                             onClick={() => handleMarkResolved(lead.id, "LOST")}
-                            className="h-8 w-8 rounded-full bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors"
+                            className="h-7 w-7 rounded border border-red-200 bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors"
                             title="Mark Junk/Lost"
                           >
                             <ArrowRight className="h-4 w-4 transform rotate-45" />
