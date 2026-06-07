@@ -133,48 +133,58 @@ export async function POST(
       return null;
     };
 
+    const cleanStr = (val: any): string | null => {
+      if (val === undefined || val === null || val === "") return null;
+      return String(val).trim();
+    };
+
     // Detect email by value pattern as final fallback
-    const emailByValue = Object.values(body).find(v =>
-      typeof v === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
-    ) as string | undefined;
+    const emailByValue = Object.values(body).find(v => {
+      const s = cleanStr(v);
+      return s ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s) : false;
+    }) as string | undefined;
 
     // Detect phone by value pattern (7-15 digits, may have +, -, spaces)
-    const phoneByValue = Object.values(body).find(v =>
-      typeof v === "string" && /^[\+\d][\d\s\-]{6,14}\d$/.test(v.trim())
-    ) as string | undefined;
+    const phoneByValue = Object.values(body).find(v => {
+      const s = cleanStr(v);
+      return s ? /^[\+\d][\d\s\-]{6,14}\d$/.test(s) : false;
+    }) as string | undefined;
 
-    const email   = find(["email", "your-email", "email_address", "e-mail", "mail"]) || emailByValue || null;
-    const phone   = find(["phone", "tel", "mobile", "phone_number", "your-phone", "contact", "whatsapp", "number"]) || phoneByValue || null;
-    const message = find(["message", "your-message", "comments", "query", "description", "msg", "text", "details"]) || null;
+    const email   = cleanStr(find(["email", "your-email", "email_address", "e-mail", "mail"]) || emailByValue);
+    const phone   = cleanStr(find(["phone", "tel", "mobile", "phone_number", "your-phone", "contact", "whatsapp", "number"]) || phoneByValue);
+    const message = cleanStr(find(["message", "your-message", "comments", "query", "description", "msg", "text", "details"]));
 
     // Name: try known keys first, then check for a value that looks like a name
     // (2-50 chars, no @ sign, not a phone number)
     const nameByKey = find(["name", "fullName", "full_name", "first_name", "your-name", "contact_name", "naam"]);
     const firstLast = [find(["first_name", "firstname"]) || "", find(["last_name", "lastname"]) || ""].join(" ").trim();
     const nameByValue = !nameByKey && !firstLast
-      ? Object.entries(body).find(([k, v]) =>
-          !["email", "phone", "message", "source", "utm", "form", "_"].some(p => k.toLowerCase().includes(p)) &&
-          typeof v === "string" &&
-          v.length >= 2 && v.length <= 60 &&
-          !v.includes("@") &&
-          !/^\+?[\d\s\-]{7,}$/.test(v) // not a phone
-        )?.[1]
+      ? Object.entries(body).find(([k, v]) => {
+          const s = cleanStr(v);
+          return s
+            ? !["email", "phone", "message", "source", "utm", "form", "_"].some(p => k.toLowerCase().includes(p)) &&
+              s.length >= 2 && s.length <= 60 &&
+              !s.includes("@") &&
+              !/^\+?[\d\s\-]{7,}$/.test(s)
+            : false;
+        })?.[1]
       : undefined;
 
-    const fullName = nameByKey || firstLast || nameByValue || "Unknown";
+    const fullName = cleanStr(nameByKey || firstLast || nameByValue) || "Unknown";
 
-    const source =
+    const source = cleanStr(
       body.source ||
       body.form_name ||
       body.form_id ||
-      (body["_wpcf7"] ? "WordPress Form" : "Website Form");
-    const utmSource   = body.utm_source   || null;
-    const utmMedium   = body.utm_medium   || null;
-    const utmCampaign = body.utm_campaign || null;
+      (body["_wpcf7"] ? "WordPress Form" : "Website Form")
+    );
+    const utmSource   = cleanStr(body.utm_source);
+    const utmMedium   = cleanStr(body.utm_medium);
+    const utmCampaign = cleanStr(body.utm_campaign);
 
-    const ipAddress = request.headers.get("x-forwarded-for")?.split(',')[0].trim() || request.headers.get("x-real-ip") || null;
-    const pageUrl = body.pageUrl || body.page_url || request.headers.get("referer") || null;
-    const pageTitle = body.pageTitle || body.page_title || null;
+    const ipAddress = cleanStr(request.headers.get("x-forwarded-for")?.split(',')[0].trim() || request.headers.get("x-real-ip"));
+    const pageUrl = cleanStr(body.pageUrl || body.page_url || request.headers.get("referer"));
+    const pageTitle = cleanStr(body.pageTitle || body.page_title);
 
     // --- Smart Lead Routing ---
     // If the message or source contains certain keywords, try to assign to a specific user.

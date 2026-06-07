@@ -30,6 +30,7 @@ export default function SettingsPage() {
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [defaultWebsiteId, setDefaultWebsiteId] = useState<string>("cm1a2b3c4d5e6f");
   const [clientWebsite, setClientWebsite] = useState<any>(null);
+  const [websites, setWebsites] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState("push");
 
   useEffect(() => {
@@ -181,6 +182,7 @@ export default function SettingsPage() {
     try {
       const res = await getWebsites();
       if (res?.success && res.websites && res.websites.length > 0) {
+        setWebsites(res.websites);
         setDefaultWebsiteId(res.websites[0].id);
         setClientWebsite(res.websites[0]);
       }
@@ -409,6 +411,49 @@ export default function SettingsPage() {
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-slate-900">Settings</h2>
         <p className="text-sm text-slate-500 mt-1">Configure your CRM preferences and integrations.</p>
+      </div>
+
+      {/* Active Profile Status / Selector */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#F8FAFC] border border-slate-200 rounded-2xl p-4 shadow-sm text-left max-w-2xl">
+        <div className="flex flex-col">
+          <span className="text-sm font-bold text-slate-800">Active Profile</span>
+          <span className="text-xs text-slate-500 mt-0.5">
+            {isClient 
+              ? "Your active website integration and branding" 
+              : "Switch profiles to configure different websites"}
+          </span>
+        </div>
+        <div>
+          {isClient ? (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-indigo-100 rounded-xl text-xs font-semibold text-indigo-700 shadow-sm w-fit font-mono">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              {clientWebsite?.name || "Rankved"} ({clientWebsite?.domain || "rankved.com"})
+            </div>
+          ) : (
+            websites.length > 0 ? (
+              <select
+                value={defaultWebsiteId}
+                onChange={(e) => {
+                  const selectedId = e.target.value;
+                  setDefaultWebsiteId(selectedId);
+                  const match = websites.find(w => w.id === selectedId);
+                  if (match) {
+                    setClientWebsite(match);
+                  }
+                }}
+                className="text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all shadow-sm cursor-pointer"
+              >
+                {websites.map((w: any) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name} ({w.domain})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="text-xs text-slate-400 italic">No websites found</span>
+            )
+          )}
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2 sm:gap-4 border-b border-slate-200">

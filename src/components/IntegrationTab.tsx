@@ -264,56 +264,109 @@ function onFormSubmitTrigger(e) {
     
     var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
     var statusColIndex = headers.indexOf("CRM Status") + 1;
+    if (statusColIndex === 0) {
+      statusColIndex = sheet.getLastColumn() + 1;
+      sheet.getRange(1, statusColIndex).setValue("CRM Status");
+    }
     
     var success = sendRowByNumber(sheet, row);
-    if (success && statusColIndex > 0) {
+    if (success) {
       sheet.getRange(row, statusColIndex).setValue("Synced");
     }
   }
 }
 
-// 2. Manual/Import Auto-Sync (Runs every minute via trigger)
+// 2. Manual/Import Auto-Sync (Runs every minute via trigger, scans all sheets)
 function syncNewRows() {
-  var sheet = SpreadsheetApp.getActiveSheet();
-  var lastRow = sheet.getLastRow();
-  if (lastRow <= 1) return;
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheets = ss.getSheets();
   
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  var statusColIndex = headers.indexOf("CRM Status") + 1;
-  if (statusColIndex === 0) {
-    statusColIndex = sheet.getLastColumn() + 1;
-    sheet.getRange(1, statusColIndex).setValue("CRM Status");
-    headers.push("CRM Status");
-  }
-  
-  var dataRange = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn());
-  var data = dataRange.getValues();
-  
-  for (var i = 0; i < data.length; i++) {
-    var rowNum = i + 2;
-    var rowData = data[i];
-    var status = rowData[statusColIndex - 1];
+  for (var s = 0; s < sheets.length; s++) {
+    var sheet = sheets[s];
+    var lastRow = sheet.getLastRow();
+    if (lastRow <= 1) continue;
     
-    if (status === "Synced") continue;
+    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
     
-    // Check if row has any contact info (ignoring CRM Status column itself)
-    var hasContactInfo = false;
+    // Check if this sheet has contact/lead headers
+    var isLeadSheet = false;
     for (var j = 0; j < headers.length; j++) {
       var header = headers[j];
-      if (header && header !== "CRM Status") {
-        var val = rowData[j];
+      if (header) {
         var hLower = header.toLowerCase();
-        if ((hLower.includes("name") || hLower.includes("email") || hLower.includes("phone") || hLower.includes("contact")) && val !== "") {
-          hasContactInfo = true;
+        if (
+          hLower.includes("name") || 
+          hLower.includes("email") || 
+          hLower.includes("mail") || 
+          hLower.includes("phone") || 
+          hLower.includes("tel") || 
+          hLower.includes("mobile") || 
+          hLower.includes("contact") || 
+          hLower.includes("whatsapp") || 
+          hLower.includes("number") || 
+          hLower.includes("customer") || 
+          hLower.includes("client")
+        ) {
+          isLeadSheet = true;
+          break;
         }
       }
     }
     
-    if (!hasContactInfo) continue;
+    if (!isLeadSheet) continue;
     
-    var success = sendRowByNumber(sheet, rowNum);
-    if (success) {
-      sheet.getRange(rowNum, statusColIndex).setValue("Synced");
+    var statusColIndex = headers.indexOf("CRM Status") + 1;
+    if (statusColIndex === 0) {
+      statusColIndex = sheet.getLastColumn() + 1;
+      sheet.getRange(1, statusColIndex).setValue("CRM Status");
+      headers.push("CRM Status");
+    }
+    
+    // Re-evaluate last column to include the new CRM Status column
+    var lastCol = sheet.getLastColumn();
+    var dataRange = sheet.getRange(2, 1, lastRow - 1, lastCol);
+    var data = dataRange.getValues();
+    
+    for (var i = 0; i < data.length; i++) {
+      var rowNum = i + 2;
+      var rowData = data[i];
+      var status = rowData[statusColIndex - 1];
+      
+      if (status === "Synced") continue;
+      
+      // Check if row has any contact info
+      var hasContactInfo = false;
+      for (var j = 0; j < headers.length; j++) {
+        var header = headers[j];
+        if (header && header !== "CRM Status") {
+          var val = rowData[j];
+          if (val !== "") {
+            var hLower = header.toLowerCase();
+            if (
+              hLower.includes("name") || 
+              hLower.includes("email") || 
+              hLower.includes("mail") || 
+              hLower.includes("phone") || 
+              hLower.includes("tel") || 
+              hLower.includes("mobile") || 
+              hLower.includes("contact") || 
+              hLower.includes("whatsapp") || 
+              hLower.includes("number") || 
+              hLower.includes("customer") || 
+              hLower.includes("client")
+            ) {
+              hasContactInfo = true;
+            }
+          }
+        }
+      }
+      
+      if (!hasContactInfo) continue;
+      
+      var success = sendRowByNumber(sheet, rowNum);
+      if (success) {
+        sheet.getRange(rowNum, statusColIndex).setValue("Synced");
+      }
     }
   }
 }
@@ -338,10 +391,49 @@ function sendRowByNumber(sheet, row) {
       "payload": JSON.stringify(payload),
       "muteHttpExceptions": true
     });
-    return response.getResponseCode() === 200 || response.getResponseCode() === 201;
+    var code = response.getResponseCode();
+    var content = response.getContentText();
+    Logger.log("Row " + row + " - Response Code: " + code + ", Response Body: " + content);
+    return code === 200 || code === 201;
   } catch (err) {
-    Logger.log("Error sending row: " + err.toString());
+    Logger.log("Error sending row " + row + ": " + err.toString());
     return false;
+  }
+}
+
+// Test function you can run inside the Apps Script Editor to authorize the script and verify connection
+function testConnection() {
+  Logger.log("Testing connection to CRM...");
+  Logger.log("Webhook URL: " + WEBHOOK_URL);
+  
+  var testPayload = {
+    "Name": "Sheets Test Ping",
+    "Email": "sheet-ping@leadflow.app",
+    "Phone": "+91 99999 99999",
+    "Message": "Testing connection from Apps Script Editor"
+  };
+  
+  try {
+    var response = UrlFetchApp.fetch(WEBHOOK_URL, {
+      "method": "post",
+      "contentType": "application/json",
+      "payload": JSON.stringify(testPayload),
+      "muteHttpExceptions": true
+    });
+    var code = response.getResponseCode();
+    var content = response.getContentText();
+    
+    Logger.log("Response Code: " + code);
+    Logger.log("Response Body: " + content);
+    
+    if (code === 200 || code === 201) {
+      Logger.log("✅ Success! Connection working and test lead sent.");
+    } else {
+      Logger.log("❌ Failed! The CRM returned status code: " + code);
+      Logger.log("Reason: " + content);
+    }
+  } catch (err) {
+    Logger.log("❌ Connection Error: " + err.toString());
   }
 }`} />
           </div>
