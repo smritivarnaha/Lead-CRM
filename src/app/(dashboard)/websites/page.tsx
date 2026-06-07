@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Globe, Copy, CheckCircle2, X, UserPlus, KeyRound, Download } from "lucide-react";
+import { Globe, Copy, CheckCircle2, X, UserPlus, KeyRound, Download, Settings } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getWebsites, createWebsite, createClientLogin, resetClientPassword, deleteClientLogin } from "@/actions/websites";
 
@@ -244,26 +244,35 @@ export default function WebsitesPage() {
                   )}
                 </TableCell>
                 <TableCell className="text-right">
-                  {site.users && site.users.length > 0 ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-slate-700 border-slate-300 text-xs flex items-center gap-1.5 ml-auto"
-                      onClick={() => openEditModal(site)}
-                    >
-                      <KeyRound className="h-3.5 w-3.5" />
-                      Edit Login
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs flex items-center gap-1.5 ml-auto"
-                      onClick={() => openLoginModal(site)}
-                    >
-                      <UserPlus className="h-3.5 w-3.5" />
-                      Create Login
-                    </Button>
-                  )}
+                    <div className="flex items-center justify-end gap-2">
+                      {site.users && site.users.length > 0 ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-slate-700 border-slate-300 text-xs flex items-center gap-1.5"
+                          onClick={() => openEditModal(site)}
+                        >
+                          <KeyRound className="h-3.5 w-3.5" />
+                          Edit Login
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs flex items-center gap-1.5"
+                          onClick={() => openLoginModal(site)}
+                        >
+                          <UserPlus className="h-3.5 w-3.5" />
+                          Create Login
+                        </Button>
+                      )}
+                      <a 
+                        href={`/client/${site.id}/settings`} 
+                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                        title="Client Settings & Integration"
+                      >
+                        <Settings className="h-4 w-4" />
+                      </a>
+                    </div>
                 </TableCell>
               </TableRow>
             ))}
