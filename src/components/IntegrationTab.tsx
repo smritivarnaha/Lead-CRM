@@ -5,11 +5,18 @@ import { Copy, Download, LinkIcon } from "lucide-react";
 import { toast } from "sonner";
 
 export const SVGIcons = {
-  WordPress: (props: any) => <svg viewBox="0 0 24 24" fill="currentColor" {...props}><path d="M12.158 12.786l-2.698 7.84c.806.236 1.657.365 2.54.365 1.047 0 2.05-.18 2.986-.51-.024-.037-.046-.078-.065-.123l-2.762-7.57zM3.007 12c0 3.568 2.06 6.644 5.068 8.092L3.788 8.341c-.496 1.117-.78 2.36-.78 3.659zm14.602-5.464c0 1.25-.472 2.046-.866 2.827-.456.882-.866 1.65-.866 2.58 0 1.118.866 2.158 2.03 2.158.125 0 .245-.01.355-.034C17.65 17.643 15.1 20.35 12 20.35c-.477 0-.943-.04-1.396-.118l3.864-11.196c.205-.59.252-.818.252-1.077 0-.472-.252-.803-.803-.803-.095 0-.213.016-.34.047l-4.14 1.19c-.314.094-.487.393-.41.708.07.29.35.45.64.45.06 0 .13-.01.19-.02l.62-.16c.39-.1.61-.01.74.37l3.22 9.27-2.33-7.56c-.16-.47-.53-.74-.95-.74-.08 0-.15.01-.23.03l-.68.17c-.31.08-.62-.11-.71-.42-.08-.32.11-.64.43-.72l4.02-1.02c.11-.03.22-.04.34-.04.59 0 .86.35.86.85 0 .26-.06.51-.28 1.1l-1.95 5.64 1.55-4.52c.26-.74.63-1.63.63-2.6 0-1.01-.58-1.78-1.12-2.42zM12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 22.8c-5.967 0-10.8-4.833-10.8-10.8S6.033 1.2 12 1.2 22.8 6.033 22.8 12 17.967 22.8 12 22.8z"/></svg>,
-  GoogleSheets: (props: any) => <svg viewBox="0 0 48 48" {...props}><path fill="#0F9D58" d="M37,45H11c-1.657,0-3-1.343-3-3V6c0-1.657,1.343-3,3-3h19l10,10v29C40,43.657,38.657,45,37,45z"/><path fill="#87CEFA" d="M30,3H11C9.343,3,8,4.343,8,6v36c0,1.657,1.343,3,3,3h26c1.657,0,3-1.343,3-3V13L30,3z"/><path fill="#0F9D58" d="M30,3v10h10L30,3z"/><path fill="#FFF" d="M15,23h18v4H15V23z M15,31h18v4H15V31z M15,15h10v4H15V15z"/></svg>,
-  HTML: (props: any) => <svg viewBox="0 0 24 24" fill="currentColor" {...props}><path d="M2.083 1.5l1.83 20.485L11.96 24l8.138-2.015L21.917 1.5H2.083zm17.062 19.34l-7.185 1.78-7.172-1.78-1.5-16.82h17.355l-1.498 16.82zm-3.036-12.78H7.314l-.19-2.128h11.23l-.19 2.128zm-2.016 4.39H8.563l-.15 1.66h5.308l-.348 3.882-3.328.898-3.328-.897-.212-2.378H4.63l.36 4.025 5.06 1.365 5.05-1.365.626-6.99z"/></svg>,
-  PHP: (props: any) => <svg viewBox="0 0 24 24" fill="currentColor" {...props}><path d="M24 10.963c0 2.87-4.043 5.197-9.034 5.197h-2.03l-1.077 3.426h-2.58l1.074-3.426H5.405c-1.637 0-3.096-.46-4.04-1.22-.942-.76-1.364-1.802-1.364-2.937 0-1.127.425-2.164 1.353-2.92.93-.755 2.375-1.213 3.998-1.213h4.945c2.316 0 4.168.618 5.43 1.834 1.258 1.213 1.848 2.898 1.848 4.673H24zm-6.425 0c0-1.187-.393-2.31-1.218-3.104-.823-.794-2.023-1.2-3.525-1.2H8.38l-.683 2.176h4.453c1.072 0 1.884.288 2.454.84.57.552.822 1.282.822 2.052 0 .762-.245 1.484-.8 2.028-.553.543-1.354.823-2.4.823H7.727l-.686 2.18h3.315c1.474 0 2.66-.398 3.472-1.183.813-.787 1.2-1.9 1.2-3.076l1.547-1.536z"/></svg>,
-  Webhook: (props: any) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+  WordPress: (props: any) => <img src="https://s.w.org/style/images/about/WordPress-logotype-wmark.png" alt="WordPress" {...props} />,
+  GoogleSheets: (props: any) => <img src="https://upload.wikimedia.org/wikipedia/commons/a/ab/Google_Sheets_logo_%282020%29.svg" alt="Google Sheets" {...props} />,
+  HTML: (props: any) => <img src="https://upload.wikimedia.org/wikipedia/commons/3/38/HTML5_Badge.svg" alt="HTML5" {...props} />,
+  PHP: (props: any) => <img src="https://upload.wikimedia.org/wikipedia/commons/2/27/PHP-logo.svg" alt="PHP" {...props} />,
+  Webhook: (props: any) => (
+    <div {...props} className={`flex items-center justify-center bg-indigo-100 rounded-full ${props.className || ''}`}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-[55%] h-[55%] text-indigo-600">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+      </svg>
+    </div>
+  )
 };
 
 export default function IntegrationTab({ site, isGlobal = false }: { site: { id: string }, isGlobal?: boolean }) {
@@ -20,35 +27,35 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
       id: "wordpress",
       title: "WordPress Plugin",
       desc: "One-click install for WP",
-      icon: <SVGIcons.WordPress className="w-8 h-8 text-[#0073AA]" />,
+      icon: <SVGIcons.WordPress className="w-8 h-8 object-contain" />,
       color: "border-[#0073AA]"
     },
     {
       id: "sheets",
       title: "Google Sheets",
       desc: "Auto-sync rows & forms",
-      icon: <SVGIcons.GoogleSheets className="w-8 h-8" />,
+      icon: <SVGIcons.GoogleSheets className="w-8 h-8 object-contain" />,
       color: "border-[#0F9D58]"
     },
     {
       id: "html",
       title: "Custom HTML",
       desc: "Universal JS Snippet",
-      icon: <SVGIcons.HTML className="w-8 h-8 text-[#E34F26]" />,
+      icon: <SVGIcons.HTML className="w-8 h-8 object-contain" />,
       color: "border-[#E34F26]"
     },
     {
       id: "php",
       title: "PHP Snippet",
       desc: "Server-side WP Tracking",
-      icon: <SVGIcons.PHP className="w-8 h-8 text-[#777BB4]" />,
+      icon: <SVGIcons.PHP className="w-8 h-8 object-contain" />,
       color: "border-[#777BB4]"
     },
     {
       id: "webhook",
       title: "Direct Webhook",
       desc: "Zapier, Make.com, APIs",
-      icon: <SVGIcons.Webhook className="w-8 h-8 text-indigo-500" />,
+      icon: <SVGIcons.Webhook className="w-8 h-8 shrink-0" />,
       color: "border-indigo-500"
     }
   ];
@@ -92,7 +99,7 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
         {activeMethod === "wordpress" && (
           <div className="animate-in fade-in zoom-in-95 duration-200">
             <h3 className="text-xl font-bold text-slate-900 flex items-center gap-3 mb-2">
-              <SVGIcons.WordPress className="w-6 h-6 text-[#0073AA]" /> WordPress Plugin
+              <SVGIcons.WordPress className="w-6 h-6 object-contain" /> WordPress Plugin
             </h3>
             <p className="text-slate-600 mb-6">The easiest way to track leads from Elementor Pro Forms and Contact Form 7. No coding required.</p>
             
@@ -115,7 +122,7 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
         {activeMethod === "sheets" && (
           <div className="animate-in fade-in zoom-in-95 duration-200">
             <h3 className="text-xl font-bold text-slate-900 flex items-center gap-3 mb-2">
-              <SVGIcons.GoogleSheets className="w-6 h-6" /> Google Sheets Sync
+              <SVGIcons.GoogleSheets className="w-6 h-6 object-contain" /> Google Sheets Sync
             </h3>
             <p className="text-slate-600 mb-6">Turn any Google Sheet into a live lead database. Perfect for Google Forms or manual entry.</p>
             
@@ -161,7 +168,7 @@ function sendRowToCRM() {
         {activeMethod === "html" && (
           <div className="animate-in fade-in zoom-in-95 duration-200">
             <h3 className="text-xl font-bold text-slate-900 flex items-center gap-3 mb-2">
-              <SVGIcons.HTML className="w-6 h-6 text-[#E34F26]" /> Universal HTML Form Snippet
+              <SVGIcons.HTML className="w-6 h-6 object-contain" /> Universal HTML Form Snippet
             </h3>
             <p className="text-slate-600 mb-6">Works seamlessly with <strong>any HTML website, Framer, Webflow, or multi-step form</strong>. Just drop this script into the <code>&lt;head&gt;</code> or footer of your site.</p>
             
@@ -177,7 +184,7 @@ function sendRowToCRM() {
         {activeMethod === "php" && (
           <div className="animate-in fade-in zoom-in-95 duration-200">
             <h3 className="text-xl font-bold text-slate-900 flex items-center gap-3 mb-2">
-              <SVGIcons.PHP className="w-6 h-6 text-[#777BB4]" /> PHP Snippet (WPCode)
+              <SVGIcons.PHP className="w-6 h-6 object-contain" /> PHP Snippet (WPCode)
             </h3>
             <p className="text-slate-600 mb-6">For advanced WordPress users. Paste this into your theme's <code>functions.php</code> or using the WPCode snippet plugin for ultra-fast server-side tracking.</p>
             
@@ -204,7 +211,7 @@ function sendRowToCRM() {
         {activeMethod === "webhook" && (
           <div className="animate-in fade-in zoom-in-95 duration-200">
             <h3 className="text-xl font-bold text-slate-900 flex items-center gap-3 mb-2">
-              <SVGIcons.Webhook className="w-6 h-6 text-indigo-500" /> Direct Webhook
+              <SVGIcons.Webhook className="w-6 h-6 shrink-0" /> Direct Webhook
             </h3>
             <p className="text-slate-600 mb-6">Connect to third-party automation tools like <strong>Zapier, Make.com, Jotform, or Typeform</strong>.</p>
             
