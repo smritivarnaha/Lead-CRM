@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Bell, BellRing, BellOff, Smartphone } from "lucide-react";
+import { Bell, BellRing, BellOff, Smartphone, X } from "lucide-react";
 import { toast } from "sonner";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
@@ -82,6 +82,34 @@ export default function SettingsPage() {
       if (data.success) {
         setSettings(data.settings);
         toast.success("Settings saved!");
+      } else {
+        toast.error("Failed to save settings.");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Network error.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const saveAllPushSettings = async () => {
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pushTitleTemplate: settings?.pushTitleTemplate,
+          pushBodyTemplate: settings?.pushBodyTemplate,
+          pushCtaLabel: settings?.pushCtaLabel,
+          pushCtaUrl: settings?.pushCtaUrl
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSettings(data.settings);
+        toast.success("Push Settings saved successfully!");
       } else {
         toast.error("Failed to save settings.");
       }
@@ -393,7 +421,19 @@ export default function SettingsPage() {
                 <label className="text-sm font-medium text-slate-700">Notification Main Icon</label>
                 <div className="flex gap-3 items-center">
                   {settings?.pushIconUrl && (
-                    <img src={settings.pushIconUrl} alt="icon" className="w-10 h-10 object-cover rounded border border-slate-200" />
+                    <div className="relative group shrink-0">
+                      <img src={settings.pushIconUrl} alt="icon" className="w-10 h-10 object-cover rounded border border-slate-200 bg-white" />
+                      <button 
+                        onClick={() => {
+                          setSettings({...settings, pushIconUrl: ""});
+                          saveSettings("pushIconUrl", "");
+                        }}
+                        className="absolute -top-2 -right-2 bg-red-100 text-red-600 hover:bg-red-200 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Delete Icon"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   )}
                   <input 
                     type="file" 
@@ -409,8 +449,18 @@ export default function SettingsPage() {
                 <label className="text-sm font-medium text-slate-700">Badge Icon (Small Monochrome)</label>
                 <div className="flex gap-3 items-center">
                   {settings?.pushBadgeUrl && (
-                    <div className="w-10 h-10 rounded border border-slate-200 bg-slate-900 flex items-center justify-center shrink-0">
+                    <div className="relative group shrink-0 w-10 h-10 rounded border border-slate-200 bg-slate-900 flex items-center justify-center">
                       <img src={settings.pushBadgeUrl} alt="badge" className="w-6 h-6 object-contain" />
+                      <button 
+                        onClick={() => {
+                          setSettings({...settings, pushBadgeUrl: ""});
+                          saveSettings("pushBadgeUrl", "");
+                        }}
+                        className="absolute -top-2 -right-2 bg-red-100 text-red-600 hover:bg-red-200 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Delete Badge"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   )}
                   <input 
@@ -446,6 +496,16 @@ export default function SettingsPage() {
                     className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
                   />
                 </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 mt-2">
+                <button
+                  onClick={saveAllPushSettings}
+                  disabled={isSaving}
+                  className="w-full sm:w-auto py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50"
+                >
+                  {isSaving ? "Saving..." : "Save Push Settings"}
+                </button>
               </div>
             </div>
           </div>
