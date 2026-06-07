@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Bell, BellRing, BellOff, Smartphone, X } from "lucide-react";
+import { Bell, BellRing, BellOff, Smartphone, X, Link as LinkIcon, Download, Copy, Code2 } from "lucide-react";
 import { toast } from "sonner";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
@@ -313,6 +313,12 @@ export default function SettingsPage() {
         >
           App Installation
         </button>
+        <button 
+          onClick={() => setActiveTab("integration")}
+          className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "integration" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+        >
+          Integration Guide
+        </button>
       </div>
 
       <div className="max-w-2xl">
@@ -616,44 +622,133 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* ─── INSTALL APP TAB ─── */}
+        {/* ─── APP INSTALLATION TAB ─── */}
         {activeTab === "install" && (
-          <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden h-fit mb-6">
+          <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden mb-6">
             <div className="p-5 border-b border-slate-100 flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
                 <Smartphone className="h-5 w-5 text-indigo-600" />
               </div>
               <div>
                 <h3 className="font-semibold text-slate-900">Install Mobile App</h3>
-                <p className="text-xs text-slate-500">Add LeadFlow to your Home Screen</p>
+                <p className="text-xs text-slate-500">Add LeadFlow to your home screen</p>
               </div>
             </div>
 
-            <div className="p-5 flex flex-col gap-4">
-              <p className="text-sm text-slate-600">
-                For the best experience and to enable push notifications on iOS, install LeadFlow directly to your phone's home screen.
+            <div className="p-6">
+              {installPrompt ? (
+                <div className="flex flex-col items-center justify-center text-center py-6">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg mb-6 flex items-center justify-center text-white font-bold text-2xl">
+                    LF
+                  </div>
+                  <h4 className="text-lg font-bold text-slate-900 mb-2">Ready to Install</h4>
+                  <p className="text-slate-500 text-sm max-w-sm mb-6">
+                    Install LeadFlow as a native app on your device for the best experience.
+                  </p>
+                  <button 
+                    onClick={async () => {
+                      installPrompt.prompt();
+                      const { outcome } = await installPrompt.userChoice;
+                      if (outcome === 'accepted') {
+                        setInstallPrompt(null);
+                        toast.success("App installation started!");
+                      }
+                    }}
+                    className="w-full sm:w-auto px-8 py-2.5 bg-indigo-600 text-white font-semibold rounded-lg"
+                  >
+                    Install App Now
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center text-center py-6">
+                  <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                    <Smartphone className="w-6 h-6 text-slate-400" />
+                  </div>
+                  <h4 className="text-slate-900 font-medium mb-1">App Already Installed or Not Supported</h4>
+                  <p className="text-slate-500 text-sm max-w-sm">
+                    If you are on an iPhone, tap the Share button and select "Add to Home Screen".
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ─── INTEGRATION GUIDE TAB ─── */}
+        {activeTab === "integration" && (
+          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="p-6 bg-slate-50 border-b border-slate-200">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <LinkIcon className="w-5 h-5 text-indigo-600" /> Global Integration Guide
+              </h3>
+              <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+                Learn how to connect your clients' websites to LeadFlow. Each client gets their own specific Webhook URL and Plugin.
               </p>
-              
-              <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
-                <h4 className="text-sm font-semibold text-slate-900 mb-2">How to install:</h4>
-                <ul className="text-sm text-slate-600 space-y-2">
-                  <li className="flex items-start gap-2">
-                    <span className="font-bold text-slate-900">iOS (Safari):</span> 
-                    Tap the Share icon at the bottom, then scroll down and tap "Add to Home Screen".
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="font-bold text-slate-900">Android (Chrome):</span> 
-                    Click the Install button below, or tap the 3 dots menu and select "Install app".
-                  </li>
-                </ul>
+            </div>
+            
+            <div className="p-6 space-y-10">
+              {/* Method 1: WordPress Plugin */}
+              <div>
+                <h4 className="text-base font-bold text-slate-900 flex items-center gap-2 mb-3">
+                  <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs">1</span> 
+                  Method 1: One-Click WP Plugin (Recommended)
+                </h4>
+                <div className="ml-8 text-sm text-slate-600 space-y-4">
+                  <p>We automatically generate a custom WordPress plugin for each website that integrates with <strong>Elementor Pro Forms</strong> and <strong>Contact Form 7</strong> seamlessly.</p>
+                  <ol className="list-decimal ml-4 space-y-2 text-slate-700 bg-slate-50 p-4 rounded-lg border border-slate-100">
+                    <li>Go to the <strong>Websites</strong> tab in the left sidebar.</li>
+                    <li>Find your client's website in the table.</li>
+                    <li>Click the <strong>WP Plugin</strong> button next to their Webhook URL to download their customized `.zip` file.</li>
+                    <li>Log into their WordPress Admin Dashboard ➔ <strong>Plugins</strong> ➔ <strong>Add New</strong> ➔ <strong>Upload Plugin</strong>.</li>
+                    <li>Upload the `.zip` file and click <strong>Activate</strong>.</li>
+                  </ol>
+                </div>
               </div>
-              <button
-                onClick={handleInstallClick}
-                className="mt-2 w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2"
-              >
-                <Smartphone className="h-4 w-4" />
-                Install App Now
-              </button>
+
+              {/* Method 2: Manual PHP Snippet */}
+              <div>
+                <h4 className="text-base font-bold text-slate-900 flex items-center gap-2 mb-3">
+                  <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs">2</span> 
+                  Method 2: Manual PHP Snippet
+                </h4>
+                <div className="ml-8 text-sm text-slate-600 space-y-4">
+                  <p>If you don't want to install the custom plugin, you can paste this snippet into the <strong>WPCode</strong> plugin or <code>functions.php</code> file. Ensure you replace <code>YOUR_WEBSITE_ID</code> with the ID from the Websites table.</p>
+                  <div className="relative group">
+                    <pre className="bg-[#1E1E1E] text-slate-300 p-4 rounded-lg text-[13px] overflow-x-auto leading-relaxed font-mono">
+                      <code className="language-php">
+{`add_action( 'elementor_pro/forms/new_record', function( $record, $handler ) {
+    $fields = [];
+    foreach ( $record->get( 'fields' ) as $id => $field ) {
+        $fields[ $id ] = $field['value'];
+    }
+    wp_remote_post( 'https://lead-crmsss.vercel.app/api/webhook/receive/YOUR_WEBSITE_ID', [
+        'body' => wp_json_encode($fields),
+        'headers' => [ 'Content-Type' => 'application/json' ],
+        'blocking' => false
+    ]);
+}, 10, 2 );`}
+                      </code>
+                    </pre>
+                  </div>
+                </div>
+              </div>
+
+              {/* Method 3: Direct Webhook */}
+              <div>
+                <h4 className="text-base font-bold text-slate-900 flex items-center gap-2 mb-3">
+                  <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs">3</span> 
+                  Method 3: Direct Webhook URL
+                </h4>
+                <div className="ml-8 text-sm text-slate-600 space-y-4">
+                  <p>You can find the unique webhook URL for every client directly in the <strong>Websites</strong> table. Use this if you are pasting directly into individual Elementor forms or Zapier.</p>
+                  <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 max-w-xl">
+                    <code className="text-slate-800 font-mono text-[13px] truncate mr-4">
+                      https://lead-crmsss.vercel.app/api/webhook/receive/YOUR_WEBSITE_ID
+                    </code>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
         )}
