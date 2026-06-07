@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getWebsites } from "@/actions/websites";
-import { getLeads } from "@/actions/leads";
+import { getIntegrationsData } from "@/actions/websites";
 import { useUser } from "@clerk/nextjs";
 import { 
   Link2, 
@@ -43,6 +42,7 @@ export default function IntegrationsPage() {
   const [allLeads, setAllLeads] = useState<any[]>([]);
   const [websiteStatuses, setWebsiteStatuses] = useState<WebsiteStatus[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [pingingId, setPingingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -51,31 +51,27 @@ export default function IntegrationsPage() {
   const isClient = role === "CLIENT" && !!userWebsiteId;
 
   useEffect(() => {
-    fetchData();
+    fetchData(false);
   }, [isClient, userWebsiteId]);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (silent = false) => {
+    if (!silent) {
+      setLoading(true);
+    } else {
+      setRefreshing(true);
+    }
     try {
-      const [webRes, leadRes] = await Promise.all([
-        getWebsites(),
-        getLeads()
-      ]);
-
-      let sites = [];
-      let leads = [];
-
-      if (webRes.success && webRes.websites) {
-        sites = isClient 
-          ? webRes.websites.filter((w: any) => w.id === userWebsiteId)
-          : webRes.websites;
-        setWebsites(sites);
+      const res = await getIntegrationsData();
+      if (!res.success) {
+        toast.error(res.error || "Failed to load integrations status.");
+        return;
       }
 
-      if (leadRes.success && leadRes.leads) {
-        leads = leadRes.leads;
-        setAllLeads(leads);
-      }
+      const sites = res.websites || [];
+      const leads = res.leads || [];
+
+      setWebsites(sites);
+      setAllLeads(leads);
 
       // Compute integration status for each site
       const computedStatuses: WebsiteStatus[] = sites.map((site: any) => {
@@ -108,7 +104,7 @@ export default function IntegrationsPage() {
             if (src.includes("wordpress") || src.includes("wp")) activeIntegrations.wordpress = true;
             else if (src.includes("sheet")) activeIntegrations.sheets = true;
             else if (src.includes("html") || src.includes("form") || src.includes("snippet")) activeIntegrations.html = true;
-            else if (src.includes("webhook") || src.includes("api") || src.includes("ping")) activeIntegrations.webhook = true;
+            else if (src.includes("webhook") || src.includes("api") || src.includes("ping") || src.includes("test")) activeIntegrations.webhook = true;
           });
 
           // Fallback if source didn't match cleanly: mark at least one active based on website
@@ -135,6 +131,7 @@ export default function IntegrationsPage() {
       toast.error("Failed to load integrations status.");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -158,8 +155,8 @@ export default function IntegrationsPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         toast.success("Test ping sent! A new lead 'CRM Integration Test Ping' has been successfully logged into the pipeline.");
-        // Refetch immediately to update status dots to live
-        fetchData();
+        // Refetch immediately in background to update status dots to live
+        fetchData(true);
       } else {
         toast.error("Ping failed: " + (data.error || "Unexpected response"));
       }
@@ -197,10 +194,10 @@ export default function IntegrationsPage() {
         </div>
 
         <button 
-          onClick={fetchData} 
+          onClick={() => fetchData(true)} 
           className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl shadow-sm transition-colors self-start sm:self-auto"
         >
-          <RefreshCw className="w-3.5 h-3.5" /> Refresh Status
+          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} /> Refresh Status
         </button>
       </div>
 

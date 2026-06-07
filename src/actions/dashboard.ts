@@ -1,15 +1,15 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { currentUser } from "@clerk/nextjs/server";
+import { getAuthenticatedUser } from "@/lib/auth";
 
 export async function getDashboardStats() {
   try {
-    const user = await currentUser();
+    const user = await getAuthenticatedUser();
     if (!user) return { success: false, error: "Unauthorized" };
 
-    const role = user.publicMetadata?.role as string | undefined;
-    const websiteId = user.publicMetadata?.websiteId as string | undefined;
+    const role = user.role;
+    const websiteId = user.websiteId;
     const isClient = role === "CLIENT" && !!websiteId;
     const whereClause = isClient ? { websiteId } : {};
 

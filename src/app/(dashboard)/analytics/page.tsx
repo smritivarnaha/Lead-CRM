@@ -43,6 +43,7 @@ export default function AnalyticsPage() {
   const [filteredLeads, setFilteredLeads] = useState<any[]>([]);
   const [selectedSiteId, setSelectedSiteId] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [timeRange, setTimeRange] = useState<"7d" | "30d" | "all">("7d");
 
@@ -52,11 +53,15 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     setMounted(true);
-    fetchData();
+    fetchData(false);
   }, [isClient, userWebsiteId]);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (silent = false) => {
+    if (!silent) {
+      setLoading(true);
+    } else {
+      setRefreshing(true);
+    }
     try {
       const [webRes, leadRes] = await Promise.all([
         getWebsites(),
@@ -86,6 +91,7 @@ export default function AnalyticsPage() {
       toast.error("Failed to load analytics data.");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -283,11 +289,11 @@ export default function AnalyticsPage() {
           </div>
 
           <button 
-            onClick={fetchData} 
+            onClick={() => fetchData(true)} 
             className="p-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl shadow-sm text-slate-500 hover:text-slate-800 transition-colors"
             title="Refresh Data"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
           </button>
         </div>
       </div>

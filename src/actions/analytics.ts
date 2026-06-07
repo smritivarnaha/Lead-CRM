@@ -2,11 +2,11 @@
 
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { currentUser } from "@clerk/nextjs/server";
+import { getAuthenticatedUser } from "@/lib/auth";
 
 export async function getDashboardStats() {
   try {
-    const user = await currentUser();
+    const user = await getAuthenticatedUser();
     if (!user) return { success: false, error: "Unauthorized" };
 
     // In a fully multi-tenant system, we would filter by workspaceId

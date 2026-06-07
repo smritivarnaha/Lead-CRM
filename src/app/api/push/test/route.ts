@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
+import { getAuthenticatedUser } from "@/lib/auth";
 import { sendPushToAll } from "@/lib/push";
 import prisma from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
-    const user = await currentUser();
+    const user = await getAuthenticatedUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const workspace = await prisma.workspace.findUnique({

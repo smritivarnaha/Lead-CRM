@@ -30,15 +30,20 @@ export default function ActivityPage() {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [filteredActivities, setFilteredActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState<"all" | "leads" | "notes" | "alerts">("all");
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    fetchLogs();
+    fetchLogs(false);
   }, []);
 
-  const fetchLogs = async () => {
-    setLoading(true);
+  const fetchLogs = async (silent = false) => {
+    if (!silent) {
+      setLoading(true);
+    } else {
+      setRefreshing(true);
+    }
     try {
       const res = await getActivityLog();
       if (res.success && res.activities) {
@@ -52,6 +57,7 @@ export default function ActivityPage() {
       toast.error("Network error while loading logs.");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -164,10 +170,10 @@ export default function ActivityPage() {
         </div>
 
         <button 
-          onClick={fetchLogs} 
+          onClick={() => fetchLogs(true)} 
           className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-[#E8E4F3] hover:bg-[#F3F0FF] hover:text-[#7C3AED] text-slate-700 text-xs font-bold rounded-xl shadow-sm transition-all self-start sm:self-auto"
         >
-          <RefreshCw className="w-3.5 h-3.5" /> Refresh Log
+          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} /> Refresh Log
         </button>
       </div>
 

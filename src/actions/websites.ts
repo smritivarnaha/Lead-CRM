@@ -1,12 +1,13 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { currentUser, clerkClient } from "@clerk/nextjs/server";
+import { clerkClient } from "@clerk/nextjs/server";
+import { getAuthenticatedUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
 export async function getWebsites() {
   try {
-    const user = await currentUser();
+    const user = await getAuthenticatedUser();
     
     if (!user) {
       return { success: false, error: "Unauthorized" };
@@ -65,7 +66,7 @@ export async function getWebsites() {
 
 export async function createWebsite(data: { name: string; domain: string }) {
   try {
-    const user = await currentUser();
+    const user = await getAuthenticatedUser();
     if (!user) return { success: false, error: "Unauthorized" };
 
     // Ensure the mock workspace exists
@@ -150,7 +151,7 @@ export async function createClientLogin(data: {
   websiteName: string; 
 }) {
   try {
-    const user = await currentUser();
+    const user = await getAuthenticatedUser();
     if (!user) return { success: false, error: "Unauthorized" };
 
     const clerk = await clerkClient();
@@ -209,7 +210,7 @@ export async function createClientLogin(data: {
 
 export async function resetClientPassword(userId: string) {
   try {
-    const user = await currentUser();
+    const user = await getAuthenticatedUser();
     if (!user) return { success: false, error: "Unauthorized" };
 
     const clerk = await clerkClient();
@@ -228,7 +229,7 @@ export async function resetClientPassword(userId: string) {
 
 export async function deleteClientLogin(userId: string) {
   try {
-    const user = await currentUser();
+    const user = await getAuthenticatedUser();
     if (!user) return { success: false, error: "Unauthorized" };
 
     const clerk = await clerkClient();
@@ -246,5 +247,54 @@ export async function deleteClientLogin(userId: string) {
   } catch (error: unknown) {
     console.error("Error deleting client user:", error);
     return { success: false, error: "Failed to delete user" };
+  }
+}
+
+export async function getIntegrationsData() {
+  try {
+    const user = await getAuthenticatedUser();
+    if (!user) return { success: false, error: "Unauthorized" };
+
+    const role = user.role;
+    const websiteId = user.websiteId;
+    const isClient = role === "CLIENT" && !!websiteId;
+
+    const whereClause = isClient ? { id: websiteId } : {};
+    const leadsWhereClause = isClient ? { websiteId } : {};
+
+    const [websites, leads] = await Promise.all([
+      prisma.website.findMany({
+        where: whereClause,
+        include: {
+          users: {
+            where: { role: "CLIENT" },
+            select: { id: true, email: true, firstName: true, lastName: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.lead.findMany({
+        where: leadsWhereClause,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          phone: true,
+          source: true,
+          createdAt: true,
+          websiteId: true,
+        },
+      })
+    ]);
+
+    return {
+      success: true,
+      websites: JSON.parse(JSON.stringify(websites)),
+      leads: JSON.parse(JSON.stringify(leads)),
+    };
+  } catch (error) {
+    console.error("Error fetching integrations data:", error);
+    return { success: false, error: "Failed to fetch integrations data" };
   }
 }

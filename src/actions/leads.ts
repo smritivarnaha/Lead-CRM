@@ -1,15 +1,15 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { currentUser } from "@clerk/nextjs/server";
+import { getAuthenticatedUser } from "@/lib/auth";
 
 export async function getLeads() {
   try {
-    const user = await currentUser();
+    const user = await getAuthenticatedUser();
     if (!user) return { success: false, error: "Unauthorized" };
 
-    const role = user.publicMetadata?.role as string | undefined;
-    const websiteId = user.publicMetadata?.websiteId as string | undefined;
+    const role = user.role;
+    const websiteId = user.websiteId;
     const isClient = role === "CLIENT" && !!websiteId;
 
     const leads = await prisma.lead.findMany({
@@ -53,7 +53,7 @@ export async function getLeads() {
 
 export async function getLeadsByWebsite(websiteId: string) {
   try {
-    const user = await currentUser();
+    const user = await getAuthenticatedUser();
     if (!user) return { success: false, error: "Unauthorized" };
 
     const leads = await prisma.lead.findMany({
@@ -97,7 +97,7 @@ export async function getLeadsByWebsite(websiteId: string) {
 
 export async function updateLeadStatus(leadId: string, status: string) {
   try {
-    const user = await currentUser();
+    const user = await getAuthenticatedUser();
     if (!user) return { success: false, error: "Unauthorized" };
 
     const updatedLead = await prisma.lead.update({
@@ -114,7 +114,7 @@ export async function updateLeadStatus(leadId: string, status: string) {
 
 export async function updateLeadPriority(leadId: string, priority: string) {
   try {
-    const user = await currentUser();
+    const user = await getAuthenticatedUser();
     if (!user) return { success: false, error: "Unauthorized" };
 
     const updatedLead = await prisma.lead.update({
@@ -131,7 +131,7 @@ export async function updateLeadPriority(leadId: string, priority: string) {
 
 export async function deleteLead(leadId: string) {
   try {
-    const user = await currentUser();
+    const user = await getAuthenticatedUser();
     if (!user) return { success: false, error: "Unauthorized" };
 
     await prisma.lead.delete({ where: { id: leadId } });
@@ -144,7 +144,7 @@ export async function deleteLead(leadId: string) {
 
 export async function logCallAction(leadId: string, status: string, callNotes?: string, followUpAt?: Date | null) {
   try {
-    const user = await currentUser();
+    const user = await getAuthenticatedUser();
     if (!user) return { success: false, error: "Unauthorized" };
 
     const dataToUpdate: any = { status };

@@ -1,12 +1,12 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { currentUser } from "@clerk/nextjs/server";
+import { getAuthenticatedUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
 export async function getWorkspaces() {
   try {
-    const user = await currentUser();
+    const user = await getAuthenticatedUser();
     if (!user) return { success: false, error: "Unauthorized" };
 
     const workspaces = await prisma.workspace.findMany({
@@ -33,7 +33,7 @@ export async function getWorkspaces() {
 
 export async function createWorkspace(name: string) {
   try {
-    const user = await currentUser();
+    const user = await getAuthenticatedUser();
     if (!user) return { success: false, error: "Unauthorized" };
 
     if (!name || name.trim() === "") {

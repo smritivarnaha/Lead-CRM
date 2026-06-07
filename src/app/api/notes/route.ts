@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
+import { getAuthenticatedUser } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 /** GET /api/notes?leadId=X */
 export async function GET(request: Request) {
   try {
-    const user = await currentUser();
+    const user = await getAuthenticatedUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { searchParams } = new URL(request.url);
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
 /** POST /api/notes  { leadId, content } */
 export async function POST(request: Request) {
   try {
-    const user = await currentUser();
+    const user = await getAuthenticatedUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { leadId, content } = await request.json();
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "leadId and content required" }, { status: 400 });
     }
 
-    const authorName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.emailAddresses[0]?.emailAddress || "Team";
+    const authorName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email || "Team";
 
     const note = await prisma.note.create({
       data: { leadId, content: content.trim(), authorName },
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
 /** DELETE /api/notes?id=X */
 export async function DELETE(request: Request) {
   try {
-    const user = await currentUser();
+    const user = await getAuthenticatedUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { searchParams } = new URL(request.url);
