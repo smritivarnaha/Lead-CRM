@@ -30,6 +30,11 @@ model Workspace {
   adminPhone          String?
   smsTemplate         String? @default("🔥 New Lead: {{name}} has just submitted a form!")
 
+  // Email Alert Settings
+  emailAlertsEnabled  Boolean @default(false)
+  adminEmail          String?
+  emailAlertTemplate  String? @default("You have a new lead from {{source}}:\n\nName: {{name}}\nEmail: {{email}}\nPhone: {{phone}}\nMessage: {{message}}")
+
   // Email Settings
   emailProvider       String? @default("RESEND")
   emailApiKey         String?
@@ -66,6 +71,7 @@ model Website {
   isActive    Boolean  @default(true)
   logoUrl     String?  // Client's specific logo (used for push badge)
   adminPhone  String?  // Client's specific phone for SMS alerts
+  adminEmail  String?  // Client's specific email for email alerts
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

@@ -309,6 +309,53 @@ export async function POST(
       }
     }
 
+    // Handle Email Admin Alerts
+    let emailAlertSent = false;
+    const targetEmail = existingSite.adminEmail || workspace?.adminEmail;
+    if (workspace?.emailAlertsEnabled && workspace?.emailProvider === "RESEND" && workspace?.emailApiKey && targetEmail) {
+      try {
+        const fromStr = workspace.fromEmailName
+          ? `${workspace.fromEmailName} <${workspace.fromEmailAddress || "onboarding@resend.dev"}>`
+          : (workspace.fromEmailAddress || "onboarding@resend.dev");
+
+        const defaultEmailTemplate = "You have a new lead from {{source}}:\n\nName: {{name}}\nEmail: {{email}}\nPhone: {{phone}}\nMessage: {{message}}\nURL: {{url}}";
+        const rawTemplate = workspace.emailAlertTemplate || defaultEmailTemplate;
+        
+        const emailBody = rawTemplate
+          .replace(/{{name}}/g, fullName)
+          .replace(/{{email}}/g, email || "N/A")
+          .replace(/{{phone}}/g, phone || "N/A")
+          .replace(/{{message}}/g, message || "N/A")
+          .replace(/{{source}}/g, source || "Website")
+          .replace(/{{url}}/g, pageUrl || "N/A");
+
+        const htmlBody = emailBody.replace(/\n/g, '<br />');
+
+        const emailRes = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${workspace.emailApiKey.trim()}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            from: fromStr,
+            to: targetEmail,
+            subject: `🔔 New Lead: ${fullName}`,
+            html: htmlBody,
+          })
+        });
+
+        if (emailRes.ok) {
+          emailAlertSent = true;
+          console.log("[EMAIL ALERT SUCCESS]", await emailRes.json());
+        } else {
+          console.error("[EMAIL ALERT FAILED]", await emailRes.json());
+        }
+      } catch (err) {
+        console.error("[EMAIL ALERT ERROR]", err);
+      }
+    }
+
     // Broadcast via Supabase Realtime to dashboard
     try {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;

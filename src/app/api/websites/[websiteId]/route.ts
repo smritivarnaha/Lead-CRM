@@ -25,6 +25,7 @@ export async function PATCH(
     if (body.name !== undefined) data.name = body.name;
     if (body.logoUrl !== undefined) data.logoUrl = body.logoUrl;
     if (body.adminPhone !== undefined) data.adminPhone = body.adminPhone;
+    if (body.adminEmail !== undefined) data.adminEmail = body.adminEmail;
 
     const updatedWebsite = await prisma.website.update({
       where: { id: websiteId },

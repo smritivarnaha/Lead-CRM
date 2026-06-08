@@ -39,21 +39,21 @@ export default function SettingsPage() {
     }
   }, [isClient]);
 
-  const saveClientWebsitePhone = async (phone: string) => {
+  const saveClientWebsiteAlerts = async (phone: string, email: string) => {
     if (!clientWebsite) return;
     setIsSaving(true);
     try {
       const res = await fetch(`/api/websites/${clientWebsite.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ adminPhone: phone }),
+        body: JSON.stringify({ adminPhone: phone, adminEmail: email }),
       });
       const data = await res.json();
       if (data.success) {
         setClientWebsite(data.website);
-        toast.success("Phone number saved successfully!");
+        toast.success("Alert settings saved successfully!");
       } else {
-        toast.error("Failed to save phone number.");
+        toast.error("Failed to save alert settings.");
       }
     } catch (e) {
       console.error(e);
@@ -503,7 +503,7 @@ export default function SettingsPage() {
           onClick={() => setActiveTab("sms")}
           className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "sms" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
         >
-          SMS Alerts
+          Lead Alerts
         </button>
         {!isClient && (
           <button 
@@ -727,27 +727,27 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* ─── SMS ALERTS TAB ─── */}
+        {/* ─── LEAD ALERTS TAB ─── */}
         {activeTab === "sms" && (
           isClient ? (
             <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden h-fit mb-6">
               <div className="p-5 border-b border-slate-100 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
-                  <Smartphone className="h-5 w-5 text-indigo-600" />
+                  <BellRing className="h-5 w-5 text-indigo-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-900">SMS Alerts</h3>
-                  <p className="text-xs text-slate-500">Configure phone number for instant lead updates</p>
+                  <h3 className="font-semibold text-slate-900">Lead Alerts</h3>
+                  <p className="text-xs text-slate-500">Configure phone and email for instant lead updates</p>
                 </div>
               </div>
 
               <div className="p-5 flex flex-col gap-5 text-left">
                 <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-lg text-emerald-800 text-xs leading-relaxed">
-                  <strong>Instant SMS alerts are active!</strong> Enter the mobile number below where you want to receive a text message automatically as soon as a new lead is captured.
+                  <strong>Instant alerts are active!</strong> Enter the mobile number and email below where you want to receive notifications automatically as soon as a new lead is captured.
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-slate-700">Admin Phone Number</label>
+                  <label className="text-sm font-medium text-slate-700">Admin Phone Number (SMS)</label>
                   <input 
                     type="text" 
                     value={clientWebsite?.adminPhone || ""} 
@@ -755,16 +755,28 @@ export default function SettingsPage() {
                     placeholder="e.g. 9876543210"
                     className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
                   />
-                  <p className="text-xs text-slate-500">The mobile number where you want to receive the lead alert.</p>
+                  <p className="text-xs text-slate-500">The mobile number where you want to receive the lead SMS alert.</p>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-slate-700">Admin Email Address</label>
+                  <input 
+                    type="email" 
+                    value={clientWebsite?.adminEmail || ""} 
+                    onChange={(e) => setClientWebsite({...clientWebsite, adminEmail: e.target.value})}
+                    placeholder="e.g. admin@yourdomain.com"
+                    className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
+                  />
+                  <p className="text-xs text-slate-500">The email address where you want to receive the full lead data.</p>
                 </div>
 
                 <div className="pt-2">
                   <button
-                    onClick={() => saveClientWebsitePhone(clientWebsite?.adminPhone)}
+                    onClick={() => saveClientWebsiteAlerts(clientWebsite?.adminPhone, clientWebsite?.adminEmail)}
                     disabled={isSaving || !clientWebsite}
                     className="w-full sm:w-auto py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50"
                   >
-                    {isSaving ? "Saving..." : "Save Phone Number"}
+                    {isSaving ? "Saving..." : "Save Alert Settings"}
                   </button>
                 </div>
               </div>
@@ -773,19 +785,76 @@ export default function SettingsPage() {
             <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden h-fit mb-6">
               <div className="p-5 border-b border-slate-100 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
-                  <Smartphone className="h-5 w-5 text-indigo-600" />
+                  <BellRing className="h-5 w-5 text-indigo-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-900">SMS Admin Alerts (India)</h3>
-                  <p className="text-xs text-slate-500">Powered by Fast2SMS</p>
+                  <h3 className="font-semibold text-slate-900">Admin Lead Alerts</h3>
+                  <p className="text-xs text-slate-500">Configure SMS and Email notifications for admins</p>
                 </div>
               </div>
 
               <div className="p-5 flex flex-col gap-5 text-left">
+                {/* Email Alerts Toggle */}
+                <div className="flex items-center justify-between bg-slate-50 p-4 rounded-lg border border-slate-100">
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-900">Enable Email Alerts</h4>
+                    <p className="text-xs text-slate-500 mt-0.5">Receive full lead data via Email instantly</p>
+                  </div>
+                  <button
+                    onClick={() => saveSettings("emailAlertsEnabled", !settings?.emailAlertsEnabled)}
+                    disabled={isSaving || !settings}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 disabled:opacity-50 ${
+                      settings?.emailAlertsEnabled ? "bg-indigo-600" : "bg-slate-200"
+                    }`}
+                    role="switch"
+                    aria-checked={settings?.emailAlertsEnabled || false}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        settings?.emailAlertsEnabled ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {settings?.emailAlertsEnabled && (
+                  <>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-medium text-slate-700">Admin Email Address</label>
+                      <input 
+                        type="email" 
+                        value={settings?.adminEmail || ""} 
+                        onChange={(e) => setSettings({...settings, adminEmail: e.target.value})}
+                        onBlur={(e) => saveSettings("adminEmail", e.target.value)}
+                        placeholder="e.g. admin@yourdomain.com"
+                        className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
+                      />
+                      <p className="text-xs text-slate-500">The email address to receive lead notifications.</p>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-medium text-slate-700">Email Alert Template</label>
+                      <textarea 
+                        value={settings?.emailAlertTemplate || ""} 
+                        onChange={(e) => setSettings({...settings, emailAlertTemplate: e.target.value})}
+                        onBlur={(e) => saveSettings("emailAlertTemplate", e.target.value)}
+                        rows={5}
+                        placeholder="You have a new lead..."
+                        className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors resize-none font-mono"
+                      />
+                      <p className="text-xs text-slate-500">Variables available: {"{{name}}, {{email}}, {{phone}}, {{message}}, {{source}}, {{url}}"}</p>
+                    </div>
+                  </>
+                )}
+
+                <div className="h-px bg-slate-100 my-2" />
+
+                {/* SMS Alerts Toggle */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="text-sm font-semibold text-slate-900">Enable Admin Alerts</h4>
-                    <p className="text-xs text-slate-500 mt-0.5">Receive an SMS instantly when a new lead arrives</p>
+                    <h4 className="text-sm font-semibold text-slate-900">Enable SMS Alerts (India)</h4>
+                    <p className="text-xs text-slate-500 mt-0.5">Receive an SMS via Fast2SMS</p>
                   </div>
                   <button
                     onClick={() => saveSettings("smsAutoReplyEnabled", !settings?.smsAutoReplyEnabled)}
@@ -830,7 +899,7 @@ export default function SettingsPage() {
                         placeholder="e.g. 9876543210"
                         className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
                       />
-                      <p className="text-xs text-slate-500">The mobile number where you want to receive the lead alert.</p>
+                      <p className="text-xs text-slate-500">The mobile number to receive the lead SMS alert.</p>
                     </div>
 
                     <div className="flex flex-col gap-2">
@@ -845,30 +914,34 @@ export default function SettingsPage() {
                       />
                       <p className="text-xs text-slate-500">Use {"{{name}}"} and {"{{source}}"} as variables.</p>
                     </div>
-
-                    <div className="flex flex-col sm:flex-row gap-3 mt-2">
-                      <button
-                        onClick={() => {
-                          saveSettings("fast2smsApiKey", settings?.fast2smsApiKey);
-                          saveSettings("adminPhone", settings?.adminPhone);
-                          saveSettings("smsTemplate", settings?.smsTemplate);
-                          toast.success("SMS Settings saved successfully!");
-                        }}
-                        disabled={isSaving}
-                        className="flex-1 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50"
-                      >
-                        {isSaving ? "Saving..." : "Save SMS Settings"}
-                      </button>
-                      <button
-                        onClick={handleTestSms}
-                        disabled={isTestingSms || isSaving}
-                        className="flex-1 py-2.5 px-4 bg-white border border-indigo-200 hover:bg-indigo-50 text-indigo-700 text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50"
-                      >
-                        {isTestingSms ? "Sending..." : "Send Test SMS"}
-                      </button>
-                    </div>
                   </>
                 )}
+
+                <div className="flex flex-col sm:flex-row gap-3 mt-2 pt-4 border-t border-slate-100">
+                  <button
+                    onClick={() => {
+                      saveSettings("fast2smsApiKey", settings?.fast2smsApiKey);
+                      saveSettings("adminPhone", settings?.adminPhone);
+                      saveSettings("smsTemplate", settings?.smsTemplate);
+                      saveSettings("adminEmail", settings?.adminEmail);
+                      saveSettings("emailAlertTemplate", settings?.emailAlertTemplate);
+                      toast.success("Alert Settings saved successfully!");
+                    }}
+                    disabled={isSaving}
+                    className="flex-1 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50"
+                  >
+                    {isSaving ? "Saving..." : "Save Alert Settings"}
+                  </button>
+                  {settings?.smsAutoReplyEnabled && (
+                    <button
+                      onClick={handleTestSms}
+                      disabled={isTestingSms || isSaving}
+                      className="flex-1 py-2.5 px-4 bg-white border border-indigo-200 hover:bg-indigo-50 text-indigo-700 text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50"
+                    >
+                      {isTestingSms ? "Sending..." : "Test SMS"}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )
