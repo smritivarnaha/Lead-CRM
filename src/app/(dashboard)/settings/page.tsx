@@ -8,6 +8,7 @@ import IntegrationTab from "@/components/IntegrationTab";
 import { getWebsites } from "@/actions/websites";
 import { useUser } from "@clerk/nextjs";
 import { EMAIL_THEMES } from "@/lib/emailTemplates";
+import { useActiveProfile } from "@/components/providers/ActiveProfileProvider";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 
@@ -23,15 +24,25 @@ export default function SettingsPage() {
   const role = user?.publicMetadata?.role as string | undefined;
   const isClient = role === "CLIENT";
 
+  const { websites, activeWebsiteId, setWebsites } = useActiveProfile();
+  const activeWebsite = websites.find(w => w.id === activeWebsiteId);
+  const [clientWebsite, setClientWebsite] = useState<any>(null);
+
+  // Sync clientWebsite with activeWebsite whenever it changes
+  useEffect(() => {
+    if (activeWebsite) {
+      setClientWebsite(activeWebsite);
+    } else if (websites.length > 0) {
+      setClientWebsite(websites[0]);
+    }
+  }, [activeWebsite, websites]);
+
   const [pushStatus, setPushStatus] = useState<"loading" | "subscribed" | "unsubscribed" | "unsupported">("loading");
   const [isProcessing, setIsProcessing] = useState(false);
   const [settings, setSettings] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isTestingSms, setIsTestingSms] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
-  const [defaultWebsiteId, setDefaultWebsiteId] = useState<string>("cm1a2b3c4d5e6f");
-  const [clientWebsite, setClientWebsite] = useState<any>(null);
-  const [websites, setWebsites] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState("push");
 
   useEffect(() => {
@@ -133,7 +144,6 @@ export default function SettingsPage() {
   useEffect(() => {
     checkPushStatus();
     fetchSettings();
-    fetchDefaultWebsite();
 
     // Force update Service Worker to ensure new notification settings apply
     if ("serviceWorker" in navigator) {
@@ -176,19 +186,6 @@ export default function SettingsPage() {
       }
     } catch (e) {
       console.error(e);
-    }
-  };
-
-  const fetchDefaultWebsite = async () => {
-    try {
-      const res = await getWebsites();
-      if (res?.success && res.websites && res.websites.length > 0) {
-        setWebsites(res.websites);
-        setDefaultWebsiteId(res.websites[0].id);
-        setClientWebsite(res.websites[0]);
-      }
-    } catch (e) {
-      console.error("Failed to fetch default website for integration settings:", e);
     }
   };
 
@@ -442,48 +439,6 @@ export default function SettingsPage() {
         <p className="text-sm text-slate-500 mt-1">Configure your CRM preferences and integrations.</p>
       </div>
 
-      {/* Active Profile Status / Selector */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#F8FAFC] border border-slate-200 rounded-2xl p-4 shadow-sm text-left max-w-2xl">
-        <div className="flex flex-col">
-          <span className="text-sm font-bold text-slate-800">Active Profile</span>
-          <span className="text-xs text-slate-500 mt-0.5">
-            {isClient 
-              ? "Your active website integration and branding" 
-              : "Switch profiles to configure different websites"}
-          </span>
-        </div>
-        <div>
-          {isClient ? (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-indigo-100 rounded-xl text-xs font-semibold text-indigo-700 shadow-sm w-fit font-mono">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              {clientWebsite?.name || "Rankved"} ({clientWebsite?.domain || "rankved.com"})
-            </div>
-          ) : (
-            websites.length > 0 ? (
-              <select
-                value={defaultWebsiteId}
-                onChange={(e) => {
-                  const selectedId = e.target.value;
-                  setDefaultWebsiteId(selectedId);
-                  const match = websites.find(w => w.id === selectedId);
-                  if (match) {
-                    setClientWebsite(match);
-                  }
-                }}
-                className="text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all shadow-sm cursor-pointer"
-              >
-                {websites.map((w: any) => (
-                  <option key={w.id} value={w.id}>
-                    {w.name} ({w.domain})
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <span className="text-xs text-slate-400 italic">No websites found</span>
-            )
-          )}
-        </div>
-      </div>
 
       <div className="flex overflow-x-auto gap-2 sm:gap-4 border-b border-slate-200 pb-1 scrollbar-hide">
         {isClient && (
@@ -799,40 +754,54 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between bg-slate-50 p-4 rounded-lg border border-slate-100">
                   <div>
                     <h4 className="text-sm font-semibold text-slate-900">Enable Email Alerts</h4>
-                    <p className="text-xs text-slate-500 mt-0.5">Receive full lead data via Email instantly</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Receive full lead data via Email instantly for {clientWebsite?.name}</p>
                   </div>
                   <button
-                    onClick={() => saveSettings("emailAlertsEnabled", !settings?.emailAlertsEnabled)}
-                    disabled={isSaving || !settings}
+                    onClick={() => {
+                      const newVal = !clientWebsite?.emailAlertsEnabled;
+                      setClientWebsite({...clientWebsite, emailAlertsEnabled: newVal});
+                      fetch(`/api/websites/${clientWebsite?.id}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ emailAlertsEnabled: newVal }),
+                      });
+                    }}
+                    disabled={isSaving || !clientWebsite}
                     className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 disabled:opacity-50 ${
-                      settings?.emailAlertsEnabled ? "bg-indigo-600" : "bg-slate-200"
+                      clientWebsite?.emailAlertsEnabled ? "bg-indigo-600" : "bg-slate-200"
                     }`}
                     role="switch"
-                    aria-checked={settings?.emailAlertsEnabled || false}
+                    aria-checked={clientWebsite?.emailAlertsEnabled || false}
                   >
                     <span
                       aria-hidden="true"
                       className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                        settings?.emailAlertsEnabled ? "translate-x-5" : "translate-x-0"
+                        clientWebsite?.emailAlertsEnabled ? "translate-x-5" : "translate-x-0"
                       }`}
                     />
                   </button>
                 </div>
 
-                {settings?.emailAlertsEnabled && (
+                {clientWebsite?.emailAlertsEnabled && (
                   <>
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-medium text-slate-700">Admin Email Address</label>
                       <input 
                         type="email" 
                         multiple
-                        value={settings?.adminEmail || ""} 
-                        onChange={(e) => setSettings({...settings, adminEmail: e.target.value})}
-                        onBlur={(e) => saveSettings("adminEmail", e.target.value)}
+                        value={clientWebsite?.adminEmail || ""} 
+                        onChange={(e) => setClientWebsite({...clientWebsite, adminEmail: e.target.value})}
+                        onBlur={(e) => {
+                          fetch(`/api/websites/${clientWebsite?.id}`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ adminEmail: e.target.value }),
+                          });
+                        }}
                         placeholder="admin@example.com, sales@example.com"
                         className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
                       />
-                      <p className="text-xs text-slate-500">The email address to receive lead notifications.</p>
+                      <p className="text-xs text-slate-500">The email address to receive lead notifications for {clientWebsite?.name}.</p>
                     </div>
 
                     <div className="flex flex-col gap-2">

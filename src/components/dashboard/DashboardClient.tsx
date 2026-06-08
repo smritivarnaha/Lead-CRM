@@ -5,6 +5,8 @@ import { Building2, Download, ExternalLink, Image as ImageIcon, Smartphone, Bell
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
+import { useActiveProfile } from "@/components/providers/ActiveProfileProvider";
+
 interface DashboardClientProps {
   initialWebsites: any[];
   role: string | undefined;
@@ -12,7 +14,10 @@ interface DashboardClientProps {
 }
 
 export function DashboardClient({ initialWebsites, role, userWebsiteId }: DashboardClientProps) {
-  const [websites, setWebsites] = useState<any[]>(initialWebsites);
+  const { websites, setWebsites, activeWebsiteId } = useActiveProfile();
+  // Filter websites if an active profile is selected, otherwise show all
+  const displayWebsites = websites.length > 0 ? (activeWebsiteId ? websites.filter(w => w.id === activeWebsiteId) : websites) : initialWebsites;
+  
   const [savingId, setSavingId] = useState<string | null>(null);
   const [pushStatus, setPushStatus] = useState<"loading" | "subscribed" | "unsubscribed" | "unsupported">("loading");
   const [isProcessingPush, setIsProcessingPush] = useState(false);
@@ -171,7 +176,7 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {websites.map((site) => (
+          {displayWebsites.map((site: any) => (
             <div key={site.id} className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col">
               <div className="p-6 flex-1 flex flex-col">
                 <div className="flex items-start justify-between mb-6">

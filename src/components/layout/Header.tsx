@@ -8,6 +8,7 @@ import { createClient } from "@supabase/supabase-js";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { UserButton, useUser } from "@clerk/nextjs";
+import { useActiveProfile } from "@/components/providers/ActiveProfileProvider";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -25,6 +26,7 @@ const navItems = [
 export function Header() {
   const pathname = usePathname();
   const { user } = useUser();
+  const { websites, activeWebsiteId, setActiveWebsiteId } = useActiveProfile();
   const role = user?.publicMetadata?.role as string | undefined;
   const isClient = role === "CLIENT";
   
@@ -177,7 +179,29 @@ export function Header() {
           <Link href="/settings" className="hidden md:block text-xs font-medium text-slate-500 hover:text-slate-900 transition-colors mr-1">
             Settings
           </Link>
-          <div className="flex items-center">
+          
+          {/* Active Profile Selector */}
+          {!isClient ? (
+            <div className="hidden sm:block">
+              <select
+                className="text-[11px] font-semibold text-slate-700 bg-[#F7F5FF] border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500 transition-all cursor-pointer max-w-[120px] truncate"
+                value={activeWebsiteId || "all"}
+                onChange={(e) => setActiveWebsiteId(e.target.value === "all" ? null : e.target.value)}
+              >
+                <option value="all">All Profiles</option>
+                {websites.map(w => (
+                  <option key={w.id} value={w.id}>{w.name}</option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className="hidden sm:flex items-center gap-1.5 px-2 py-1.5 bg-indigo-50 border border-indigo-100 rounded-lg text-[11px] font-bold text-indigo-700 max-w-[120px]">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="truncate">{websites.find(w => w.id === activeWebsiteId)?.name || "Client"}</span>
+            </div>
+          )}
+
+          <div className="flex items-center ml-1">
             <UserButton />
           </div>
         </div>
