@@ -912,12 +912,14 @@ export default function SettingsPage() {
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium text-slate-700">Provider API Key (e.g. Resend)</label>
                 <input 
-                  type="password" 
+                  type="text" 
+                  autoComplete="off"
+                  data-1p-ignore
                   value={settings?.emailApiKey || ""} 
                   onChange={(e) => setSettings({...settings, emailApiKey: e.target.value})}
                   onBlur={(e) => saveSettings("emailApiKey", e.target.value)}
                   placeholder="re_..."
-                  className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
+                  className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors font-mono"
                 />
                 <p className="text-xs text-slate-500">Securely stored and used to authenticate API requests.</p>
               </div>
