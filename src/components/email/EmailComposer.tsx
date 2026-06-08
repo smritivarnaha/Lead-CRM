@@ -128,7 +128,7 @@ export function EmailComposer({ isOpen, onClose, selectedCount }: EmailComposerP
                   onClick={() => setBody(body + "{{First Name}}")}
                   className="px-2.5 py-1 text-[11px] font-bold text-indigo-600 bg-indigo-100/50 hover:bg-indigo-100 rounded-lg transition-colors border border-indigo-200/50"
                 >
-                  + {{First Name}}
+                  + {"{{First Name}}"}
                 </button>
               </div>
             </div>
