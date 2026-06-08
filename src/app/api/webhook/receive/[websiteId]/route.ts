@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import prisma from "@/lib/prisma";
 import { sendPushToAll } from "@/lib/push";
+import { generateEmailHtml, EmailTheme } from "@/lib/emailTemplates";
 
 // Fixed seed IDs — must match prisma/seed.ts
 const WORKSPACE_ID = "mock_workspace_id";
@@ -330,7 +331,13 @@ export async function POST(
             .replace(/{{source}}/g, source || "Website")
             .replace(/{{url}}/g, pageUrl || "N/A");
 
-          const htmlBody = emailBody.replace(/\n/g, '<br />');
+          const rawHtmlBody = emailBody.replace(/\n/g, '<br />');
+          const siteName = existingSite.name || "Website";
+          const finalHtmlBody = generateEmailHtml(
+            ((workspace as any)?.emailDesignTheme as EmailTheme) || "modern_minimal",
+            `New Lead from ${siteName}`,
+            rawHtmlBody
+          );
 
           const emailRes = await fetch("https://api.resend.com/emails", {
             method: "POST",
@@ -342,7 +349,7 @@ export async function POST(
               from: fromStr,
               to: targetEmail,
               subject: `🔔 New Lead: ${fullName}`,
-              html: htmlBody,
+              html: finalHtmlBody,
             })
           });
 

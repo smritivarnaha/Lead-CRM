@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import IntegrationTab from "@/components/IntegrationTab";
 import { getWebsites } from "@/actions/websites";
 import { useUser } from "@clerk/nextjs";
+import { EMAIL_THEMES } from "@/lib/emailTemplates";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 
@@ -844,6 +845,60 @@ export default function SettingsPage() {
                         className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors resize-none font-mono"
                       />
                       <p className="text-xs text-slate-500">Variables available: {"{{name}}, {{email}}, {{phone}}, {{message}}, {{source}}, {{url}}"}</p>
+                    </div>
+
+                    <div className="flex flex-col gap-3 mt-4">
+                      <div className="flex flex-col">
+                        <label className="text-sm font-medium text-slate-700">Email Design Theme</label>
+                        <p className="text-xs text-slate-500 mt-1">Choose a beautiful layout for your lead notification emails. All themes include mobile responsiveness and spam-safe HTML.</p>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-2">
+                        {EMAIL_THEMES.map((theme) => (
+                          <div 
+                            key={theme.id}
+                            onClick={() => {
+                              setSettings({...settings, emailDesignTheme: theme.id});
+                              saveSettings("emailDesignTheme", theme.id);
+                            }}
+                            className={`cursor-pointer rounded-xl p-4 transition-all duration-200 border bg-white ${settings?.emailDesignTheme === theme.id ? 'border-indigo-600 ring-1 ring-indigo-600 shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'}`}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="text-sm font-semibold text-slate-900">{theme.name}</div>
+                              {settings?.emailDesignTheme === theme.id && (
+                                <div className="h-4 w-4 rounded-full bg-indigo-600 flex items-center justify-center">
+                                  <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-slate-500 leading-snug mb-3 min-h-[32px]">{theme.description}</div>
+                            
+                            {/* Simple visual mock */}
+                            <div className="h-20 rounded-md border border-slate-100 flex flex-col overflow-hidden pointer-events-none" aria-hidden="true">
+                              <div className={`h-5 w-full ${
+                                theme.id === 'modern_minimal' ? 'bg-white border-b border-slate-100' :
+                                theme.id === 'corporate_blue' ? 'bg-blue-800' :
+                                theme.id === 'healthcare_trust' ? 'bg-teal-700' :
+                                theme.id === 'urgent_alert' ? 'bg-red-500' :
+                                theme.id === 'dark_mode_sleek' ? 'bg-gray-800' :
+                                theme.id === 'playful_startup' ? 'bg-violet-600' :
+                                theme.id === 'classic_crm' ? 'bg-slate-200' :
+                                theme.id === 'elegant_serif' ? 'bg-stone-100 border-b border-stone-200' :
+                                theme.id === 'tech_neon' ? 'bg-black' :
+                                'bg-pink-100'
+                              }`}></div>
+                              <div className={`flex-1 p-2 flex flex-col gap-1.5 ${
+                                theme.id === 'dark_mode_sleek' || theme.id === 'tech_neon' ? 'bg-gray-900' : 'bg-slate-50'
+                              }`}>
+                                <div className={`h-1.5 w-3/4 rounded ${theme.id === 'dark_mode_sleek' || theme.id === 'tech_neon' ? 'bg-gray-700' : 'bg-slate-200'}`}></div>
+                                <div className={`h-1.5 w-1/2 rounded ${theme.id === 'dark_mode_sleek' || theme.id === 'tech_neon' ? 'bg-gray-700' : 'bg-slate-200'}`}></div>
+                                <div className={`mt-auto h-1 w-full rounded ${theme.id === 'dark_mode_sleek' || theme.id === 'tech_neon' ? 'bg-gray-800' : 'bg-slate-200'}`}></div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </>
                 )}

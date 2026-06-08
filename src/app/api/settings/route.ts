@@ -44,7 +44,8 @@ export async function POST(req: Request) {
       "emailProvider",
       "emailApiKey",
       "fromEmailAddress",
-      "fromEmailName"
+      "fromEmailName",
+      "emailDesignTheme"
     ];
 
     const dataToUpdate: any = {};

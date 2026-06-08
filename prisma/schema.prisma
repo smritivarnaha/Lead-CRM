@@ -28,12 +28,13 @@ model Workspace {
   smsAutoReplyEnabled Boolean @default(false)
   fast2smsApiKey      String?
   adminPhone          String?
-  smsTemplate         String? @default("🔥 New Lead: {{name}} has just submitted a form!")
+  smsTemplate         String? @default("🚨 New Lead: {{name}}\\n📌 Source: {{source}}\\nLog in to CRM to view details.")
 
   // Email Alert Settings
   emailAlertsEnabled  Boolean @default(false)
   adminEmail          String?
-  emailAlertTemplate  String? @default("You have a new lead from {{source}}:\n\nName: {{name}}\nEmail: {{email}}\nPhone: {{phone}}\nMessage: {{message}}")
+  emailAlertTemplate  String? @default("You have a new lead from {{source}}:\\n\\nName: {{name}}\\nEmail: {{email}}\\nPhone: {{phone}}\\nMessage: {{message}}")
+  emailDesignTheme    String  @default("modern_minimal")
 
   // Email Settings
   emailProvider       String? @default("RESEND")
