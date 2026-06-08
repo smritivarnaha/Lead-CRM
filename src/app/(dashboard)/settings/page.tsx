@@ -825,10 +825,11 @@ export default function SettingsPage() {
                       <label className="text-sm font-medium text-slate-700">Admin Email Address</label>
                       <input 
                         type="email" 
+                        multiple
                         value={settings?.adminEmail || ""} 
                         onChange={(e) => setSettings({...settings, adminEmail: e.target.value})}
                         onBlur={(e) => saveSettings("adminEmail", e.target.value)}
-                        placeholder="e.g. admin@yourdomain.com"
+                        placeholder="admin@example.com, sales@example.com"
                         className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
                       />
                       <p className="text-xs text-slate-500">The email address to receive lead notifications.</p>
