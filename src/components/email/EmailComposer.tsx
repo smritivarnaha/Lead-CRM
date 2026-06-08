@@ -47,7 +47,8 @@ export function EmailComposer({ isOpen, onClose, selectedLeadIds }: EmailCompose
       const data = await response.json();
 
       if (!response.ok) {
-        toast.error(data.error || "Failed to send emails");
+        const errorMessage = data.details?.message || data.error || "Failed to send emails";
+        toast.error(errorMessage);
         setIsSending(false);
         return;
       }
