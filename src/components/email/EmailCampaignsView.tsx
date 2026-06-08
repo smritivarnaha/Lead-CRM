@@ -166,7 +166,7 @@ export function EmailCampaignsView({ initialLeads }: { initialLeads: any[] }) {
       <EmailComposer 
         isOpen={isComposerOpen} 
         onClose={() => setIsComposerOpen(false)} 
-        selectedCount={selectedLeadIds.length}
+        selectedLeadIds={selectedLeadIds}
       />
     </div>
   );

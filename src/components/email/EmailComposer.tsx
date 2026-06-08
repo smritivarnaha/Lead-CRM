@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { X, Send, Sparkles, User, FileText, Gift, Mail } from "lucide-react";
+import { toast } from "sonner";
 
 interface EmailComposerProps {
   isOpen: boolean;
   onClose: () => void;
-  selectedCount: number;
+  selectedLeadIds: string[];
 }
 
 const TEMPLATES = [
@@ -14,7 +15,7 @@ const TEMPLATES = [
   { id: "newsletter", label: "Newsletter", icon: FileText, subject: "This month's updates" },
 ];
 
-export function EmailComposer({ isOpen, onClose, selectedCount }: EmailComposerProps) {
+export function EmailComposer({ isOpen, onClose, selectedLeadIds }: EmailComposerProps) {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
@@ -29,10 +30,29 @@ export function EmailComposer({ isOpen, onClose, selectedCount }: EmailComposerP
     setBody(`Hi {{First Name}},\n\nWe wanted to reach out regarding...\n\nBest,\nThe Team`);
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     setIsSending(true);
-    // Simulate sending delay
-    setTimeout(() => {
+    
+    try {
+      const response = await fetch("/api/email/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          leadIds: selectedLeadIds,
+          subject,
+          body,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.error || "Failed to send emails");
+        setIsSending(false);
+        return;
+      }
+
+      // Success
       setIsSending(false);
       setSent(true);
       setTimeout(() => {
@@ -42,7 +62,12 @@ export function EmailComposer({ isOpen, onClose, selectedCount }: EmailComposerP
         setBody("");
         setActiveTemplate(null);
       }, 2000);
-    }, 1500);
+
+    } catch (error) {
+      console.error(error);
+      toast.error("A network error occurred.");
+      setIsSending(false);
+    }
   };
 
   return (
@@ -67,7 +92,7 @@ export function EmailComposer({ isOpen, onClose, selectedCount }: EmailComposerP
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-900 tracking-tight">Compose Broadcast</h2>
-              <p className="text-[13px] text-slate-500 font-medium">Sending to {selectedCount} selected leads</p>
+              <p className="text-[13px] text-slate-500 font-medium">Sending to {selectedLeadIds.length} selected leads</p>
             </div>
           </div>
           <button 
