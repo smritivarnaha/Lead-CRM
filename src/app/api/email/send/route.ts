@@ -32,6 +32,13 @@ export async function POST(req: Request) {
       }, { status: 400 });
     }
 
+    const trimmedApiKey = workspace.emailApiKey.trim();
+    if (!trimmedApiKey.startsWith("re_")) {
+      return NextResponse.json({ 
+        error: "Invalid API Key format. Resend API keys must start with 're_'." 
+      }, { status: 400 });
+    }
+
     if (!workspace?.fromEmailAddress) {
       return NextResponse.json({ 
         error: "From Email Address is missing. Please configure it in Settings." 
@@ -76,7 +83,7 @@ export async function POST(req: Request) {
     const response = await fetch("https://api.resend.com/emails/batch", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${workspace.emailApiKey}`,
+        "Authorization": `Bearer ${trimmedApiKey}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify(batchPayload)
