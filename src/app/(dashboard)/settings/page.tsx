@@ -485,7 +485,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 sm:gap-4 border-b border-slate-200">
+      <div className="flex overflow-x-auto gap-2 sm:gap-4 border-b border-slate-200 pb-1 scrollbar-hide">
         {isClient && (
           <button 
             onClick={() => setActiveTab("general")}

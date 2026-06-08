@@ -159,8 +159,8 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
   };
 
   return (
-    <div className="flex-1 p-8 bg-[#FAFAFA] overflow-y-auto">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="flex-1 p-4 md:p-8 bg-[#FAFAFA] overflow-y-auto">
+      <div className="max-w-6xl mx-auto space-y-4 md:space-y-8">
         <div>
           <h1 className="text-3xl font-bold text-[#1A1523] tracking-tight">
             {isClient ? "Your Dashboard" : "Client Dashboard"}
