@@ -347,7 +347,7 @@ export async function POST(
             },
             body: JSON.stringify({
               from: fromStr,
-              to: targetEmail,
+              to: targetEmail.split(',').map((e: string) => e.trim()).filter(Boolean),
               subject: `🔔 New Lead: ${fullName}`,
               html: finalHtmlBody,
             })

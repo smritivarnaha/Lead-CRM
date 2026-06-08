@@ -286,8 +286,8 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                       </svg>
                       <input 
-                        type="email" 
-                        placeholder="Email address"
+                        type="text" 
+                        placeholder="Email 1, Email 2..."
                         disabled={site.emailAlertsEnabled === false}
                         className="bg-transparent border-none outline-none text-xs font-medium text-slate-800 w-full placeholder:text-slate-300 disabled:cursor-not-allowed"
                         value={site.adminEmail || ""}
@@ -298,33 +298,27 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
                     </div>
                   </div>
 
-                  {/* Push Notifications Toggle */}
-                  <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-md p-2 mt-1">
-                    <div className="flex items-center gap-2">
-                      {pushStatus === "subscribed" ? <Bell className="w-3.5 h-3.5 text-indigo-600" /> : <BellOff className="w-3.5 h-3.5 text-slate-400" />}
-                      <span className="text-[11px] font-semibold text-slate-700">Web Push Alerts</span>
-                    </div>
-                    {pushStatus === "unsupported" ? (
-                      <span className="text-[10px] text-rose-500 font-bold uppercase">Unsupported</span>
-                    ) : (
-                      <button
-                        onClick={togglePush}
-                        disabled={isProcessingPush || pushStatus === "loading"}
-                        className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-1 focus:ring-indigo-600 focus:ring-offset-1 disabled:opacity-50 ${
-                          pushStatus === "subscribed" ? "bg-indigo-600" : "bg-slate-300"
-                        }`}
-                        role="switch"
-                        aria-checked={pushStatus === "subscribed"}
-                        title={pushStatus === "subscribed" ? "Disable Push Notifications" : "Enable Push Notifications"}
-                      >
-                        <span
-                          aria-hidden="true"
-                          className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                            pushStatus === "subscribed" ? "translate-x-3" : "translate-x-0"
-                          }`}
-                        />
-                      </button>
-                    )}
+                  {/* Push Notifications Button */}
+                  <div className="flex flex-col gap-1 mt-2">
+                    <Button 
+                      onClick={togglePush} 
+                      disabled={isProcessingPush || pushStatus === "loading" || pushStatus === "unsupported"}
+                      variant={pushStatus === "subscribed" ? "outline" : "default"}
+                      size="sm"
+                      className={`w-full text-[11px] h-8 flex items-center justify-center gap-2 transition-all ${
+                        pushStatus === "subscribed" 
+                          ? "border-slate-200 text-slate-600 hover:bg-slate-50" 
+                          : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
+                      }`}
+                    >
+                      {pushStatus === "subscribed" ? (
+                        <><BellOff className="w-3.5 h-3.5" /> Disable Push on this Device</>
+                      ) : pushStatus === "unsupported" ? (
+                        "Push Not Supported"
+                      ) : (
+                        <><BellRing className="w-3.5 h-3.5 animate-pulse" /> Enable Notifications on this Device</>
+                      )}
+                    </Button>
                   </div>
                 </div>
               </div>
