@@ -35,6 +35,8 @@ model Workspace {
   emailApiKey         String?
   fromEmailAddress    String?
   fromEmailName       String? @default("LeadFlow CRM")
+  
+  emailCampaigns      EmailCampaign[]
 }
 
 model User {
@@ -136,4 +138,33 @@ model Lead {
 
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  
+  emailRecipients EmailRecipient[]
+}
+
+model EmailCampaign {
+  id          String   @id @default(cuid())
+  subject     String
+  body        String   @db.Text
+  status      String   @default("DRAFT") // DRAFT, SENT, FAILED
+  sentAt      DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  
+  recipients  EmailRecipient[]
+}
+
+model EmailRecipient {
+  id              String   @id @default(cuid())
+  emailCampaignId String
+  emailCampaign   EmailCampaign @relation(fields: [emailCampaignId], references: [id], onDelete: Cascade)
+  
+  leadId          String
+  lead            Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  
+  status          String   @default("PENDING") // PENDING, SENT, FAILED
+  sentAt          DateTime?
 }

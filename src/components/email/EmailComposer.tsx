@@ -6,6 +6,8 @@ interface EmailComposerProps {
   isOpen: boolean;
   onClose: () => void;
   selectedLeadIds: string[];
+  onSent?: () => void;
+  onDraftSaved?: () => void;
 }
 
 const TEMPLATES = [
@@ -15,12 +17,14 @@ const TEMPLATES = [
   { id: "newsletter", label: "Newsletter", icon: FileText, subject: "This month's updates" },
 ];
 
-export function EmailComposer({ isOpen, onClose, selectedLeadIds }: EmailComposerProps) {
+export function EmailComposer({ isOpen, onClose, selectedLeadIds, onSent, onDraftSaved }: EmailComposerProps) {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [isDrafting, setIsDrafting] = useState(false);
   const [sent, setSent] = useState(false);
+  const [draftSaved, setDraftSaved] = useState(false);
 
   if (!isOpen) return null;
 
@@ -41,6 +45,7 @@ export function EmailComposer({ isOpen, onClose, selectedLeadIds }: EmailCompose
           leadIds: selectedLeadIds,
           subject,
           body,
+          action: "send"
         }),
       });
 
@@ -62,12 +67,50 @@ export function EmailComposer({ isOpen, onClose, selectedLeadIds }: EmailCompose
         setSubject("");
         setBody("");
         setActiveTemplate(null);
+        if (onSent) onSent();
       }, 2000);
 
     } catch (error) {
       console.error(error);
       toast.error("A network error occurred.");
       setIsSending(false);
+    }
+  };
+
+  const handleDraft = async () => {
+    setIsDrafting(true);
+    try {
+      const response = await fetch("/api/email/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          leadIds: selectedLeadIds,
+          subject,
+          body,
+          action: "draft"
+        }),
+      });
+
+      if (!response.ok) {
+        toast.error("Failed to save draft");
+        setIsDrafting(false);
+        return;
+      }
+
+      setIsDrafting(false);
+      setDraftSaved(true);
+      toast.success("Draft saved successfully!");
+      setTimeout(() => {
+        setDraftSaved(false);
+        onClose();
+        setSubject("");
+        setBody("");
+        setActiveTemplate(null);
+        if (onDraftSaved) onDraftSaved();
+      }, 1000);
+    } catch (error) {
+      toast.error("Network error saving draft");
+      setIsDrafting(false);
     }
   };
 
@@ -82,7 +125,7 @@ export function EmailComposer({ isOpen, onClose, selectedLeadIds }: EmailCompose
       {/* Modal */}
       <div 
         className={`relative w-full max-w-2xl bg-white/95 backdrop-blur-xl border border-white/60 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] rounded-[28px] overflow-hidden flex flex-col transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${
-          sent ? "scale-95 opacity-0" : "scale-100 opacity-100 animate-in slide-in-from-bottom-10 fade-in"
+          sent || draftSaved ? "scale-95 opacity-0" : "scale-100 opacity-100 animate-in slide-in-from-bottom-10 fade-in"
         }`}
       >
         {/* Header */}
@@ -166,21 +209,31 @@ export function EmailComposer({ isOpen, onClose, selectedLeadIds }: EmailCompose
           <p className="text-[11px] font-medium text-slate-400">
             Powered by LeadFlow Mailer
           </p>
-          <button 
-            onClick={handleSend}
-            disabled={!subject || !body || isSending}
-            className="group relative flex items-center gap-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold shadow-lg shadow-slate-900/20 transition-all active:scale-95 overflow-hidden"
-          >
-            {/* Glow effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 opacity-0 group-hover:opacity-100 group-active:opacity-50 transition-opacity duration-300 blur-md -z-10" />
-            
-            <span className="relative z-10">
-              {isSending ? "Sending..." : "Send Now"}
-            </span>
-            {!isSending && (
-              <Send className="relative z-10 h-4 w-4 transform group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={handleDraft}
+              disabled={!subject || !body || isSending || isDrafting}
+              className="px-4 py-2.5 text-[13px] font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-50 flex items-center gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              {isDrafting ? "Saving..." : "Save Draft"}
+            </button>
+            <button 
+              onClick={handleSend}
+              disabled={!subject || !body || isSending || isDrafting}
+              className="group relative flex items-center gap-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold shadow-lg shadow-slate-900/20 transition-all active:scale-95 overflow-hidden"
+            >
+              {/* Glow effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 opacity-0 group-hover:opacity-100 group-active:opacity-50 transition-opacity duration-300 blur-md -z-10" />
+              
+              <span className="relative z-10">
+                {isSending ? "Sending..." : "Send Now"}
+              </span>
+              {!isSending && (
+                <Send className="relative z-10 h-4 w-4 transform group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Success Overlay */}
