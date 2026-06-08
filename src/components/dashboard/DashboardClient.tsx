@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Building2, Download, ExternalLink, Image as ImageIcon, Smartphone } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Building2, Download, ExternalLink, Image as ImageIcon, Smartphone, Bell, BellOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -14,8 +14,85 @@ interface DashboardClientProps {
 export function DashboardClient({ initialWebsites, role, userWebsiteId }: DashboardClientProps) {
   const [websites, setWebsites] = useState<any[]>(initialWebsites);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [pushStatus, setPushStatus] = useState<"loading" | "subscribed" | "unsubscribed" | "unsupported">("loading");
+  const [isProcessingPush, setIsProcessingPush] = useState(false);
 
   const isClient = role === "CLIENT" && !!userWebsiteId;
+
+  // Add push checking
+  useEffect(() => {
+    checkPushStatus();
+  }, []);
+
+  const checkPushStatus = async () => {
+    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+      setPushStatus("unsupported");
+      return;
+    }
+    try {
+      const sw = await navigator.serviceWorker.ready;
+      const sub = await sw.pushManager.getSubscription();
+      if (sub) setPushStatus("subscribed");
+      else setPushStatus("unsubscribed");
+    } catch (e) {
+      setPushStatus("unsupported");
+    }
+  };
+
+  const urlBase64ToUint8Array = (base64String: string) => {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const rawData = window.atob(base64);
+    return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+  };
+
+  const togglePush = async () => {
+    if (pushStatus === "unsupported") {
+      toast.error("Push not supported on this device/browser.");
+      return;
+    }
+    setIsProcessingPush(true);
+    try {
+      const sw = await navigator.serviceWorker.ready;
+      if (pushStatus === "subscribed") {
+        const sub = await sw.pushManager.getSubscription();
+        if (sub) {
+          await sub.unsubscribe();
+          await fetch("/api/push/subscribe", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ endpoint: sub.endpoint }),
+          });
+        }
+        setPushStatus("unsubscribed");
+        toast.success("Push notifications disabled.");
+      } else {
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") {
+          toast.error("Notification permission denied.");
+          setIsProcessingPush(false);
+          return;
+        }
+        const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
+        const subscription = await sw.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        });
+        await fetch("/api/push/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(subscription.toJSON()),
+        });
+        setPushStatus("subscribed");
+        toast.success("Push notifications enabled!");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to toggle push notifications.");
+    } finally {
+      setIsProcessingPush(false);
+    }
+  };
 
   const handleSave = async (siteId: string, field: string, value: any) => {
     setSavingId(siteId);
@@ -161,24 +238,77 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
                   </div>
                 </div>
 
-                {/* Inline Phone Editor for SMS */}
-                {!isClient && (
-                  <div className="mt-auto">
-                    <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5 block">Admin SMS Phone</label>
-                    <div className="bg-white rounded-md border border-slate-200 flex items-center px-2.5 py-2 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all">
-                      <Smartphone className="w-4 h-4 text-slate-400 mr-2" />
+                {/* Inline Alert Editors */}
+                <div className="mt-auto flex flex-col gap-3">
+                  {/* Phone Input */}
+                  <div>
+                    <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1 block flex items-center justify-between">
+                      <span>SMS Alerts To</span>
+                    </label>
+                    <div className="bg-white rounded-md border border-slate-200 flex items-center px-2 py-1.5 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all">
+                      <Smartphone className="w-3.5 h-3.5 text-slate-400 mr-2" />
                       <input 
                         type="text" 
-                        placeholder="e.g. +1234567890"
-                        className="bg-transparent border-none outline-none text-sm font-medium text-slate-800 w-full placeholder:text-slate-300"
+                        placeholder="Phone number"
+                        className="bg-transparent border-none outline-none text-xs font-medium text-slate-800 w-full placeholder:text-slate-300"
                         value={site.adminPhone || ""}
                         onChange={(e) => setWebsites(prev => prev.map(w => w.id === site.id ? { ...w, adminPhone: e.target.value } : w))}
                         onBlur={(e) => handleSave(site.id, "adminPhone", e.target.value)}
                       />
-                      {savingId === site.id && <div className="w-3.5 h-3.5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin ml-2" />}
+                      {savingId === `${site.id}-adminPhone` && <div className="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin ml-2" />}
                     </div>
                   </div>
-                )}
+
+                  {/* Email Input */}
+                  <div>
+                    <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1 block flex items-center justify-between">
+                      <span>Email Alerts To</span>
+                    </label>
+                    <div className="bg-white rounded-md border border-slate-200 flex items-center px-2 py-1.5 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all">
+                      <svg className="w-3.5 h-3.5 text-slate-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      <input 
+                        type="email" 
+                        placeholder="Email address"
+                        className="bg-transparent border-none outline-none text-xs font-medium text-slate-800 w-full placeholder:text-slate-300"
+                        value={site.adminEmail || ""}
+                        onChange={(e) => setWebsites(prev => prev.map(w => w.id === site.id ? { ...w, adminEmail: e.target.value } : w))}
+                        onBlur={(e) => handleSave(site.id, "adminEmail", e.target.value)}
+                      />
+                      {savingId === `${site.id}-adminEmail` && <div className="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin ml-2" />}
+                    </div>
+                  </div>
+
+                  {/* Push Notifications Toggle */}
+                  <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-md p-2 mt-1">
+                    <div className="flex items-center gap-2">
+                      {pushStatus === "subscribed" ? <Bell className="w-3.5 h-3.5 text-indigo-600" /> : <BellOff className="w-3.5 h-3.5 text-slate-400" />}
+                      <span className="text-[11px] font-semibold text-slate-700">Web Push Alerts</span>
+                    </div>
+                    {pushStatus === "unsupported" ? (
+                      <span className="text-[10px] text-rose-500 font-bold uppercase">Unsupported</span>
+                    ) : (
+                      <button
+                        onClick={togglePush}
+                        disabled={isProcessingPush || pushStatus === "loading"}
+                        className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-1 focus:ring-indigo-600 focus:ring-offset-1 disabled:opacity-50 ${
+                          pushStatus === "subscribed" ? "bg-indigo-600" : "bg-slate-300"
+                        }`}
+                        role="switch"
+                        aria-checked={pushStatus === "subscribed"}
+                        title={pushStatus === "subscribed" ? "Disable Push Notifications" : "Enable Push Notifications"}
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                            pushStatus === "subscribed" ? "translate-x-3" : "translate-x-0"
+                          }`}
+                        />
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Action Buttons */}
