@@ -152,7 +152,7 @@ function StageSelector({ lead, stageConfig, handleStatusChange, isMobile = false
                       : "bg-white border-transparent hover:bg-slate-50 text-slate-600"
                   }`}
                 >
-                  <div className={`h-2 w-2 rounded-full shrink-0 ${config.text.replace("text-", "bg-")}`} />
+                  <div className={`h-2 w-2 rounded-full shrink-0 ${config.text ? config.text.replace("text-", "bg-") : config.ring.replace("border-", "bg-")}`} />
                   <span className="text-[11px] font-semibold truncate">{config.label}</span>
                 </button>
               ))}

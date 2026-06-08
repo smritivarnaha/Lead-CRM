@@ -16,12 +16,14 @@ import {
   BookOpen,
   Link2,
   CalendarClock,
+  Mail,
 } from "lucide-react";
 
 const navItems = [
   { name: "Dashboard",    href: "/",           icon: LayoutDashboard },
   { name: "Lead Pipeline",href: "/leads",       icon: Users },
   { name: "Followups",    href: "/followups",   icon: CalendarClock },
+  { name: "Email Campaigns",href: "/email",     icon: Mail },
   { name: "Websites",     href: "/websites",    icon: Globe },
   { name: "Analytics",    href: "/analytics",   icon: BarChart3 },
   { name: "Integrations", href: "/integrations",icon: Link2 },

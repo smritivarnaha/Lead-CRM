@@ -29,6 +29,12 @@ model Workspace {
   fast2smsApiKey      String?
   adminPhone          String?
   smsTemplate         String? @default("🔥 New Lead: {{name}} has just submitted a form!")
+
+  // Email Settings
+  emailProvider       String? @default("RESEND")
+  emailApiKey         String?
+  fromEmailAddress    String?
+  fromEmailName       String? @default("LeadFlow CRM")
 }
 
 model User {

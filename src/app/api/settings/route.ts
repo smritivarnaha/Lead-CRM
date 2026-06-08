@@ -37,7 +37,11 @@ export async function POST(req: Request) {
       "smsAutoReplyEnabled", 
       "fast2smsApiKey", 
       "smsTemplate",
-      "adminPhone"
+      "adminPhone",
+      "emailProvider",
+      "emailApiKey",
+      "fromEmailAddress",
+      "fromEmailName"
     ];
 
     const dataToUpdate: any = {};

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Bell, BellRing, BellOff, Smartphone, X, Link as LinkIcon, Download, Copy, Code2, Image as ImageIcon } from "lucide-react";
+import { Bell, BellRing, BellOff, Smartphone, X, Link as LinkIcon, Download, Copy, Code2, Image as ImageIcon, Mail } from "lucide-react";
 import { toast } from "sonner";
 import IntegrationTab from "@/components/IntegrationTab";
 import { getWebsites } from "@/actions/websites";
@@ -233,6 +233,34 @@ export default function SettingsPage() {
         toast.success("Push Settings saved successfully!");
       } else {
         toast.error("Failed to save settings.");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Network error.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const saveAllEmailSettings = async () => {
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          emailProvider: settings?.emailProvider,
+          emailApiKey: settings?.emailApiKey,
+          fromEmailAddress: settings?.fromEmailAddress,
+          fromEmailName: settings?.fromEmailName
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSettings(data.settings);
+        toast.success("Email Settings saved successfully!");
+      } else {
+        toast.error("Failed to save email settings.");
       }
     } catch (e) {
       console.error(e);
@@ -477,6 +505,14 @@ export default function SettingsPage() {
         >
           SMS Alerts
         </button>
+        {!isClient && (
+          <button 
+            onClick={() => setActiveTab("email")}
+            className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "email" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+          >
+            Email Config
+          </button>
+        )}
         <button 
           onClick={() => setActiveTab("install")}
           className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "install" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
@@ -836,6 +872,84 @@ export default function SettingsPage() {
               </div>
             </div>
           )
+        )}
+
+        {/* ─── EMAIL CONFIG TAB ─── */}
+        {activeTab === "email" && !isClient && (
+          <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden mb-6">
+            <div className="p-5 border-b border-slate-100 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+                <Mail className="h-5 w-5 text-indigo-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900">Email Configuration</h3>
+                <p className="text-xs text-slate-500">Configure Resend or SMTP to send emails to leads</p>
+              </div>
+            </div>
+
+            <div className="p-5 flex flex-col gap-5 text-left">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-slate-700">Email Provider</label>
+                <select
+                  value={settings?.emailProvider || "RESEND"}
+                  onChange={(e) => setSettings({...settings, emailProvider: e.target.value})}
+                  onBlur={(e) => saveSettings("emailProvider", e.target.value)}
+                  className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
+                >
+                  <option value="RESEND">Resend API</option>
+                  <option value="SMTP">SMTP (Coming Soon)</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-slate-700">Provider API Key (e.g. Resend)</label>
+                <input 
+                  type="password" 
+                  value={settings?.emailApiKey || ""} 
+                  onChange={(e) => setSettings({...settings, emailApiKey: e.target.value})}
+                  onBlur={(e) => saveSettings("emailApiKey", e.target.value)}
+                  placeholder="re_..."
+                  className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
+                />
+                <p className="text-xs text-slate-500">Securely stored and used to authenticate API requests.</p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-slate-700">From Name</label>
+                  <input 
+                    type="text" 
+                    value={settings?.fromEmailName || ""} 
+                    onChange={(e) => setSettings({...settings, fromEmailName: e.target.value})}
+                    onBlur={(e) => saveSettings("fromEmailName", e.target.value)}
+                    placeholder="LeadFlow CRM"
+                    className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-slate-700">From Email Address</label>
+                  <input 
+                    type="text" 
+                    value={settings?.fromEmailAddress || ""} 
+                    onChange={(e) => setSettings({...settings, fromEmailAddress: e.target.value})}
+                    onBlur={(e) => saveSettings("fromEmailAddress", e.target.value)}
+                    placeholder="hello@yourdomain.com"
+                    className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 mt-2">
+                <button
+                  onClick={saveAllEmailSettings}
+                  disabled={isSaving}
+                  className="w-full sm:w-auto py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50"
+                >
+                  {isSaving ? "Saving..." : "Save Email Settings"}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* ─── APP INSTALLATION TAB ─── */}
