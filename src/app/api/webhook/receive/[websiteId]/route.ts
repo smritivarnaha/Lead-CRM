@@ -270,7 +270,7 @@ export async function POST(
 
     // Handle SMS Admin Alerts via Fast2SMS
     const targetPhone = existingSite.adminPhone || workspace?.adminPhone;
-    if (workspace?.smsAutoReplyEnabled && workspace?.fast2smsApiKey && targetPhone) {
+    if (workspace?.smsAutoReplyEnabled && existingSite.smsAlertsEnabled && workspace?.fast2smsApiKey && targetPhone) {
       try {
         const smsTemplate = workspace.smsTemplate || "🔥 New Lead: {{name}} has just submitted a form!";
         const smsMessage = smsTemplate
@@ -312,7 +312,7 @@ export async function POST(
     // Handle Email Admin Alerts
     let emailAlertSent = false;
     const targetEmail = existingSite.adminEmail || workspace?.adminEmail;
-    if (workspace?.emailAlertsEnabled && workspace?.emailProvider === "RESEND" && workspace?.emailApiKey && targetEmail) {
+    if (workspace?.emailAlertsEnabled && existingSite.emailAlertsEnabled && workspace?.emailProvider === "RESEND" && workspace?.emailApiKey && targetEmail) {
       try {
         const fromStr = workspace.fromEmailName
           ? `${workspace.fromEmailName} <${workspace.fromEmailAddress || "onboarding@resend.dev"}>`

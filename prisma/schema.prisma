@@ -70,9 +70,11 @@ model Website {
   apiKey      String?
   isActive    Boolean  @default(true)
   logoUrl     String?  // Client's specific logo (used for push badge)
-  adminPhone  String?  // Client's specific phone for SMS alerts
-  adminEmail  String?  // Client's specific email for email alerts
-  createdAt   DateTime @default(now())
+  adminPhone         String?  // Client's specific phone for SMS alerts
+  adminEmail         String?  // Client's specific email for email alerts
+  smsAlertsEnabled   Boolean  @default(true)
+  emailAlertsEnabled Boolean  @default(true)
+  createdAt          DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   workspaceId String

@@ -242,15 +242,24 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
                 <div className="mt-auto flex flex-col gap-3">
                   {/* Phone Input */}
                   <div>
-                    <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1 block flex items-center justify-between">
-                      <span>SMS Alerts To</span>
+                    <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1 flex items-center justify-between">
+                      <span>SMS Alerts</span>
+                      <button
+                        onClick={() => handleSave(site.id, "smsAlertsEnabled", !site.smsAlertsEnabled)}
+                        className={`relative inline-flex h-3 w-5 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-1 focus:ring-indigo-600 focus:ring-offset-1 disabled:opacity-50 ${
+                          site.smsAlertsEnabled !== false ? "bg-indigo-600" : "bg-slate-300"
+                        }`}
+                      >
+                        <span className={`pointer-events-none inline-block h-2 w-2 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${site.smsAlertsEnabled !== false ? "translate-x-2" : "translate-x-0"}`} />
+                      </button>
                     </label>
-                    <div className="bg-white rounded-md border border-slate-200 flex items-center px-2 py-1.5 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all">
+                    <div className={`bg-white rounded-md border border-slate-200 flex items-center px-2 py-1.5 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all ${site.smsAlertsEnabled === false ? 'opacity-50' : ''}`}>
                       <Smartphone className="w-3.5 h-3.5 text-slate-400 mr-2" />
                       <input 
                         type="text" 
                         placeholder="Phone number"
-                        className="bg-transparent border-none outline-none text-xs font-medium text-slate-800 w-full placeholder:text-slate-300"
+                        disabled={site.smsAlertsEnabled === false}
+                        className="bg-transparent border-none outline-none text-xs font-medium text-slate-800 w-full placeholder:text-slate-300 disabled:cursor-not-allowed"
                         value={site.adminPhone || ""}
                         onChange={(e) => setWebsites(prev => prev.map(w => w.id === site.id ? { ...w, adminPhone: e.target.value } : w))}
                         onBlur={(e) => handleSave(site.id, "adminPhone", e.target.value)}
@@ -261,17 +270,26 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
 
                   {/* Email Input */}
                   <div>
-                    <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1 block flex items-center justify-between">
-                      <span>Email Alerts To</span>
+                    <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1 flex items-center justify-between">
+                      <span>Email Alerts</span>
+                      <button
+                        onClick={() => handleSave(site.id, "emailAlertsEnabled", !site.emailAlertsEnabled)}
+                        className={`relative inline-flex h-3 w-5 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-1 focus:ring-indigo-600 focus:ring-offset-1 disabled:opacity-50 ${
+                          site.emailAlertsEnabled !== false ? "bg-indigo-600" : "bg-slate-300"
+                        }`}
+                      >
+                        <span className={`pointer-events-none inline-block h-2 w-2 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${site.emailAlertsEnabled !== false ? "translate-x-2" : "translate-x-0"}`} />
+                      </button>
                     </label>
-                    <div className="bg-white rounded-md border border-slate-200 flex items-center px-2 py-1.5 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all">
+                    <div className={`bg-white rounded-md border border-slate-200 flex items-center px-2 py-1.5 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all ${site.emailAlertsEnabled === false ? 'opacity-50' : ''}`}>
                       <svg className="w-3.5 h-3.5 text-slate-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                       </svg>
                       <input 
                         type="email" 
                         placeholder="Email address"
-                        className="bg-transparent border-none outline-none text-xs font-medium text-slate-800 w-full placeholder:text-slate-300"
+                        disabled={site.emailAlertsEnabled === false}
+                        className="bg-transparent border-none outline-none text-xs font-medium text-slate-800 w-full placeholder:text-slate-300 disabled:cursor-not-allowed"
                         value={site.adminEmail || ""}
                         onChange={(e) => setWebsites(prev => prev.map(w => w.id === site.id ? { ...w, adminEmail: e.target.value } : w))}
                         onBlur={(e) => handleSave(site.id, "adminEmail", e.target.value)}
