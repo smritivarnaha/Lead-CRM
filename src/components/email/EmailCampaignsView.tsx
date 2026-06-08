@@ -42,7 +42,7 @@ export function EmailCampaignsView({ initialLeads }: { initialLeads: any[] }) {
   const trHeightClass = "h-[46px]";
 
   return (
-    <div className="flex flex-col h-full gap-6 relative">
+    <div className="p-6 max-w-7xl mx-auto flex flex-col gap-6 relative w-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[#1A1523] tracking-tight">Email Campaigns</h1>
@@ -115,12 +115,12 @@ export function EmailCampaignsView({ initialLeads }: { initialLeads: any[] }) {
                       </td>
                       <td className={`px-4 py-1 border-r ${borderClass}`}>
                         {hasEmail ? (
-                          <div className="flex items-center gap-2 text-[12.5px] font-medium text-slate-700">
-                            <Mail className="h-3.5 w-3.5 text-indigo-400" />
-                            {lead.email}
+                          <div className="flex items-center gap-1.5 text-[11.5px] font-medium text-[#6B7280]">
+                            <Mail className="h-3 w-3 text-indigo-400 flex-shrink-0" />
+                            <span className="truncate max-w-[180px]">{lead.email}</span>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-1.5 text-[11.5px] text-red-400 font-medium bg-red-50 w-fit px-2 py-0.5 rounded-full border border-red-100">
+                          <div className="flex items-center gap-1.5 text-[11px] text-red-400 font-medium bg-red-50 w-fit px-2 py-0.5 rounded-full border border-red-100">
                             <XCircle className="h-3 w-3" /> No email
                           </div>
                         )}

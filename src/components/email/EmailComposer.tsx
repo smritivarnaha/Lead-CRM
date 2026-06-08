@@ -103,7 +103,7 @@ export function EmailComposer({ isOpen, onClose, selectedLeadIds }: EmailCompose
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+        <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-4">
           {/* Templates Carousel */}
           <div>
             <label className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 block">
@@ -136,16 +136,16 @@ export function EmailComposer({ isOpen, onClose, selectedLeadIds }: EmailCompose
                 type="text" 
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                className="w-full pl-20 pr-4 py-3 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl outline-none text-slate-900 font-medium transition-all"
+                className="w-full pl-16 pr-4 py-2.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl outline-none text-slate-900 font-medium transition-all text-[14px]"
                 placeholder="What is this about?"
               />
             </div>
 
-            <div className="relative flex-1 group min-h-[200px]">
+            <div className="relative flex-1 group min-h-[160px]">
               <textarea 
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
-                className="w-full h-full min-h-[200px] p-4 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl outline-none text-slate-800 text-[15px] leading-relaxed resize-none transition-all"
+                className="w-full h-full min-h-[160px] p-4 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl outline-none text-slate-800 text-[14px] leading-relaxed resize-none transition-all"
                 placeholder="Write your message here... Use {{First Name}} to personalize."
               />
               <div className="absolute bottom-4 left-4 flex gap-2">
@@ -161,14 +161,14 @@ export function EmailComposer({ isOpen, onClose, selectedLeadIds }: EmailCompose
         </div>
 
         {/* Footer */}
-        <div className="p-4 sm:p-6 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
-          <p className="text-[12px] font-medium text-slate-500">
+        <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+          <p className="text-[11px] font-medium text-slate-400">
             Powered by LeadFlow Mailer
           </p>
           <button 
             onClick={handleSend}
             disabled={!subject || !body || isSending}
-            className="group relative flex items-center gap-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-slate-900/20 transition-all active:scale-95 overflow-hidden"
+            className="group relative flex items-center gap-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold shadow-lg shadow-slate-900/20 transition-all active:scale-95 overflow-hidden"
           >
             {/* Glow effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 opacity-0 group-hover:opacity-100 group-active:opacity-50 transition-opacity duration-300 blur-md -z-10" />
