@@ -888,6 +888,14 @@ export default function SettingsPage() {
             </div>
 
             <div className="p-5 flex flex-col gap-5 text-left">
+              <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg text-blue-800 text-[13px] leading-relaxed flex flex-col gap-2">
+                <p><strong>How to configure Resend Email:</strong></p>
+                <ul className="list-disc pl-5 flex flex-col gap-1">
+                  <li><strong>Testing:</strong> If you don't have a custom domain yet, set your From Address to <code>onboarding@resend.dev</code>. You can <strong>only</strong> send emails to your own email address.</li>
+                  <li><strong>Production:</strong> To send emails to your leads, you must use a custom domain. Go to your <a href="https://resend.com/domains" target="_blank" rel="noreferrer" className="text-blue-600 font-bold hover:underline">Resend Dashboard → Domains</a>, add your domain, and add the provided DNS records to your domain provider (e.g., GoDaddy, Namecheap) to verify it.</li>
+                </ul>
+              </div>
+
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium text-slate-700">Email Provider</label>
                 <select
