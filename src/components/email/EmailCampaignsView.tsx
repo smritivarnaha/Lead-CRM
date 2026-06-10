@@ -6,7 +6,6 @@ import { formatDistanceToNow, format } from "date-fns";
 import { EmailComposer } from "./EmailComposer";
 import { EmailTemplatesTab } from "./EmailTemplatesTab";
 import { EmailAutomationsTab } from "./EmailAutomationsTab";
-import { SmsTemplatesTab } from "./SmsTemplatesTab";
 
 const STAGE_STYLE: Record<string, { label: string; ring: string; fill: string; text?: string }> = {
   NEW:         { label: "New Lead",      ring: "border-blue-500",   fill: "bg-transparent", text: "text-blue-500" },
@@ -21,7 +20,7 @@ export function EmailCampaignsView({ initialLeads }: { initialLeads: any[] }) {
   const [leads, setLeads] = useState(initialLeads);
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"leads" | "sent" | "drafts" | "templates" | "automations" | "sms-templates">("leads");
+  const [activeTab, setActiveTab] = useState<"leads" | "sent" | "drafts" | "templates" | "automations">("leads");
   const [campaigns, setCampaigns] = useState<any[]>([]);
 
   useEffect(() => {
@@ -92,13 +91,6 @@ export function EmailCampaignsView({ initialLeads }: { initialLeads: any[] }) {
         className={`px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-all flex items-center gap-2 ${activeTab === "automations" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"}`}
       >
         Automations
-      </button>
-      <div className="w-px h-6 bg-slate-200 mx-1"></div>
-      <button 
-        onClick={() => setActiveTab("sms-templates")}
-        className={`px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-all flex items-center gap-2 ${activeTab === "sms-templates" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"}`}
-      >
-        SMS Templates
       </button>
     </div>
   );
@@ -286,7 +278,6 @@ export function EmailCampaignsView({ initialLeads }: { initialLeads: any[] }) {
       {activeTab === "drafts" && renderCampaignTable(draftCampaigns, "draft")}
       {activeTab === "templates" && <EmailTemplatesTab />}
       {activeTab === "automations" && <EmailAutomationsTab />}
-      {activeTab === "sms-templates" && <SmsTemplatesTab />}
 
       {/* Floating Action Bar */}
       {activeTab === "leads" && selectedLeadIds.length > 0 && (

@@ -17,6 +17,7 @@ import {
   Link2,
   CalendarClock,
   Mail,
+  MessageSquare,
 } from "lucide-react";
 
 const navItems = [
@@ -24,6 +25,7 @@ const navItems = [
   { name: "Lead Pipeline",href: "/leads",       icon: Users },
   { name: "Followups",    href: "/followups",   icon: CalendarClock },
   { name: "Email Campaigns",href: "/email",     icon: Mail },
+  { name: "Client Alerts",    href: "/alerts",      icon: MessageSquare },
   { name: "Websites",     href: "/websites",    icon: Globe },
   { name: "Analytics",    href: "/analytics",   icon: BarChart3 },
   { name: "Integrations", href: "/integrations",icon: Link2 },
