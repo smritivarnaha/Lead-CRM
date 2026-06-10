@@ -34,18 +34,7 @@ const CLIENT_EMAIL_PRESETS = [
       <p style="margin-top: 0; font-size: 16px; line-height: 1.5;">Great news! A new lead has just registered on your website. Here are the details:</p>
       
       <div class="lead-box">
-        <div class="field">
-          <div class="field-label">Name</div>
-          <p class="field-value">{{name}}</p>
-        </div>
-        <div class="field">
-          <div class="field-label">Email</div>
-          <p class="field-value"><a href="mailto:{{email}}" style="color: #4f46e5;">{{email}}</a></p>
-        </div>
-        <div class="field" style="margin-bottom: 0;">
-          <div class="field-label">Phone</div>
-          <p class="field-value">{{phone}}</p>
-        </div>
+        {{all_fields}}
       </div>
       
       <a href="https://leadflow.app/client" class="btn">View Lead in CRM</a>

@@ -275,10 +275,16 @@ export async function POST(
     const smsPromise = (async () => {
       if (existingSite.smsAlertsEnabled !== false && workspace?.fast2smsApiKey && targetPhone) {
         try {
-          const smsTemplate = workspace.smsTemplate || "🔥 New Lead: {{name}} has just submitted a form!";
+          const allFieldsText = Object.entries(body)
+            .filter(([k]) => !['site_url', 'site_domain', 'pageUrl', 'pageTitle'].includes(k))
+            .map(([k, v]) => `${k}: ${v}`)
+            .join('\n');
+
+          const smsTemplate = workspace.smsTemplate || "🔥 New Lead: {{name}}\n\n{{all_fields}}";
           const smsMessage = smsTemplate
             .replace(/{{name}}/g, fullName)
-            .replace(/{{source}}/g, source || "Website");
+            .replace(/{{source}}/g, source || "Website")
+            .replace(/{{all_fields}}/g, allFieldsText || "No additional fields");
 
           const cleanPhone = targetPhone.replace(/\D/g, "").slice(-10);
 
@@ -321,16 +327,29 @@ export async function POST(
             ? `${workspace.fromEmailName} <${workspace.fromEmailAddress || "onboarding@resend.dev"}>`
             : (workspace.fromEmailAddress || "onboarding@resend.dev");
 
-          const defaultEmailTemplate = "You have a new lead from {{source}}:\n\nName: {{name}}\nEmail: {{email}}\nPhone: {{phone}}\nMessage: {{message}}\nURL: {{url}}";
+          const defaultEmailTemplate = "You have a new lead from {{source}}:\n\n{{all_fields}}\n\nURL: {{url}}";
           const rawTemplate = workspace.emailAlertTemplate || defaultEmailTemplate;
           
+          const allFieldsHtml = `
+<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 20px; margin-top: 20px;">
+  ${Object.entries(body)
+    .filter(([k]) => !['site_url', 'site_domain', 'pageUrl', 'pageTitle'].includes(k))
+    .map(([k, v]) => `
+    <div style="margin-bottom: 12px;">
+      <div style="font-size: 12px; text-transform: uppercase; color: #64748b; font-weight: bold; letter-spacing: 0.05em; margin-bottom: 4px;">${k}</div>
+      <div style="font-size: 16px; font-weight: 500; color: #0f172a; margin: 0; word-break: break-word;">${v}</div>
+    </div>
+  `).join('')}
+</div>`;
+
           const emailBody = rawTemplate
             .replace(/{{name}}/g, fullName)
             .replace(/{{email}}/g, email || "N/A")
             .replace(/{{phone}}/g, phone || "N/A")
             .replace(/{{message}}/g, message || "N/A")
             .replace(/{{source}}/g, source || "Website")
-            .replace(/{{url}}/g, pageUrl || "N/A");
+            .replace(/{{url}}/g, pageUrl || "N/A")
+            .replace(/{{all_fields}}/g, allFieldsHtml);
 
           const rawHtmlBody = emailBody.replace(/\n/g, '<br />');
           const siteName = existingSite.name || "Website";

@@ -6,20 +6,16 @@ import { toast } from "sonner";
 
 const SMS_PRESETS = [
   {
-    name: "Welcome Text",
-    content: "Hi {{name}}, welcome to LeadFlow! We're thrilled to have you here. Reply STOP to opt out."
+    name: "New Lead Alert",
+    content: "🚨 New Lead: {{name}}\n\n{{all_fields}}\n\nView details in LeadFlow."
   },
   {
-    name: "Appointment Reminder",
-    content: "Reminder: You have an appointment with us tomorrow. Please reply YES to confirm or NO to reschedule."
+    name: "Consultation Request",
+    content: "📅 Consultation Request from {{name}}\n\n{{all_fields}}\n\nPlease follow up shortly."
   },
   {
-    name: "Promo Discount",
-    content: "Hey {{name}}, don't miss out! Get 20% off your next purchase using code SAVE20. Valid for 48 hrs."
-  },
-  {
-    name: "Check-in",
-    content: "Hi {{name}}, just checking in to see if you received our email. Let us know if you need anything!"
+    name: "Daily Digest",
+    content: "📊 You received {{total_leads}} new leads today! Keep up the great work."
   }
 ];
 
