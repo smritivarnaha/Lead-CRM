@@ -53,3 +53,30 @@ export async function createWorkspace(name: string) {
     return { success: false, error: "Failed to create workspace" };
   }
 }
+
+export async function deleteWorkspace(id: string) {
+  try {
+    const user = await getAuthenticatedUser();
+    if (!user) return { success: false, error: "Unauthorized" };
+
+    // Simply delete related models to emulate cascade delete
+    await prisma.lead.deleteMany({ where: { workspaceId: id } });
+    await prisma.website.deleteMany({ where: { workspaceId: id } });
+    await prisma.user.deleteMany({ where: { workspaceId: id } });
+    await prisma.emailCampaign.deleteMany({ where: { workspaceId: id } });
+    await prisma.emailTemplate.deleteMany({ where: { workspaceId: id } });
+    await prisma.emailAutomation.deleteMany({ where: { workspaceId: id } });
+    await prisma.emailQueue.deleteMany({ where: { workspaceId: id } });
+    await prisma.smsTemplate.deleteMany({ where: { workspaceId: id } });
+
+    await prisma.workspace.delete({
+      where: { id }
+    });
+
+    revalidatePath("/workspaces");
+    return { success: true };
+  } catch (error) {
+    console.error("[DELETE_WORKSPACE_ERROR]", error);
+    return { success: false, error: "Failed to delete workspace" };
+  }
+}

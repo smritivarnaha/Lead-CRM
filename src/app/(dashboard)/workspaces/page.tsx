@@ -167,21 +167,23 @@ export default function WorkspacesPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {workspaces.map((ws) => (
           <div key={ws.id} className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col group hover:shadow-md hover:border-slate-300 transition-all duration-200">
-            <div className="p-6 flex-1 flex flex-col justify-between relative">
+            <div className="p-6 flex-1 flex flex-col relative">
               
               {/* Background gradient badge */}
               <div className="absolute top-0 right-0 -mt-6 -mr-6 w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full opacity-5 group-hover:opacity-10 transition-opacity" />
 
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm">
-                    {ws.name.slice(0, 2).toUpperCase()}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900 text-base group-hover:text-indigo-600 transition-colors">{ws.name}</h3>
-                    <div className="flex items-center gap-1 text-[10px] text-slate-400 font-semibold mt-0.5">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span>Created {new Date(ws.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" })}</span>
+              <div className="space-y-4 flex-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm">
+                      {ws.name.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-900 text-base group-hover:text-indigo-600 transition-colors">{ws.name}</h3>
+                      <div className="flex items-center gap-1 text-[10px] text-slate-400 font-semibold mt-0.5">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>Created {new Date(ws.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" })}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -206,9 +208,31 @@ export default function WorkspacesPage() {
               {/* Workspace ID footer */}
               <div className="pt-4 mt-6 border-t border-slate-100 flex items-center justify-between text-xs">
                 <span className="text-slate-400 font-mono text-[10px]">ID: {ws.id}</span>
-                <span className="flex items-center gap-1 text-indigo-600 font-bold group-hover:gap-2 transition-all cursor-pointer">
-                  Manage Settings <ArrowRight className="w-3.5 h-3.5" />
-                </span>
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={async () => {
+                      if(confirm(`Are you sure you want to delete the workspace "${ws.name}"? This deletes ALL associated websites, leads, templates, and users permanently.`)) {
+                        try {
+                          // Note: Need to import deleteWorkspace from actions
+                          const { deleteWorkspace } = await import("@/actions/workspaces");
+                          const res = await deleteWorkspace(ws.id);
+                          if(res.success) {
+                            toast.success("Workspace deleted!");
+                            fetchWorkspaces();
+                          } else {
+                            toast.error(res.error || "Failed to delete.");
+                          }
+                        } catch(e) { toast.error("Error deleting workspace"); }
+                      }
+                    }}
+                    className="text-red-500 hover:text-red-700 font-bold px-2 py-1 hover:bg-red-50 rounded transition-colors"
+                  >
+                    Delete
+                  </button>
+                  <span className="flex items-center gap-1 text-indigo-600 font-bold group-hover:gap-2 transition-all cursor-pointer">
+                    Manage <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
+                </div>
               </div>
             </div>
           </div>

@@ -1,14 +1,34 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MessageSquare, Plus, Save, Trash2, Edit } from "lucide-react";
+import { MessageSquare, Plus, Save, Trash2, Edit, X, Sparkles, Wand2 } from "lucide-react";
 import { toast } from "sonner";
+
+const SMS_PRESETS = [
+  {
+    name: "Welcome Text",
+    content: "Hi {{name}}, welcome to LeadFlow! We're thrilled to have you here. Reply STOP to opt out."
+  },
+  {
+    name: "Appointment Reminder",
+    content: "Reminder: You have an appointment with us tomorrow. Please reply YES to confirm or NO to reschedule."
+  },
+  {
+    name: "Promo Discount",
+    content: "Hey {{name}}, don't miss out! Get 20% off your next purchase using code SAVE20. Valid for 48 hrs."
+  },
+  {
+    name: "Check-in",
+    content: "Hi {{name}}, just checking in to see if you received our email. Let us know if you need anything!"
+  }
+];
 
 export function SmsTemplatesTab() {
   const [templates, setTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<any>(null);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
 
   const fetchTemplates = async () => {
     try {
@@ -71,6 +91,19 @@ export function SmsTemplatesTab() {
     } catch (err) {
       toast.error("Error deleting template");
     }
+  };
+
+  const handleSelectPreset = (preset: any | null) => {
+    setIsGalleryOpen(false);
+    if (preset) {
+      setEditingTemplate({
+        name: preset.name,
+        content: preset.content
+      });
+    } else {
+      setEditingTemplate({ name: "", content: "" });
+    }
+    setIsEditing(true);
   };
 
   if (isEditing) {
@@ -144,14 +177,14 @@ export function SmsTemplatesTab() {
           <p className="text-[13px] text-slate-500 mt-1">Manage reusable SMS messages with variables.</p>
         </div>
         <button 
-          onClick={() => { setEditingTemplate({ name: "", content: "" }); setIsEditing(true); }}
+          onClick={() => setIsGalleryOpen(true)}
           className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm"
         >
           <Plus className="w-4 h-4" /> Create Template
         </button>
       </div>
       
-      <div className="p-6">
+      <div className="p-6 flex-1 bg-white">
         {loading ? (
           <div className="text-center text-slate-400 py-10">Loading templates...</div>
         ) : templates.length === 0 ? (
@@ -160,17 +193,17 @@ export function SmsTemplatesTab() {
             <p className="text-[15px] font-medium text-slate-700">No SMS Templates</p>
             <p className="text-[13px] mt-1 mb-4">Create your first SMS template to use in automations.</p>
             <button 
-              onClick={() => { setEditingTemplate({ name: "", content: "" }); setIsEditing(true); }}
+              onClick={() => setIsGalleryOpen(true)}
               className="text-indigo-600 font-semibold text-sm hover:underline"
             >
-              Create Template &rarr;
+              Browse Gallery & Create &rarr;
             </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {templates.map(t => (
-              <div key={t.id} className="border border-slate-200 rounded-xl p-4 hover:border-indigo-300 transition-colors group relative bg-white shadow-sm">
-                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+              <div key={t.id} className="border border-slate-200 rounded-xl p-4 hover:border-indigo-300 transition-colors group relative bg-white shadow-sm flex flex-col">
+                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">
                   <button onClick={() => { setEditingTemplate(t); setIsEditing(true); }} className="p-1.5 bg-white border border-slate-200 rounded text-slate-600 hover:text-indigo-600 hover:border-indigo-300 shadow-sm">
                     <Edit className="w-3.5 h-3.5" />
                   </button>
@@ -178,15 +211,74 @@ export function SmsTemplatesTab() {
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
-                <h3 className="font-bold text-slate-800 text-[14px] mb-2 pr-12">{t.name}</h3>
-                <div className="bg-slate-50 p-3 rounded-lg text-[12px] text-slate-600 font-mono whitespace-pre-wrap min-h-[60px] border border-slate-100">
-                  {t.content}
+                <h3 className="font-bold text-slate-800 text-[14px] mb-4 pr-12">{t.name}</h3>
+                
+                {/* iMessage style chat bubble preview */}
+                <div className="bg-slate-100 rounded-xl p-4 flex flex-col gap-2 min-h-[120px] justify-end border border-slate-200 mt-auto">
+                  <div className="self-end bg-blue-500 text-white px-4 py-2.5 rounded-2xl rounded-br-sm text-[13px] leading-snug max-w-[90%] shadow-sm relative">
+                    <span className="whitespace-pre-wrap">{t.content}</span>
+                  </div>
+                  <div className="text-[9px] text-slate-400 font-medium self-end mr-1 mt-0.5">
+                    160 chars
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* SMS Template Gallery Modal */}
+      {isGalleryOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-slate-900 text-lg flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-indigo-500" /> SMS Gallery
+                </h3>
+                <p className="text-sm text-slate-500 mt-1">Start from scratch or pick a ready-made SMS preset.</p>
+              </div>
+              <button onClick={() => setIsGalleryOpen(false)} className="text-slate-400 hover:text-slate-600 hover:bg-slate-50 p-2 rounded-lg transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto bg-slate-50/50 flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                {/* Start from Scratch */}
+                <div 
+                  onClick={() => handleSelectPreset(null)}
+                  className="border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 transition-colors cursor-pointer flex flex-col items-center justify-center h-56 text-center p-4 group"
+                >
+                  <Wand2 className="w-8 h-8 text-slate-400 group-hover:text-indigo-500 mb-3" />
+                  <h4 className="font-bold text-slate-700 group-hover:text-indigo-700">Start from Scratch</h4>
+                  <p className="text-xs text-slate-500 mt-1">Blank message</p>
+                </div>
+
+                {/* Presets */}
+                {SMS_PRESETS.map((preset, idx) => (
+                  <div 
+                    key={idx}
+                    onClick={() => handleSelectPreset(preset)}
+                    className="border border-slate-200 rounded-xl bg-white hover:border-indigo-400 hover:shadow-md transition-all cursor-pointer flex flex-col overflow-hidden h-56 group"
+                  >
+                    <div className="flex-1 bg-slate-50 p-4 flex flex-col justify-end">
+                      <div className="self-end bg-blue-500 text-white px-3 py-2 rounded-2xl rounded-br-sm text-[11px] leading-snug max-w-[90%] shadow-sm overflow-hidden">
+                        <span className="line-clamp-4">{preset.content}</span>
+                      </div>
+                    </div>
+                    <div className="p-3 border-t border-slate-100 bg-white z-10">
+                      <h4 className="font-bold text-slate-800 text-sm truncate">{preset.name}</h4>
+                      <p className="text-[10px] text-slate-500 mt-0.5 truncate">SMS Text Message</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
