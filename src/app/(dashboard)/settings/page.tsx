@@ -440,7 +440,7 @@ export default function SettingsPage() {
       </div>
 
 
-      <div className="flex overflow-x-auto gap-2 sm:gap-4 border-b border-slate-200 pb-1 scrollbar-hide">
+      <div className="flex flex-wrap gap-2 sm:gap-4 border-b border-slate-200 pb-1">
         {isClient && (
           <button 
             onClick={() => setActiveTab("general")}
@@ -476,10 +476,28 @@ export default function SettingsPage() {
           App Installation
         </button>
         <button 
-          onClick={() => setActiveTab("integration")}
-          className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "integration" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+          onClick={() => setActiveTab("wordpress")}
+          className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "wordpress" ? "border-[#0073AA] text-[#0073AA]" : "border-transparent text-slate-500 hover:text-slate-700"}`}
         >
-          Integration Guide
+          WP Plugin Download
+        </button>
+        <button 
+          onClick={() => setActiveTab("sheets")}
+          className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "sheets" ? "border-[#0F9D58] text-[#0F9D58]" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+        >
+          Sheet Config
+        </button>
+        <button 
+          onClick={() => setActiveTab("html")}
+          className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "html" ? "border-[#E34F26] text-[#E34F26]" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+        >
+          Custom HTML Snippet
+        </button>
+        <button 
+          onClick={() => setActiveTab("webhook")}
+          className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "webhook" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+        >
+          Direct Webhook
         </button>
       </div>
 
@@ -1139,9 +1157,9 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* ─── INTEGRATION GUIDE TAB ─── */}
-        {activeTab === "integration" && (
-          <IntegrationTab site={{ id: clientWebsite?.id }} isGlobal={!isClient} />
+        {/* ─── INTEGRATION TABS ─── */}
+        {["wordpress", "sheets", "html", "php", "webhook"].includes(activeTab) && (
+          <IntegrationTab site={{ id: clientWebsite?.id }} isGlobal={!isClient} activeMethodProp={activeTab} hideTabBar={true} />
         )}
       </div>
 

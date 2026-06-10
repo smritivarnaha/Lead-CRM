@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 import { Phone, Mail, CheckCircle2, ArrowRight, XCircle, Send, FileText, Clock, Users } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { EmailComposer } from "./EmailComposer";
+import { EmailTemplatesTab } from "./EmailTemplatesTab";
+import { EmailAutomationsTab } from "./EmailAutomationsTab";
+import { SmsTemplatesTab } from "./SmsTemplatesTab";
 
 const STAGE_STYLE: Record<string, { label: string; ring: string; fill: string; text?: string }> = {
   NEW:         { label: "New Lead",      ring: "border-blue-500",   fill: "bg-transparent", text: "text-blue-500" },
@@ -18,7 +21,7 @@ export function EmailCampaignsView({ initialLeads }: { initialLeads: any[] }) {
   const [leads, setLeads] = useState(initialLeads);
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"leads" | "sent" | "drafts">("leads");
+  const [activeTab, setActiveTab] = useState<"leads" | "sent" | "drafts" | "templates" | "automations" | "sms-templates">("leads");
   const [campaigns, setCampaigns] = useState<any[]>([]);
 
   useEffect(() => {
@@ -77,6 +80,26 @@ export function EmailCampaignsView({ initialLeads }: { initialLeads: any[] }) {
         Drafts
         <span className="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-md text-[10px]">{draftCampaigns.length}</span>
       </button>
+      <div className="w-px h-6 bg-slate-200 mx-1"></div>
+      <button 
+        onClick={() => setActiveTab("templates")}
+        className={`px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-all flex items-center gap-2 ${activeTab === "templates" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"}`}
+      >
+        Templates & Design
+      </button>
+      <button 
+        onClick={() => setActiveTab("automations")}
+        className={`px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-all flex items-center gap-2 ${activeTab === "automations" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"}`}
+      >
+        Automations
+      </button>
+      <div className="w-px h-6 bg-slate-200 mx-1"></div>
+      <button 
+        onClick={() => setActiveTab("sms-templates")}
+        className={`px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-all flex items-center gap-2 ${activeTab === "sms-templates" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"}`}
+      >
+        SMS Templates
+      </button>
     </div>
   );
 
@@ -87,7 +110,9 @@ export function EmailCampaignsView({ initialLeads }: { initialLeads: any[] }) {
           <thead className="text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-white sticky top-0 z-10 shadow-sm">
             <tr className={`border-b ${borderClass} ${trHeightClass}`}>
               <th className={`w-[350px] px-6 py-0 border-r ${borderClass}`}>SUBJECT LINE</th>
-              <th className={`w-[150px] px-4 py-0 border-r ${borderClass}`}>RECIPIENTS</th>
+              <th className={`w-[120px] px-4 py-0 border-r ${borderClass}`}>RECIPIENTS</th>
+              {type === "sent" && <th className={`w-[120px] px-4 py-0 border-r ${borderClass}`}>OPEN RATE</th>}
+              {type === "sent" && <th className={`w-[120px] px-4 py-0 border-r ${borderClass}`}>CLICK RATE</th>}
               <th className={`w-[200px] px-4 py-0 border-r ${borderClass}`}>{type === "sent" ? "SENT AT" : "CREATED"}</th>
               <th className={`w-[120px] px-4 py-0 border-r ${borderClass}`}>STATUS</th>
             </tr>
@@ -115,6 +140,20 @@ export function EmailCampaignsView({ initialLeads }: { initialLeads: any[] }) {
                       {campaign._count?.recipients || 0} Leads
                     </div>
                   </td>
+                  {type === "sent" && (
+                    <td className={`px-4 py-1 border-r ${borderClass}`}>
+                      <div className="font-semibold text-slate-700 text-[12px]">
+                        {campaign._count?.recipients ? Math.round(((campaign.recipients?.filter((r: any) => r.openedAt).length || 0) / campaign._count.recipients) * 100) : 0}%
+                      </div>
+                    </td>
+                  )}
+                  {type === "sent" && (
+                    <td className={`px-4 py-1 border-r ${borderClass}`}>
+                      <div className="font-semibold text-slate-700 text-[12px]">
+                        {campaign._count?.recipients ? Math.round(((campaign.recipients?.filter((r: any) => r.clickedAt).length || 0) / campaign._count.recipients) * 100) : 0}%
+                      </div>
+                    </td>
+                  )}
                   <td className={`px-4 py-1 border-r ${borderClass}`}>
                     <div className="flex items-center gap-1.5 text-[11.5px] text-slate-500">
                       <Clock className="h-3 w-3" />
@@ -245,6 +284,9 @@ export function EmailCampaignsView({ initialLeads }: { initialLeads: any[] }) {
 
       {activeTab === "sent" && renderCampaignTable(sentCampaigns, "sent")}
       {activeTab === "drafts" && renderCampaignTable(draftCampaigns, "draft")}
+      {activeTab === "templates" && <EmailTemplatesTab />}
+      {activeTab === "automations" && <EmailAutomationsTab />}
+      {activeTab === "sms-templates" && <SmsTemplatesTab />}
 
       {/* Floating Action Bar */}
       {activeTab === "leads" && selectedLeadIds.length > 0 && (

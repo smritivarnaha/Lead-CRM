@@ -274,6 +274,44 @@ function BulkStatusDropdown({ selectedLeadIds, handleStatusChange, setSelectedLe
 }
 // ------------------------------------------------
 
+function LiveTimer({ createdAt, status }: { createdAt: string, status: string }) {
+  const [timeText, setTimeText] = useState("");
+
+  useEffect(() => {
+    if (status === "CONTACTED" || status === "CONVERTED") return;
+    
+    const updateTime = () => {
+      const now = new Date().getTime();
+      const created = new Date(createdAt).getTime();
+      const diff = Math.max(0, now - created);
+      
+      const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const m = Math.floor((diff / 1000 / 60) % 60);
+      const s = Math.floor((diff / 1000) % 60);
+      
+      setTimeText(`${d} days ${h} hours ${m} minutes and ${s} seconds`);
+    };
+    
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, [createdAt, status]);
+
+  if (status === "CONTACTED" || status === "CONVERTED") {
+    return <span className="text-emerald-500 font-bold text-[12px] flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Completed</span>;
+  }
+
+  return (
+    <div className="flex flex-col">
+      <span className="text-slate-600 font-bold text-[11px] leading-tight">
+        {timeText}
+      </span>
+      <span className="text-[9px] text-slate-400 uppercase tracking-wider mt-0.5">leads received since</span>
+    </div>
+  );
+}
+
 export function PipelineView({ websiteId, initialLeads }: { websiteId?: string; initialLeads?: Lead[] }) {
   const [leads, setLeads] = useState<Lead[]>(initialLeads || []);
   const [loading, setLoading] = useState(!initialLeads);
@@ -577,8 +615,8 @@ export function PipelineView({ websiteId, initialLeads }: { websiteId?: string; 
                       </th>
                     )}
                     {cols.timeInStage && (
-                      <th className={`w-[95px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer hidden lg:table-cell`}>
-                        <div className="flex items-center justify-between">IN STAGE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
+                      <th className={`w-[170px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer hidden lg:table-cell`}>
+                        <div className="flex items-center justify-between">TIMER<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
                       </th>
                     )}
                     {cols.closeDate && (
@@ -678,11 +716,8 @@ export function PipelineView({ websiteId, initialLeads }: { websiteId?: string; 
                           </td>
                         )}
                         {cols.timeInStage && (
-                          <td className={`px-4 py-0 border-r ${borderClass} hidden lg:table-cell`}>
-                            <div className="flex items-center text-slate-600 font-medium text-[12px]">
-                              <Clock className="w-3 h-3 mr-1 text-slate-400" />
-                              {lead.updatedAt ? Math.max(0, Math.floor((new Date().getTime() - new Date(lead.updatedAt).getTime()) / (1000 * 3600 * 24))) : 0}d
-                            </div>
+                          <td className={`px-4 py-1 border-r ${borderClass} hidden lg:table-cell`}>
+                            <LiveTimer createdAt={lead.createdAt} status={lead.status} />
                           </td>
                         )}
                         {cols.closeDate && (
@@ -749,6 +784,9 @@ export function PipelineView({ websiteId, initialLeads }: { websiteId?: string; 
                           {/* Mobile Date/Time display */}
                           <div className="text-[10.5px] text-[#7C3AED] font-semibold mt-1">
                             Submitted: {new Date(lead.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })} at {new Date(lead.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                          <div className="mt-1.5 bg-slate-50 border border-slate-100 rounded-md p-2">
+                            <LiveTimer createdAt={lead.createdAt} status={lead.status} />
                           </div>
                         </div>
                       </div>

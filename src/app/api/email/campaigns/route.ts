@@ -11,6 +11,12 @@ export async function GET() {
       include: {
         _count: {
           select: { recipients: true }
+        },
+        recipients: {
+          select: {
+            openedAt: true,
+            clickedAt: true
+          }
         }
       }
     });

@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import prisma from "@/lib/prisma";
 import { sendPushToAll } from "@/lib/push";
 import { generateEmailHtml, EmailTheme } from "@/lib/emailTemplates";
+import { processEmailAutomations } from "@/lib/emailAutomations";
 
 // Fixed seed IDs — must match prisma/seed.ts
 const WORKSPACE_ID = "mock_workspace_id";
@@ -455,8 +456,11 @@ export async function POST(
       }
     })();
 
+    // Fire auto-responders based on global rules
+    const autoResponderPromise = processEmailAutomations(newLead, "NEW_LEAD");
+
     // Run all external notifications concurrently to drastically reduce webhook response latency (from ~20s down to ~2s)
-    await Promise.allSettled([smsPromise, emailPromise, realtimePromise, pushPromise]);
+    await Promise.allSettled([smsPromise, emailPromise, realtimePromise, pushPromise, autoResponderPromise]);
 
     // Update the Lead in the database with the notification statuses
     if (smsSent || pushSent) {

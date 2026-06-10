@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
 model Workspace {
@@ -12,12 +12,12 @@ model Workspace {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users     User[]
-  websites  Website[]
-  leads     Lead[]
+  users    User[]
+  websites Website[]
+  leads    Lead[]
 
   // Push Notification Settings
-  pushTitleTemplate String? @default("🔥 New Lead Alert!")
+  pushTitleTemplate String? @default("ðŸ”¥ New Lead Alert!")
   pushBodyTemplate  String? @default("You have a new lead: {{name}}")
   pushIconUrl       String? @default("/icon-192.png")
   pushBadgeUrl      String? @default("/icon-192.png")
@@ -28,61 +28,66 @@ model Workspace {
   smsAutoReplyEnabled Boolean @default(false)
   fast2smsApiKey      String?
   adminPhone          String?
-  smsTemplate         String? @default("🚨 New Lead: {{name}}\\n📌 Source: {{source}}\\nLog in to CRM to view details.")
+  smsTemplate         String? @default("ðŸš¨ New Lead: {{name}}\\nðŸ“Œ Source: {{source}}\\nLog in to CRM to view details.")
 
   // Email Alert Settings
-  emailAlertsEnabled  Boolean @default(false)
-  adminEmail          String?
-  emailAlertTemplate  String? @default("You have a new lead from {{source}}:\\n\\nName: {{name}}\\nEmail: {{email}}\\nPhone: {{phone}}\\nMessage: {{message}}")
-  emailDesignTheme    String  @default("modern_minimal")
+  emailAlertsEnabled Boolean @default(false)
+  adminEmail         String?
+  emailAlertTemplate String? @default("You have a new lead from {{source}}:\\n\\nName: {{name}}\\nEmail: {{email}}\\nPhone: {{phone}}\\nMessage: {{message}}")
+  emailDesignTheme   String  @default("modern_minimal")
 
   // Email Settings
-  emailProvider       String? @default("RESEND")
-  emailApiKey         String?
-  fromEmailAddress    String?
-  fromEmailName       String? @default("LeadFlow CRM")
-  
-  emailCampaigns      EmailCampaign[]
+  emailProvider    String? @default("RESEND")
+  emailApiKey      String?
+  fromEmailAddress String?
+  fromEmailName    String? @default("LeadFlow CRM")
+
+  emailCampaigns          EmailCampaign[]
+  emailTemplates          EmailTemplate[]
+  emailAutomations        EmailAutomation[]
+  emailQueues             EmailQueue[]
+  emailAutomationsEnabled Boolean           @default(false)
+  smsTemplates            SmsTemplate[]
 }
 
 model User {
-  id          String   @id @default(cuid()) // Clerk User ID ideally
-  email       String   @unique
-  firstName   String?
-  lastName    String?
-  role        String   @default("STAFF") // SUPER_ADMIN, CLIENT_ADMIN, STAFF
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid()) // Clerk User ID ideally
+  email     String   @unique
+  firstName String?
+  lastName  String?
+  role      String   @default("STAFF") // SUPER_ADMIN, CLIENT_ADMIN, STAFF
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   workspaceId String?
   workspace   Workspace? @relation(fields: [workspaceId], references: [id])
-  
-  websiteId   String?
-  website     Website?   @relation(fields: [websiteId], references: [id])
+
+  websiteId String?
+  website   Website? @relation(fields: [websiteId], references: [id])
 
   assignedLeads Lead[] @relation("AssignedTo")
 }
 
 model Website {
-  id          String   @id @default(cuid())
-  name        String
-  domain      String
-  webhookUrl  String   @unique @default(cuid())
-  apiKey      String?
-  isActive    Boolean  @default(true)
-  logoUrl     String?  // Client's specific logo (used for push badge)
-  adminPhone         String?  // Client's specific phone for SMS alerts
-  adminEmail         String?  // Client's specific email for email alerts
+  id                 String   @id @default(cuid())
+  name               String
+  domain             String
+  webhookUrl         String   @unique @default(cuid())
+  apiKey             String?
+  isActive           Boolean  @default(true)
+  logoUrl            String? // Client's specific logo (used for push badge)
+  adminPhone         String? // Client's specific phone for SMS alerts
+  adminEmail         String? // Client's specific email for email alerts
   smsAlertsEnabled   Boolean  @default(true)
   emailAlertsEnabled Boolean  @default(true)
   createdAt          DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt          DateTime @updatedAt
 
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
-  leads       Lead[]
-  users       User[]
+  leads Lead[]
+  users User[]
 }
 
 model Note {
@@ -104,19 +109,19 @@ model PushSubscription {
 }
 
 model Lead {
-  id          String   @id @default(cuid())
-  fullName    String
-  phone       String?
-  email       String?
-  city        String?
-  state       String?
-  
+  id       String  @id @default(cuid())
+  fullName String
+  phone    String?
+  email    String?
+  city     String?
+  state    String?
+
   formName    String?
   source      String?
-  pageUrl     String?   // URL of page where form was submitted
-  pageTitle   String?   // Title of page where form was submitted
-  ipAddress   String?   // IP address of the form submitter
-  rawFields   String?   // JSON string of all raw form fields
+  pageUrl     String? // URL of page where form was submitted
+  pageTitle   String? // Title of page where form was submitted
+  ipAddress   String? // IP address of the form submitter
+  rawFields   String? // JSON string of all raw form fields
   utmSource   String?
   utmMedium   String?
   utmCampaign String?
@@ -124,10 +129,10 @@ model Lead {
   utmTerm     String?
   message     String?
 
-  score       Int      @default(0)
-  priority    String   @default("NORMAL") // HIGH, NORMAL, LOW
-  temperature String   @default("COLD") // HOT, WARM, COLD
-  status      String   @default("NEW") // NEW, CONTACTED, NO_RESPONSE, FOLLOW_UP, CONVERTED, LOST
+  score        Int       @default(0)
+  priority     String    @default("NORMAL") // HIGH, NORMAL, LOW
+  temperature  String    @default("COLD") // HOT, WARM, COLD
+  status       String    @default("NEW") // NEW, CONTACTED, NO_RESPONSE, FOLLOW_UP, CONVERTED, LOST
   assignedToId String?
   callNotes    String?   @db.Text
   createdAt    DateTime  @default(now())
@@ -135,45 +140,118 @@ model Lead {
   followUpAt   DateTime?
 
   // Notification Status Tracking
-  smsSent     Boolean  @default(false)
-  pushSent    Boolean  @default(false)
+  smsSent  Boolean @default(false)
+  pushSent Boolean @default(false)
 
-  assignedTo   User?    @relation("AssignedTo", fields: [assignedToId], references: [id])
+  assignedTo User? @relation("AssignedTo", fields: [assignedToId], references: [id])
 
-  notes       Note[]
+  notes Note[]
 
-  websiteId   String
-  website     Website  @relation(fields: [websiteId], references: [id])
+  websiteId String
+  website   Website @relation(fields: [websiteId], references: [id])
 
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
-  
+
   emailRecipients EmailRecipient[]
+  emailQueues     EmailQueue[]
 }
 
 model EmailCampaign {
-  id          String   @id @default(cuid())
-  subject     String
-  body        String   @db.Text
-  status      String   @default("DRAFT") // DRAFT, SENT, FAILED
-  sentAt      DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String    @id @default(cuid())
+  subject         String
+  body            String    @db.Text
+  isABTest        Boolean   @default(false)
+  variantASubject String?
+  variantABody    String?   @db.Text
+  variantBSubject String?
+  variantBBody    String?   @db.Text
+  status          String    @default("DRAFT") // DRAFT, SENT, FAILED
+  sentAt          DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
-  
-  recipients  EmailRecipient[]
+
+  recipients EmailRecipient[]
 }
 
 model EmailRecipient {
-  id              String   @id @default(cuid())
-  emailCampaignId String
-  emailCampaign   EmailCampaign @relation(fields: [emailCampaignId], references: [id], onDelete: Cascade)
-  
-  leadId          String
-  lead            Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  
-  status          String   @default("PENDING") // PENDING, SENT, FAILED
-  sentAt          DateTime?
+  id              String         @id @default(cuid())
+  emailCampaignId String?
+  emailCampaign   EmailCampaign? @relation(fields: [emailCampaignId], references: [id], onDelete: Cascade)
+
+  leadId String
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  status    String    @default("PENDING") // PENDING, SENT, FAILED
+  variant   String? // "A" or "B" for A/B testing
+  resendId  String?   @unique // ID returned by Resend
+  openedAt  DateTime?
+  clickedAt DateTime?
+  sentAt    DateTime?
+}
+
+model EmailTemplate {
+  id         String   @id @default(cuid())
+  name       String
+  subject    String
+  bodyHtml   String   @db.Text
+  designJson String?  @db.Text // Store visual builder data
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  workspaceId String
+  workspace   Workspace         @relation(fields: [workspaceId], references: [id])
+  automations EmailAutomation[]
+  emailQueues EmailQueue[]
+}
+
+model EmailAutomation {
+  id           String   @id @default(cuid())
+  name         String
+  trigger      String   @default("NEW_LEAD") // NEW_LEAD, STATUS_CHANGE
+  statusValue  String? // e.g., "CONVERTED" if trigger is STATUS_CHANGE
+  isActive     Boolean  @default(true)
+  delayMinutes Int      @default(0) // 0 = instant
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  templateId String
+  template   EmailTemplate @relation(fields: [templateId], references: [id])
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  emailQueues EmailQueue[]
+}
+
+model EmailQueue {
+  id           String           @id @default(cuid())
+  automationId String?
+  automation   EmailAutomation? @relation(fields: [automationId], references: [id])
+  templateId   String
+  template     EmailTemplate    @relation(fields: [templateId], references: [id])
+  leadId       String
+  lead         Lead             @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  scheduledFor DateTime
+  status       String   @default("PENDING") // PENDING, SENT, FAILED
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+}
+
+model SmsTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
 }

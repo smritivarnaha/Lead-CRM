@@ -20,6 +20,9 @@ const TEMPLATES = [
 export function EmailComposer({ isOpen, onClose, selectedLeadIds, onSent, onDraftSaved }: EmailComposerProps) {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [isABTest, setIsABTest] = useState(false);
+  const [variantBSubject, setVariantBSubject] = useState("");
+  const [variantBBody, setVariantBBody] = useState("");
   const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [isDrafting, setIsDrafting] = useState(false);
@@ -31,7 +34,10 @@ export function EmailComposer({ isOpen, onClose, selectedLeadIds, onSent, onDraf
   const handleTemplateClick = (t: any) => {
     setActiveTemplate(t.id);
     setSubject(t.subject);
-    setBody(`Hi {{First Name}},\n\nWe wanted to reach out regarding...\n\nBest,\nThe Team`);
+    setVariantBSubject(t.subject + " (Variant B)");
+    const defaultBody = `Hi {{First Name}},\n\nWe wanted to reach out regarding...\n\nBest,\nThe Team`;
+    setBody(defaultBody);
+    setVariantBBody(defaultBody);
   };
 
   const handleSend = async () => {
@@ -45,6 +51,11 @@ export function EmailComposer({ isOpen, onClose, selectedLeadIds, onSent, onDraf
           leadIds: selectedLeadIds,
           subject,
           body,
+          isABTest,
+          variantASubject: subject,
+          variantABody: body,
+          variantBSubject,
+          variantBBody,
           action: "send"
         }),
       });
@@ -87,6 +98,11 @@ export function EmailComposer({ isOpen, onClose, selectedLeadIds, onSent, onDraf
           leadIds: selectedLeadIds,
           subject,
           body,
+          isABTest,
+          variantASubject: subject,
+          variantABody: body,
+          variantBSubject,
+          variantBBody,
           action: "draft"
         }),
       });
@@ -171,35 +187,93 @@ export function EmailComposer({ isOpen, onClose, selectedLeadIds, onSent, onDraf
             </div>
           </div>
 
-          <div className="flex flex-col gap-4">
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <span className="text-sm font-semibold text-slate-400">Subject</span>
-              </div>
-              <input 
-                type="text" 
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                className="w-full pl-16 pr-4 py-2.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl outline-none text-slate-900 font-medium transition-all text-[14px]"
-                placeholder="What is this about?"
-              />
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
+                Message Options
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={isABTest} 
+                  onChange={(e) => setIsABTest(e.target.checked)}
+                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="text-xs font-bold text-indigo-600">Enable A/B Testing</span>
+              </label>
             </div>
-
-            <div className="relative flex-1 group min-h-[160px]">
-              <textarea 
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                className="w-full h-full min-h-[160px] p-4 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl outline-none text-slate-800 text-[14px] leading-relaxed resize-none transition-all"
-                placeholder="Write your message here... Use {{First Name}} to personalize."
-              />
-              <div className="absolute bottom-4 left-4 flex gap-2">
-                <button 
-                  onClick={() => setBody(body + "{{First Name}}")}
-                  className="px-2.5 py-1 text-[11px] font-bold text-indigo-600 bg-indigo-100/50 hover:bg-indigo-100 rounded-lg transition-colors border border-indigo-200/50"
-                >
-                  + {"{{First Name}}"}
-                </button>
+            
+            <div className="flex flex-col gap-4">
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <span className="text-sm font-semibold text-slate-400">{isABTest ? "Variant A Subject" : "Subject"}</span>
+                </div>
+                <input 
+                  type="text" 
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  className="w-full pl-36 pr-4 py-2.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl outline-none text-slate-900 font-medium transition-all text-[14px]"
+                  placeholder="What is this about?"
+                />
               </div>
+
+              <div className="relative flex-1 group min-h-[160px]">
+                <textarea 
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  className="w-full h-full min-h-[160px] p-4 pt-10 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl outline-none text-slate-800 text-[14px] leading-relaxed resize-none transition-all"
+                  placeholder="Write your message here... Use {{First Name}} to personalize."
+                />
+                <div className="absolute top-3 left-4 text-xs font-bold text-slate-400 pointer-events-none">
+                  {isABTest ? "Variant A Body" : "Message Body"}
+                </div>
+                <div className="absolute bottom-4 left-4 flex gap-2">
+                  <button 
+                    onClick={() => setBody(body + "{{First Name}}")}
+                    className="px-2.5 py-1 text-[11px] font-bold text-indigo-600 bg-indigo-100/50 hover:bg-indigo-100 rounded-lg transition-colors border border-indigo-200/50"
+                  >
+                    + {"{{First Name}}"}
+                  </button>
+                </div>
+              </div>
+
+              {isABTest && (
+                <div className="mt-4 border-t border-slate-100 pt-6 flex flex-col gap-4 relative">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white px-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Variant B</div>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <span className="text-sm font-semibold text-slate-400">Variant B Subject</span>
+                    </div>
+                    <input 
+                      type="text" 
+                      value={variantBSubject}
+                      onChange={(e) => setVariantBSubject(e.target.value)}
+                      className="w-full pl-36 pr-4 py-2.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl outline-none text-slate-900 font-medium transition-all text-[14px]"
+                      placeholder="Alternative subject line"
+                    />
+                  </div>
+
+                  <div className="relative flex-1 group min-h-[160px]">
+                    <textarea 
+                      value={variantBBody}
+                      onChange={(e) => setVariantBBody(e.target.value)}
+                      className="w-full h-full min-h-[160px] p-4 pt-10 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl outline-none text-slate-800 text-[14px] leading-relaxed resize-none transition-all"
+                      placeholder="Write your alternative message here..."
+                    />
+                    <div className="absolute top-3 left-4 text-xs font-bold text-slate-400 pointer-events-none">
+                      Variant B Body
+                    </div>
+                    <div className="absolute bottom-4 left-4 flex gap-2">
+                      <button 
+                        onClick={() => setVariantBBody(variantBBody + "{{First Name}}")}
+                        className="px-2.5 py-1 text-[11px] font-bold text-indigo-600 bg-indigo-100/50 hover:bg-indigo-100 rounded-lg transition-colors border border-indigo-200/50"
+                      >
+                        + {"{{First Name}}"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

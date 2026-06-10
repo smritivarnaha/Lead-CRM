@@ -21,7 +21,7 @@ export const SVGIcons = {
   )
 };
 
-export default function IntegrationTab({ site, isGlobal = false }: { site: { id: string }, isGlobal?: boolean }) {
+export default function IntegrationTab({ site, isGlobal = false, activeMethodProp, hideTabBar = false }: { site: { id: string }, isGlobal?: boolean, activeMethodProp?: string, hideTabBar?: boolean }) {
   const { user } = useUser();
   const role = user?.publicMetadata?.role as string | undefined;
   const isClient = role === "CLIENT";
@@ -36,6 +36,12 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
       setOrigin(window.location.origin);
     }
   }, []);
+
+  useEffect(() => {
+    if (activeMethodProp) {
+      setActiveMethod(activeMethodProp);
+    }
+  }, [activeMethodProp]);
 
   useEffect(() => {
     if (site.id) {
@@ -149,19 +155,21 @@ export default function IntegrationTab({ site, isGlobal = false }: { site: { id:
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
       
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-        {methods.map(m => (
-          <button 
-            key={m.id}
-            onClick={() => setActiveMethod(m.id)}
-            className={`flex flex-col items-center text-center p-4 rounded-xl border-2 transition-all duration-200 bg-white hover:shadow-md ${activeMethod === m.id ? `${m.color} shadow-sm bg-slate-50 scale-[1.02]` : "border-slate-100 hover:border-slate-300 opacity-70 hover:opacity-100"}`}
-          >
-            {m.icon}
-            <span className="mt-3 text-sm font-bold text-slate-900">{m.title}</span>
-            <span className="mt-1 text-[11px] text-slate-500 leading-tight hidden md:block">{m.desc}</span>
-          </button>
-        ))}
-      </div>
+      {!hideTabBar && (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+          {methods.map(m => (
+            <button 
+              key={m.id}
+              onClick={() => setActiveMethod(m.id)}
+              className={`flex flex-col items-center text-center p-4 rounded-xl border-2 transition-all duration-200 bg-white hover:shadow-md ${activeMethod === m.id ? `${m.color} shadow-sm bg-slate-50 scale-[1.02]` : "border-slate-100 hover:border-slate-300 opacity-70 hover:opacity-100"}`}
+            >
+              {m.icon}
+              <span className="mt-3 text-sm font-bold text-slate-900">{m.title}</span>
+              <span className="mt-1 text-[11px] text-slate-500 leading-tight hidden md:block">{m.desc}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 sm:p-8 min-h-[400px]">
         
