@@ -125,27 +125,7 @@ export function Header() {
             LeadFlow
           </Link>
           
-          {/* Desktop Navigation Links */}
-          <div className="hidden md:flex h-full items-center gap-8">
-            <Link 
-              href="/leads"
-              className="flex h-full items-center text-[13.5px] font-semibold cursor-pointer relative text-indigo-600"
-            >
-              Pipeline
-              {pathname === "/leads" && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-indigo-600" />}
-            </Link>
-            {!isClient && (
-              <Link href="/websites" className="flex h-full items-center text-[13.5px] font-medium text-slate-500 hover:text-slate-900 transition-colors">
-                Websites
-              </Link>
-            )}
-            <Link href="/contacts" className="flex h-full items-center text-[13.5px] font-medium text-slate-500 hover:text-slate-900 transition-colors">
-              Contacts
-            </Link>
-            <Link href="/analytics" className="flex h-full items-center text-[13.5px] font-medium text-slate-500 hover:text-slate-900 transition-colors">
-              Analytics
-            </Link>
-          </div>
+
         </div>
 
         {/* Right side: Push Status Indicator & Settings */}
