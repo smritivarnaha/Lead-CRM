@@ -288,13 +288,13 @@ function LiveTimer({ createdAt, status }: { createdAt: string, status: string })
       const d = Math.floor(diff / (1000 * 60 * 60 * 24));
       const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
       const m = Math.floor((diff / 1000 / 60) % 60);
-      const s = Math.floor((diff / 1000) % 60);
       
-      setTimeText(`${d} days ${h} hours ${m} minutes and ${s} seconds`);
+      setTimeText(`${d} D : ${h} H : ${m} Min`);
     };
     
     updateTime();
-    const interval = setInterval(updateTime, 1000);
+    // we can update every minute instead of every second since we only show minutes
+    const interval = setInterval(updateTime, 60000);
     return () => clearInterval(interval);
   }, [createdAt, status]);
 
@@ -304,10 +304,11 @@ function LiveTimer({ createdAt, status }: { createdAt: string, status: string })
 
   return (
     <div className="flex flex-col">
-      <span className="text-slate-600 font-bold text-[11px] leading-tight">
+      <span className="text-slate-700 font-bold text-[11px] leading-tight flex items-center gap-1.5">
+        <Clock className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
         {timeText}
       </span>
-      <span className="text-[9px] text-slate-400 uppercase tracking-wider mt-0.5">leads received since</span>
+      <span className="text-[9px] text-slate-400 uppercase tracking-wider mt-0.5 ml-5">since received</span>
     </div>
   );
 }
