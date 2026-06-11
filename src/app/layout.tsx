@@ -21,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider signInUrl="/crm/sign-in" signUpUrl="/crm/sign-up" afterSignOutUrl="/crm/sign-in">
       <html
         lang="en"
         className={`${inter.variable} font-sans h-full antialiased`}
