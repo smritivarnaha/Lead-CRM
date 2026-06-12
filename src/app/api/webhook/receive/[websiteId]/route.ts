@@ -54,8 +54,9 @@ export async function POST(
       try {
         const text = await request.text();
         body = text ? JSON.parse(text) : {};
-      } catch {
+      } catch (e) {
         body = {};
+      }
     }
 
     // Check if the request is coming to the old vercel domain

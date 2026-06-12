@@ -24,7 +24,7 @@ export default function SettingsPage() {
   const role = user?.publicMetadata?.role as string | undefined;
   const isClient = role === "CLIENT";
 
-  const { websites, activeWebsiteId, setWebsites } = useActiveProfile();
+  const { websites, activeWebsiteId, setWebsites, setActiveWebsiteId } = useActiveProfile();
   const activeWebsite = websites.find(w => w.id === activeWebsiteId);
   const [clientWebsite, setClientWebsite] = useState<any>(null);
 
