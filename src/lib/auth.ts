@@ -41,7 +41,16 @@ export async function getAuthenticatedUser(): Promise<AuthenticatedUser | null> 
     const email = clerkUser.emailAddresses[0]?.emailAddress;
     if (!email) return null;
 
-    const role = (clerkUser.publicMetadata?.role as string) || "SUPER_ADMIN";
+    const adminEmails = ["rankved.business@gmail.com", "sarthakj9u@gmail.com"];
+    let role = clerkUser.publicMetadata?.role as string;
+    
+    if (!role) {
+      if (adminEmails.includes(email.toLowerCase())) {
+        role = "SUPER_ADMIN";
+      } else {
+        role = "STAFF";
+      }
+    }
     const websiteId = clerkUser.publicMetadata?.websiteId as string | undefined;
 
     // Ensure mock workspace exists for new user setup

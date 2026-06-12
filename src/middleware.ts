@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
 const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
@@ -7,9 +8,18 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
+  const host = request.headers.get('host');
+  
+  // Force redirect from vercel domain to custom domain, except for webhooks to not break existing integrations
+  if (host === 'lead-crmsss.vercel.app' && !request.nextUrl.pathname.startsWith('/api/webhook/')) {
+    const newUrl = new URL(request.url);
+    newUrl.hostname = 'crm.rankved.com';
+    return NextResponse.redirect(newUrl, 308);
+  }
+
   if (!isPublicRoute(request)) {
     await auth.protect({
-      unauthenticatedUrl: new URL('/crm/sign-in', request.url).toString(),
+      unauthenticatedUrl: new URL('/sign-in', request.url).toString(),
     });
   }
 });

@@ -29,12 +29,11 @@ export default function IntegrationTab({ site, isGlobal = false, activeMethodPro
   const [activeMethod, setActiveMethod] = useState<string>("wordpress");
   const [dynamicSiteId, setDynamicSiteId] = useState<string>(site.id);
   const finalSiteId = dynamicSiteId || site.id;
-  const [origin, setOrigin] = useState("https://leadflow.app");
+  const [origin, setOrigin] = useState("https://crm.rankved.com");
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      setOrigin(window.location.origin);
-    }
+    // Force to primary domain regardless of where it's loaded
+    setOrigin("https://crm.rankved.com");
   }, []);
 
   useEffect(() => {
@@ -450,7 +449,7 @@ function testConnection() {
   
   var testPayload = {
     "Name": "Sheets Test Ping",
-    "Email": "sheet-ping@leadflow.app",
+    "Email": "sheet-ping@rankved.com",
     "Phone": "+91 99999 99999",
     "Message": "Testing connection from Apps Script Editor"
   };

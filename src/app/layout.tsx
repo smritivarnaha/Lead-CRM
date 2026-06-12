@@ -21,13 +21,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider signInUrl="/crm/sign-in" signUpUrl="/crm/sign-up" afterSignOutUrl="/crm/sign-in">
+    <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up" afterSignOutUrl="/sign-in">
       <html
         lang="en"
         className={`${inter.variable} font-sans h-full antialiased`}
       >
         <head>
-          <link rel="manifest" href="/crm/manifest.json" />
+          <link rel="manifest" href="/manifest.json" />
           <meta name="theme-color" content="#7C3AED" />
         </head>
         <body className="min-h-full flex flex-col bg-background text-foreground">
@@ -38,7 +38,7 @@ export default function RootLayout({
               __html: `
                 if ('serviceWorker' in navigator) {
                   function registerSW() {
-                    navigator.serviceWorker.register('/crm/sw.js').then(function(registration) {
+                    navigator.serviceWorker.register('/sw.js').then(function(registration) {
                       console.log('ServiceWorker registration successful');
                     }, function(err) {
                       console.log('ServiceWorker registration failed: ', err);

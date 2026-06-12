@@ -37,7 +37,7 @@ const CLIENT_EMAIL_PRESETS = [
         {{all_fields}}
       </div>
       
-      <a href="https://leadflow.app/client" class="btn">View Lead in CRM</a>
+      <a href="https://crm.rankved.com/sign-in" class="btn">View Lead in CRM</a>
     </div>
     <div class="footer">
       Powered by LeadFlow CRM &copy; 2026

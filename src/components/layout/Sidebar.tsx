@@ -32,6 +32,7 @@ const navItems = [
   { name: "Workspaces",   href: "/workspaces",  icon: Briefcase },
   { name: "Activity",     href: "/activity",    icon: Activity },
   { name: "Settings",     href: "/settings",    icon: Settings },
+  { name: "Team",         href: "/settings/team",icon: Users },
 ];
 
 export function Sidebar() {
@@ -40,14 +41,21 @@ export function Sidebar() {
 
   const role = user?.publicMetadata?.role as string | undefined;
   const isClient = role === "CLIENT";
+  const isSuperAdmin = role === "SUPER_ADMIN" || !role; // Default super admin for owner
 
   const visibleNavItems = navItems.filter((item) => {
     if (
       isClient &&
       (item.name === "Websites" ||
-        item.name === "Workspaces")
+        item.name === "Workspaces" ||
+        item.name === "Team")
     )
       return false;
+      
+    if (item.name === "Team" && !isSuperAdmin) {
+      return false;
+    }
+    
     return true;
   });
 

@@ -63,9 +63,7 @@ export default function WebsitesPage() {
 
   useEffect(() => {
     fetchSites();
-    if (typeof window !== "undefined") {
-      setOrigin(window.location.origin);
-    }
+    setOrigin("https://crm.rankved.com");
   }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -172,7 +170,7 @@ export default function WebsitesPage() {
 
   const copyCredentials = (credentials: { email: string, password: string } | null) => {
     if (!credentials) return;
-    const currentOrigin = typeof window !== "undefined" ? window.location.origin : "https://leadflow.app";
+    const currentOrigin = "https://crm.rankved.com";
     navigator.clipboard.writeText(
       `Login URL: ${currentOrigin}/sign-in\nEmail: ${credentials.email}\nPassword: ${credentials.password}`
     );
@@ -180,7 +178,7 @@ export default function WebsitesPage() {
   };
 
   const copyWebhook = (id: string) => {
-    const currentOrigin = typeof window !== "undefined" ? window.location.origin : "https://leadflow.app";
+    const currentOrigin = "https://crm.rankved.com";
     const url = `${currentOrigin}/api/webhook/receive/${id}`;
     navigator.clipboard.writeText(url);
     alert("Webhook URL copied to clipboard!");

@@ -144,7 +144,7 @@ export default function IntegrationsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fullName: "CRM Integration Test Ping",
-          email: "ping-test@leadflow.app",
+          email: "ping-test@rankved.com",
           phone: "+91 99999 99999",
           message: "This is an automated test lead to verify that the webhook integration is active and leads are logging correctly.",
           source: "Webhook Test Ping",

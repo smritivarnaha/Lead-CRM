@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Bell, BellRing, BellOff, Smartphone, X, Link as LinkIcon, Download, Copy, Code2, Image as ImageIcon, Mail } from "lucide-react";
+import { Bell, BellRing, BellOff, Smartphone, X, Link as LinkIcon, Download, Copy, Code2, Image as ImageIcon, Mail, Globe, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import IntegrationTab from "@/components/IntegrationTab";
 import { getWebsites } from "@/actions/websites";
@@ -439,6 +439,57 @@ export default function SettingsPage() {
         <p className="text-sm text-slate-500 mt-1">Configure your CRM preferences and integrations.</p>
       </div>
 
+      {/* Active Profile Selector for Admins */}
+      {!isClient && websites.length > 0 && (
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm animate-in fade-in duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-[15px] font-bold text-slate-900">Active Website Profile</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Select a website below to configure its alerts, logo, and integrations.</p>
+            </div>
+            <div className="px-2.5 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-lg border border-indigo-100">
+              {websites.length} Profile{websites.length === 1 ? '' : 's'}
+            </div>
+          </div>
+          
+          <div className="flex flex-nowrap overflow-x-auto gap-3 pb-2 snap-x hide-scrollbar">
+            {websites.map(site => {
+              const isActive = site.id === activeWebsiteId || site.id === clientWebsite?.id;
+              return (
+                <button
+                  key={site.id}
+                  onClick={() => {
+                    setActiveWebsiteId(site.id);
+                    setClientWebsite(site);
+                  }}
+                  className={`flex items-center gap-3 min-w-[220px] p-3 rounded-xl border-2 transition-all duration-200 snap-center text-left ${isActive ? "border-indigo-600 bg-indigo-50/50 shadow-sm" : "border-slate-100 bg-white hover:border-slate-300 hover:bg-slate-50 opacity-80 hover:opacity-100"}`}
+                >
+                  <div className="w-10 h-10 bg-white border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
+                    {site.logoUrl ? (
+                      <img src={site.logoUrl} alt={site.name} className="w-full h-full object-contain p-1" />
+                    ) : (
+                      <Globe className="w-4 h-4 text-slate-400" />
+                    )}
+                  </div>
+                  <div className="overflow-hidden">
+                    <p className={`text-sm font-bold truncate ${isActive ? "text-indigo-900" : "text-slate-800"}`}>
+                      {site.name}
+                    </p>
+                    <p className={`text-[11px] font-medium truncate ${isActive ? "text-indigo-600" : "text-slate-400"}`}>
+                      {site.domain}
+                    </p>
+                  </div>
+                  {isActive && (
+                    <div className="ml-auto flex items-center justify-center w-5 h-5 bg-indigo-600 rounded-full text-white shrink-0 shadow-sm">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-2 sm:gap-4 border-b border-slate-200 pb-1">
         {isClient && (

@@ -17,7 +17,7 @@ export async function GET(
     return new NextResponse("Forbidden", { status: 403 });
   }
 
-  const { origin } = new URL(request.url);
+  const origin = "https://crm.rankved.com";
   
   const phpContent = `<?php
 /**
