@@ -42,8 +42,14 @@ export function generateEmailHtml(theme: EmailTheme, title: string, htmlBody: st
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          @media only screen and (max-width: 600px) {
+            .email-container { padding: 16px !important; }
+            .email-body { padding: 8px !important; }
+          }
+        </style>
       </head>
-      <body style="margin: 0; padding: 20px; background-color: ${bgColor}; font-family: ${fontFamily};">
+      <body class="email-body" style="margin: 0; padding: 16px; background-color: ${bgColor}; font-family: ${fontFamily};">
         ${content}
       </body>
     </html>
@@ -52,9 +58,9 @@ export function generateEmailHtml(theme: EmailTheme, title: string, htmlBody: st
   switch (theme) {
     case "modern_minimal":
       return baseHtml(`
-        <div style="max-width: 600px; margin: 0 auto; background: #ffffff; padding: 40px; border-radius: 8px; border: 1px solid #eaeaea;">
+        <div class="email-container" style="max-width: 600px; margin: 0 auto; background: #ffffff; padding: 24px; border-radius: 8px; border: 1px solid #eaeaea;">
           <h2 style="color: #111827; font-size: 24px; margin-top: 0; font-weight: 600; letter-spacing: -0.5px;">${title}</h2>
-          <div style="color: #4b5563; font-size: 15px; line-height: 1.6;">
+          <div style="color: #4b5563; font-size: 15px; line-height: 1.6; word-break: break-word;">
             ${htmlBody}
           </div>
           ${getFooter('#eaeaea')}
@@ -64,10 +70,10 @@ export function generateEmailHtml(theme: EmailTheme, title: string, htmlBody: st
     case "corporate_blue":
       return baseHtml(`
         <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 6px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-          <div style="background: #1e3a8a; padding: 30px 40px;">
+          <div class="email-container" style="background: #1e3a8a; padding: 24px;">
             <h2 style="color: #ffffff; font-size: 22px; margin: 0; font-weight: 600;">${title}</h2>
           </div>
-          <div style="padding: 40px; color: #334155; font-size: 15px; line-height: 1.6;">
+          <div class="email-container" style="padding: 24px; color: #334155; font-size: 15px; line-height: 1.6; word-break: break-word;">
             ${htmlBody}
             ${getFooter('#e2e8f0')}
           </div>
@@ -76,9 +82,9 @@ export function generateEmailHtml(theme: EmailTheme, title: string, htmlBody: st
 
     case "healthcare_trust":
       return baseHtml(`
-        <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-top: 6px solid #0f766e; padding: 40px; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+        <div class="email-container" style="max-width: 600px; margin: 0 auto; background: #ffffff; border-top: 6px solid #0f766e; padding: 24px; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
           <h2 style="color: #115e59; font-size: 24px; margin-top: 0; border-bottom: 2px solid #ccfbf1; padding-bottom: 15px;">${title}</h2>
-          <div style="color: #374151; font-size: 16px; line-height: 1.7;">
+          <div style="color: #374151; font-size: 16px; line-height: 1.7; word-break: break-word;">
             ${htmlBody}
           </div>
           ${getFooter('#ccfbf1')}
@@ -87,11 +93,11 @@ export function generateEmailHtml(theme: EmailTheme, title: string, htmlBody: st
 
     case "urgent_alert":
       return baseHtml(`
-        <div style="max-width: 600px; margin: 0 auto; background: #ffffff; padding: 30px; border: 2px solid #ef4444; border-radius: 8px;">
+        <div class="email-container" style="max-width: 600px; margin: 0 auto; background: #ffffff; padding: 24px; border: 2px solid #ef4444; border-radius: 8px;">
           <div style="display: flex; align-items: center; background: #fee2e2; padding: 15px 20px; border-radius: 6px; margin-bottom: 25px;">
             <h2 style="color: #b91c1c; font-size: 20px; margin: 0; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">🚨 ${title}</h2>
           </div>
-          <div style="color: #1f2937; font-size: 15px; line-height: 1.6;">
+          <div style="color: #1f2937; font-size: 15px; line-height: 1.6; word-break: break-word;">
             ${htmlBody}
           </div>
           ${getFooter('#fecaca')}
@@ -100,9 +106,9 @@ export function generateEmailHtml(theme: EmailTheme, title: string, htmlBody: st
 
     case "dark_mode_sleek":
       return baseHtml(`
-        <div style="max-width: 600px; margin: 0 auto; background: #1f2937; padding: 40px; border-radius: 12px; border: 1px solid #374151;">
+        <div class="email-container" style="max-width: 600px; margin: 0 auto; background: #1f2937; padding: 24px; border-radius: 12px; border: 1px solid #374151;">
           <h2 style="color: #f3f4f6; font-size: 24px; margin-top: 0; font-weight: 500;">${title}</h2>
-          <div style="color: #d1d5db; font-size: 15px; line-height: 1.6;">
+          <div style="color: #d1d5db; font-size: 15px; line-height: 1.6; word-break: break-word;">
             ${htmlBody}
           </div>
           ${getFooter('#374151')}
@@ -111,9 +117,9 @@ export function generateEmailHtml(theme: EmailTheme, title: string, htmlBody: st
 
     case "playful_startup":
       return baseHtml(`
-        <div style="max-width: 600px; margin: 0 auto; background: #ffffff; padding: 40px; border-radius: 24px; box-shadow: 0 10px 25px rgba(124, 58, 237, 0.1);">
+        <div class="email-container" style="max-width: 600px; margin: 0 auto; background: #ffffff; padding: 24px; border-radius: 24px; box-shadow: 0 10px 25px rgba(124, 58, 237, 0.1);">
           <h2 style="color: #7c3aed; font-size: 28px; margin-top: 0; font-weight: 800;">✨ ${title}</h2>
-          <div style="color: #4b5563; font-size: 16px; line-height: 1.6;">
+          <div style="color: #4b5563; font-size: 16px; line-height: 1.6; word-break: break-word;">
             ${htmlBody}
           </div>
           ${getFooter('#ede9fe')}
@@ -124,12 +130,12 @@ export function generateEmailHtml(theme: EmailTheme, title: string, htmlBody: st
       return baseHtml(`
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #cccccc; border-collapse: collapse;">
           <tr>
-            <td style="background: #f4f4f4; padding: 20px; border-bottom: 1px solid #cccccc;">
+            <td class="email-container" style="background: #f4f4f4; padding: 16px 20px; border-bottom: 1px solid #cccccc;">
               <h2 style="color: #333333; font-size: 20px; margin: 0; font-family: Arial, sans-serif;">${title}</h2>
             </td>
           </tr>
           <tr>
-            <td style="padding: 30px 20px; color: #555555; font-size: 14px; line-height: 1.5; font-family: Arial, sans-serif;">
+            <td class="email-container" style="padding: 24px 20px; color: #555555; font-size: 14px; line-height: 1.5; font-family: Arial, sans-serif; word-break: break-word;">
               ${htmlBody}
               ${getFooter('#eeeeee')}
             </td>
@@ -139,9 +145,9 @@ export function generateEmailHtml(theme: EmailTheme, title: string, htmlBody: st
 
     case "elegant_serif":
       return baseHtml(`
-        <div style="max-width: 600px; margin: 0 auto; background: #ffffff; padding: 50px; border: 1px solid #e5e7eb;">
+        <div class="email-container" style="max-width: 600px; margin: 0 auto; background: #ffffff; padding: 24px; border: 1px solid #e5e7eb;">
           <h2 style="color: #111827; font-size: 26px; margin-top: 0; font-weight: 400; text-align: center; border-bottom: 1px solid #d1d5db; padding-bottom: 20px;">${title}</h2>
-          <div style="color: #4b5563; font-size: 16px; line-height: 1.8; margin-top: 30px;">
+          <div style="color: #4b5563; font-size: 16px; line-height: 1.8; margin-top: 30px; word-break: break-word;">
             ${htmlBody}
           </div>
           ${getFooter('#e5e7eb')}
@@ -150,9 +156,9 @@ export function generateEmailHtml(theme: EmailTheme, title: string, htmlBody: st
 
     case "tech_neon":
       return baseHtml(`
-        <div style="max-width: 600px; margin: 0 auto; background: #000000; padding: 40px; border: 1px solid #22c55e; border-radius: 4px;">
+        <div class="email-container" style="max-width: 600px; margin: 0 auto; background: #000000; padding: 24px; border: 1px solid #22c55e; border-radius: 4px;">
           <h2 style="color: #4ade80; font-size: 22px; margin-top: 0; font-weight: normal;">> ${title}_</h2>
-          <div style="color: #a3e635; font-size: 14px; line-height: 1.6; margin-top: 20px;">
+          <div style="color: #a3e635; font-size: 14px; line-height: 1.6; margin-top: 20px; word-break: break-word;">
             ${htmlBody}
           </div>
           ${getFooter('#166534')}
@@ -161,9 +167,9 @@ export function generateEmailHtml(theme: EmailTheme, title: string, htmlBody: st
 
     case "soft_pastel":
       return baseHtml(`
-        <div style="max-width: 600px; margin: 0 auto; background: #ffffff; padding: 40px; border-radius: 16px; border: 2px solid #fce7f3;">
+        <div class="email-container" style="max-width: 600px; margin: 0 auto; background: #ffffff; padding: 24px; border-radius: 16px; border: 2px solid #fce7f3;">
           <h2 style="color: #db2777; font-size: 24px; margin-top: 0; font-weight: 600;">${title}</h2>
-          <div style="color: #64748b; font-size: 15px; line-height: 1.6;">
+          <div style="color: #64748b; font-size: 15px; line-height: 1.6; word-break: break-word;">
             ${htmlBody}
           </div>
           ${getFooter('#fce7f3')}

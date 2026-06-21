@@ -53,7 +53,7 @@ export async function processEmailAutomations(lead: any, trigger: string, newSta
 
       // Wrap in standard layout if needed, or if the template provides its own HTML, just use it
       // Let's assume bodyHtml is ready to send but we might need CAN-SPAM footers
-      const footer = `<br/><br/><hr style="border:0;border-top:1px solid #eee;"/><p style="font-size:11px;color:#888;">You are receiving this email because you recently contacted us. <a href="#">Unsubscribe</a></p>`;
+      const footer = `<br/><br/><hr style="border:0;border-top:1px solid #eee;"/><p style="font-size:11px;color:#888;text-align:center;">You are receiving this email because you recently contacted us. <a href="#">Unsubscribe</a><br/><br/><span style="text-transform:uppercase;letter-spacing:0.5px;">Lead Automation CRM Developed By Rankved Healthcare Martech</span></p>`;
       const finalHtmlBody = rawBody + footer;
 
       const fromStr = workspace.fromEmailName
