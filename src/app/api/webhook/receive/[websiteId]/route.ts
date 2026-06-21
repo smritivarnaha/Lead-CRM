@@ -281,10 +281,15 @@ export async function POST(
             .join('\n');
 
           const smsTemplate = workspace.smsTemplate || "🔥 New Lead: {{name}}\n\n{{all_fields}}";
-          const smsMessage = smsTemplate
+          let smsMessage = smsTemplate
             .replace(/{{name}}/g, fullName)
-            .replace(/{{source}}/g, source || "Website")
-            .replace(/{{all_fields}}/g, allFieldsText || "No additional fields");
+            .replace(/{{source}}/g, source || "Website");
+            
+          if (smsMessage.includes("{{all_fields}}")) {
+            smsMessage = smsMessage.replace(/{{all_fields}}/g, allFieldsText || "No additional fields");
+          } else if (allFieldsText) {
+            smsMessage += `\n\n${allFieldsText}`;
+          }
 
           const cleanPhone = targetPhone.replace(/\D/g, "").slice(-10);
 
@@ -342,16 +347,21 @@ export async function POST(
   `).join('')}
 </div>`;
 
-          const emailBody = rawTemplate
+          let textBody = rawTemplate
             .replace(/{{name}}/g, fullName)
             .replace(/{{email}}/g, email || "N/A")
             .replace(/{{phone}}/g, phone || "N/A")
             .replace(/{{message}}/g, message || "N/A")
             .replace(/{{source}}/g, source || "Website")
-            .replace(/{{url}}/g, pageUrl || "N/A")
-            .replace(/{{all_fields}}/g, allFieldsHtml);
+            .replace(/{{url}}/g, pageUrl || "N/A");
 
-          const rawHtmlBody = emailBody.replace(/\n/g, '<br />');
+          let rawHtmlBody = textBody.replace(/\n/g, '<br />');
+          
+          if (rawHtmlBody.includes("{{all_fields}}")) {
+            rawHtmlBody = rawHtmlBody.replace(/{{all_fields}}/g, allFieldsHtml);
+          } else if (Object.keys(body).length > 0) {
+            rawHtmlBody += `<br /><br />${allFieldsHtml}`;
+          }
           const siteName = existingSite.name || "Website";
           const finalHtmlBody = generateEmailHtml(
             ((workspace as any)?.emailDesignTheme as EmailTheme) || "modern_minimal",
