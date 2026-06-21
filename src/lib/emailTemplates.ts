@@ -27,11 +27,15 @@ const FOOTER_TEXT = "Lead Automation CRM Developed By Rankved Healthcare Martech
 
 export function generateEmailHtml(theme: EmailTheme, title: string, htmlBody: string): string {
   // Common footer HTML to ensure consistency and beauty
+  // We inject a tiny invisible timestamp to prevent Gmail from trimming the footer across multiple similar emails!
   const getFooter = (color: string) => `
     <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid ${color}; text-align: center;">
       <p style="font-size: 12px; color: #888; font-family: sans-serif; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase;">
         ${FOOTER_TEXT}
       </p>
+      <div style="display:none; color:transparent; font-size:1px; line-height:1px; max-height:0px; max-width:0px; opacity:0; overflow:hidden;">
+        Ref: ${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}
+      </div>
     </div>
   `;
 

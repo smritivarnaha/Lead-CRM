@@ -336,13 +336,13 @@ export async function POST(
           const rawTemplate = workspace.emailAlertTemplate || defaultEmailTemplate;
           
           const allFieldsHtml = `
-<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 20px; margin-top: 20px;">
+<div style="background: rgba(243, 244, 246, 0.7); border: 1px solid rgba(229, 231, 235, 1); border-radius: 8px; padding: 16px; margin-top: 20px;">
   ${Object.entries(body)
     .filter(([k]) => !['site_url', 'site_domain', 'pageUrl', 'pageTitle'].includes(k))
     .map(([k, v]) => `
-    <div style="margin-bottom: 12px;">
-      <div style="font-size: 12px; text-transform: uppercase; color: #64748b; font-weight: bold; letter-spacing: 0.05em; margin-bottom: 4px;">${k}</div>
-      <div style="font-size: 16px; font-weight: 500; color: #0f172a; margin: 0; word-break: break-word;">${v}</div>
+    <div style="margin-bottom: 14px; border-bottom: 1px solid rgba(229, 231, 235, 0.5); padding-bottom: 8px;">
+      <div style="font-size: 12px; text-transform: uppercase; color: #6366f1; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 4px;">${k}</div>
+      <div style="font-size: 16px; font-weight: 500; margin: 0; word-break: break-word; color: #1f2937;">${v}</div>
     </div>
   `).join('')}
 </div>`;
