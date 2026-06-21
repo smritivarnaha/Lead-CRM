@@ -59,10 +59,6 @@ export async function POST(
       }
     }
 
-    // Check if the request is coming to the old vercel domain
-    const host = request.headers.get("host") || "";
-    const isLegacyVercelApp = host.includes("lead-crmsss.vercel.app");
-
     // --- Automatic Website Detection by Domain ---
     if (websiteId === "auto") {
       const siteUrlOrDomain = body.site_url || body.site_domain || body.page_url || body.pageUrl || request.headers.get("referer") || request.headers.get("origin");
@@ -277,10 +273,6 @@ export async function POST(
     // Handle SMS Admin Alerts via Fast2SMS
     const targetPhone = existingSite.adminPhone || workspace?.adminPhone;
     const smsPromise = (async () => {
-      if (isLegacyVercelApp) {
-        console.log("[WEBHOOK] Skipping SMS for legacy vercel domain.");
-        return;
-      }
       if (existingSite.smsAlertsEnabled !== false && workspace?.fast2smsApiKey && targetPhone) {
         try {
           const allFieldsText = Object.entries(body)
@@ -329,10 +321,6 @@ export async function POST(
     let emailAlertSent = false;
     const targetEmail = existingSite.adminEmail || workspace?.adminEmail;
     const emailPromise = (async () => {
-      if (isLegacyVercelApp) {
-        console.log("[WEBHOOK] Skipping Email Alerts for legacy vercel domain.");
-        return;
-      }
       if (existingSite.emailAlertsEnabled !== false && workspace?.emailProvider === "RESEND" && workspace?.emailApiKey && targetEmail) {
         try {
           const fromStr = workspace.fromEmailName
@@ -422,10 +410,6 @@ export async function POST(
     // Fire push notification to all subscribed team members
     let pushStatus = { success: false, count: 0 };
     const pushPromise = (async () => {
-      if (isLegacyVercelApp) {
-        console.log("[WEBHOOK] Skipping Push notifications for legacy vercel domain.");
-        return;
-      }
       const siteName = existingSite.name || "Website";
       const contactLine = [fullName !== "Unknown" ? fullName : null, phone, email].filter(Boolean).join(" · ");
       
@@ -492,7 +476,7 @@ export async function POST(
     })();
 
     // Fire auto-responders based on global rules
-    const autoResponderPromise = isLegacyVercelApp ? Promise.resolve() : processEmailAutomations(newLead, "NEW_LEAD");
+    const autoResponderPromise = processEmailAutomations(newLead, "NEW_LEAD");
 
     // Run all external notifications concurrently to drastically reduce webhook response latency (from ~20s down to ~2s)
     await Promise.allSettled([smsPromise, emailPromise, realtimePromise, pushPromise, autoResponderPromise]);
