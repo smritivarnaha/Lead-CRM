@@ -247,25 +247,6 @@ export default function AnalyticsPage() {
 
         {/* Toolbar */}
         <div className="flex items-center gap-3 self-start sm:self-auto">
-          {/* Website Filter (Only for Super Admins) */}
-          {!isClient && (
-            <div className="relative">
-              <select
-                value={selectedSiteId}
-                onChange={(e) => setSelectedSiteId(e.target.value)}
-                className="appearance-none bg-white border border-slate-200 text-slate-700 text-xs font-bold px-4 py-2.5 pr-10 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-              >
-                <option value="all">🌐 All Websites</option>
-                {websites.map((w) => (
-                  <option key={w.id} value={w.id}>
-                    💻 {w.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3.5 top-3.5 w-3 h-3 text-slate-400 pointer-events-none" />
-            </div>
-          )}
-
           {/* Time range selector */}
           <div className="bg-white border border-slate-200 rounded-xl p-1 shadow-sm flex items-center gap-0.5">
             <button

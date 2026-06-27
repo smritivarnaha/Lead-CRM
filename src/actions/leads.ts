@@ -2,6 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/auth";
+import { cookies } from "next/headers";
 
 export async function getLeads() {
   try {
@@ -9,11 +10,22 @@ export async function getLeads() {
     if (!user) return { success: false, error: "Unauthorized" };
 
     const role = user.role;
-    const websiteId = user.websiteId;
-    const isClient = role === "CLIENT" && !!websiteId;
+    const isClient = role === "CLIENT" && !!user.websiteId;
+    
+    // Read the active profile cookie set by the frontend dropdown
+    const cookieStore = cookies();
+    const activeWebsiteCookie = cookieStore.get("leadflow_active_website_id")?.value;
+    
+    // Determine which website to filter by
+    let filterWebsiteId = undefined;
+    if (isClient) {
+      filterWebsiteId = user.websiteId as string;
+    } else if (activeWebsiteCookie && activeWebsiteCookie !== "all") {
+      filterWebsiteId = activeWebsiteCookie;
+    }
 
     const leads = await prisma.lead.findMany({
-      where: isClient ? { websiteId } : {},
+      where: filterWebsiteId ? { websiteId: filterWebsiteId } : {},
       orderBy: { createdAt: "desc" },
       select: {
         id: true,

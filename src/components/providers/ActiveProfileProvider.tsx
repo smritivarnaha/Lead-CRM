@@ -77,12 +77,14 @@ export function ActiveProfileProvider({ children }: { children: React.ReactNode 
     fetchSites();
   }, [isLoaded, user]);
 
-  // Sync to localStorage whenever it changes
+  // Sync to localStorage AND cookie whenever it changes
   useEffect(() => {
     if (activeWebsiteId) {
       localStorage.setItem("leadflow_active_website_id", activeWebsiteId);
+      document.cookie = `leadflow_active_website_id=${activeWebsiteId}; path=/; max-age=31536000; SameSite=Lax`;
     } else {
       localStorage.removeItem("leadflow_active_website_id");
+      document.cookie = `leadflow_active_website_id=; path=/; max-age=0; SameSite=Lax`;
     }
   }, [activeWebsiteId]);
 
