@@ -342,6 +342,18 @@ export async function POST(
           const defaultEmailTemplate = "You have a new lead from {{source}}:\n\n{{all_fields}}\n\nURL: {{url}}";
           const rawTemplate = workspace.emailAlertTemplate || defaultEmailTemplate;
           
+          const systemFieldsHtml = `
+  <div style="margin-top: 16px; padding-top: 12px; border-top: 1px dashed rgba(229, 231, 235, 0.8);">
+    <div style="margin-bottom: 6px;">
+      <span style="font-size: 11px; text-transform: uppercase; color: #9ca3af; font-weight: 700; letter-spacing: 0.05em;">IP Address:</span> 
+      <span style="font-size: 12px; color: #6b7280; font-family: monospace;">${ipAddress || "Unknown"}</span>
+    </div>
+    <div>
+      <span style="font-size: 11px; text-transform: uppercase; color: #9ca3af; font-weight: 700; letter-spacing: 0.05em;">Source URL:</span> 
+      <a href="${pageUrl || "#"}" style="font-size: 12px; color: #6366f1; word-break: break-all; text-decoration: none;">${pageUrl || "Direct (Hidden)"}</a>
+    </div>
+  </div>`;
+
           const allFieldsHtml = `
 <div style="background: rgba(243, 244, 246, 0.7); border: 1px solid rgba(229, 231, 235, 1); border-radius: 8px; padding: 16px; margin-top: 20px;">
   ${Object.entries(body)
@@ -352,6 +364,7 @@ export async function POST(
       <div style="font-size: 16px; font-weight: 500; margin: 0; word-break: break-word; color: #1f2937;">${v}</div>
     </div>
   `).join('')}
+  ${systemFieldsHtml}
 </div>`;
 
           let textBody = rawTemplate
@@ -360,7 +373,8 @@ export async function POST(
             .replace(/{{phone}}/g, phone || "N/A")
             .replace(/{{message}}/g, message || "N/A")
             .replace(/{{source}}/g, source || "Website")
-            .replace(/{{url}}/g, pageUrl || "N/A");
+            .replace(/{{url}}/g, pageUrl || "N/A")
+            .replace(/{{ip}}/g, ipAddress || "Unknown");
 
           let rawHtmlBody = textBody.replace(/\n/g, '<br />');
           
