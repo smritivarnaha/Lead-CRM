@@ -507,6 +507,11 @@ export async function POST(
 
     console.log(`[WEBHOOK SUCCESS] Lead saved: ${newLead.id} for website: ${websiteId}`);
 
+    const redirectUrl = body._redirect || body.redirect_url;
+    if (redirectUrl) {
+      return NextResponse.redirect(redirectUrl, 302);
+    }
+
     return NextResponse.json(
       {
         success: true,
