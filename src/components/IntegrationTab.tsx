@@ -104,13 +104,7 @@ export default function IntegrationTab({ site, isGlobal = false, activeMethodPro
       icon: <SVGIcons.WordPress className="w-8 h-8 object-contain" />,
       color: "border-[#0073AA]"
     },
-    {
-      id: "sheets",
-      title: "Google Sheets",
-      desc: "Auto-sync rows & forms",
-      icon: <SVGIcons.GoogleSheets className="w-8 h-8 object-contain" />,
-      color: "border-[#0F9D58]"
-    },
+
     {
       id: "html",
       title: "Custom HTML",
@@ -209,295 +203,23 @@ export default function IntegrationTab({ site, isGlobal = false, activeMethodPro
           </div>
         )}
 
-        {activeMethod === "sheets" && (
-          <div className="animate-in fade-in zoom-in-95 duration-200 text-left">
-            <h3 className="text-xl font-bold text-slate-900 flex items-center gap-3 mb-2">
-              <SVGIcons.GoogleSheets className="w-6 h-6 object-contain" /> Google Sheets Sync
-            </h3>
-            <p className="text-slate-600 mb-6">Turn any Google Sheet into a live lead database. Perfect for Google Forms, manual entry, or copy-paste imports.</p>
-            
-            <div className="bg-[#E6F4EA] border border-[#CEEAD6] rounded-xl p-5 mb-6">
-              <ol className="list-decimal ml-4 space-y-3 text-[#0D652D] font-medium text-sm">
-                <li>Open your Google Sheet and click <strong>Extensions ➔ Apps Script</strong>.</li>
-                <li>Paste the code below, replacing everything, and click <strong>Save</strong>.</li>
-                <li>Refresh your Google Sheet (press F5 or reload the page). You will see a custom <strong>LeadFlow CRM</strong> menu at the top.</li>
-                <li>Click <strong>LeadFlow CRM ➔ 🚀 Enable Auto-Sync Triggers (Run Once)</strong>. This will run a quick setup script, prompt you to authorize your Google account once, and automatically configure all background timers and form submission triggers. No manual trigger setup required!</li>
-              </ol>
-            </div>
-
-            {renderWebsiteIdSection({
-              focusRingColorClass: "focus:ring-[#0F9D58]",
-              borderClass: "border-[#0F9D58]",
-              label: "Enter your Website ID to update the code below dynamically:"
-            })}
-            
-            <CopyBox language="Google Apps Script (javascript)" code={`const WEBHOOK_URL = '${origin}/api/webhook/receive/${finalSiteId}';
-
-function onOpen() {
-  var ui = SpreadsheetApp.getUi();
-  ui.createMenu('LeadFlow CRM')
-      .addItem('🚀 Enable Auto-Sync Triggers (Run Once)', 'setupAutoSync')
-      .addSeparator()
-      .addItem('Push Selected Row to CRM', 'sendRowToCRM')
-      .addItem('Sync All Pending Rows Now', 'syncNewRows')
-      .addToUi();
-}
-
-// Automatically configures the triggers for you programmatically so you don't have to do it manually!
-function setupAutoSync() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  
-  // Clean up any existing triggers to avoid duplicates
-  var triggers = ScriptApp.getProjectTriggers();
-  for (var i = 0; i < triggers.length; i++) {
-    ScriptApp.deleteTrigger(triggers[i]);
-  }
-  
-  // 1. Create the Time-driven minute trigger (syncs manual typing / copy-paste rows every minute)
-  ScriptApp.newTrigger('syncNewRows')
-      .timeBased()
-      .everyMinutes(1)
-      .create();
-      
-  // 2. Create the Form submission trigger (syncs new form submissions instantly)
-  ScriptApp.newTrigger('onFormSubmitTrigger')
-      .forSpreadsheet(ss)
-      .onFormSubmit()
-      .create();
-      
-  // 3. Create the Change trigger (syncs instantly when external integrations/HTML forms insert data)
-  ScriptApp.newTrigger('syncNewRows')
-      .forSpreadsheet(ss)
-      .onChange()
-      .create();
-      
-  SpreadsheetApp.getActiveSpreadsheet().toast("🚀 Success! Auto-sync triggers created. New rows added manually, via forms, or by external HTML forms will now automatically push to the CRM instantly!", "LeadFlow CRM", 5);
-}
-
-function sendRowToCRM() {
-  var sheet = SpreadsheetApp.getActiveSheet();
-  var row = sheet.getActiveCell().getRow();
-  if (row === 1) return SpreadsheetApp.getUi().alert("Please select a data row.");
-  
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  var statusColIndex = headers.indexOf("CRM Status") + 1;
-  if (statusColIndex === 0) {
-    statusColIndex = sheet.getLastColumn() + 1;
-    sheet.getRange(1, statusColIndex).setValue("CRM Status");
-  }
-  
-  var success = sendRowByNumber(sheet, row);
-  if (success) {
-    sheet.getRange(row, statusColIndex).setValue("Synced");
-    SpreadsheetApp.getUi().alert("Row successfully sent to CRM!");
-  } else {
-    SpreadsheetApp.getUi().alert("Failed to send row to CRM. Check Apps Script logs.");
-  }
-}
-
-// 1. Google Forms Auto-Sync (Instant)
-function onFormSubmitTrigger(e) {
-  if (e && e.range) {
-    var sheet = e.range.getSheet();
-    var row = e.range.getRow();
-    
-    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-    var statusColIndex = headers.indexOf("CRM Status") + 1;
-    if (statusColIndex === 0) {
-      statusColIndex = sheet.getLastColumn() + 1;
-      sheet.getRange(1, statusColIndex).setValue("CRM Status");
-    }
-    
-    var success = sendRowByNumber(sheet, row);
-    if (success) {
-      sheet.getRange(row, statusColIndex).setValue("Synced");
-    }
-  }
-}
-
-// 2. Manual/Import Auto-Sync (Runs every minute via trigger, scans all sheets)
-function syncNewRows() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheets = ss.getSheets();
-  
-  for (var s = 0; s < sheets.length; s++) {
-    var sheet = sheets[s];
-    var lastRow = sheet.getLastRow();
-    if (lastRow <= 1) continue;
-    
-    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-    
-    // Check if this sheet has contact/lead headers
-    var isLeadSheet = false;
-    for (var j = 0; j < headers.length; j++) {
-      var header = headers[j];
-      if (header) {
-        var hLower = header.toLowerCase();
-        if (
-          hLower.includes("name") || 
-          hLower.includes("email") || 
-          hLower.includes("mail") || 
-          hLower.includes("phone") || 
-          hLower.includes("tel") || 
-          hLower.includes("mobile") || 
-          hLower.includes("contact") || 
-          hLower.includes("whatsapp") || 
-          hLower.includes("number") || 
-          hLower.includes("customer") || 
-          hLower.includes("client")
-        ) {
-          isLeadSheet = true;
-          break;
-        }
-      }
-    }
-    
-    if (!isLeadSheet) continue;
-    
-    var statusColIndex = headers.indexOf("CRM Status") + 1;
-    if (statusColIndex === 0) {
-      statusColIndex = sheet.getLastColumn() + 1;
-      sheet.getRange(1, statusColIndex).setValue("CRM Status");
-      headers.push("CRM Status");
-    }
-    
-    // Re-evaluate last column to include the new CRM Status column
-    var lastCol = sheet.getLastColumn();
-    var dataRange = sheet.getRange(2, 1, lastRow - 1, lastCol);
-    var data = dataRange.getValues();
-    
-    for (var i = data.length - 1; i >= 0; i--) {
-      var rowNum = i + 2;
-      var rowData = data[i];
-      var status = rowData[statusColIndex - 1];
-      
-      if (status === "Synced") {
-        break; // Stop scanning once we hit already synced history
-      }
-      
-      // Check if row has any contact info
-      var hasContactInfo = false;
-      for (var j = 0; j < headers.length; j++) {
-        var header = headers[j];
-        if (header && header !== "CRM Status") {
-          var val = rowData[j];
-          if (val !== "") {
-            var hLower = header.toLowerCase();
-            if (
-              hLower.includes("name") || 
-              hLower.includes("email") || 
-              hLower.includes("mail") || 
-              hLower.includes("phone") || 
-              hLower.includes("tel") || 
-              hLower.includes("mobile") || 
-              hLower.includes("contact") || 
-              hLower.includes("whatsapp") || 
-              hLower.includes("number") || 
-              hLower.includes("customer") || 
-              hLower.includes("client")
-            ) {
-              hasContactInfo = true;
-            }
-          }
-        }
-      }
-      
-      if (!hasContactInfo) continue;
-      
-      var success = sendRowByNumber(sheet, rowNum);
-      if (success) {
-        sheet.getRange(rowNum, statusColIndex).setValue("Synced");
-      }
-    }
-  }
-}
-
-// Core helper function to send data
-function sendRowByNumber(sheet, row) {
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  var values = sheet.getRange(row, 1, 1, sheet.getLastColumn()).getValues()[0];
-  
-  var payload = {};
-  for (var i = 0; i < headers.length; i++) {
-    var header = headers[i];
-    if (header && header !== "CRM Status") {
-      payload[header] = values[i];
-    }
-  }
-  
-  try {
-    var response = UrlFetchApp.fetch(WEBHOOK_URL, {
-      "method": "post",
-      "contentType": "application/json",
-      "payload": JSON.stringify(payload),
-      "muteHttpExceptions": true
-    });
-    var code = response.getResponseCode();
-    var content = response.getContentText();
-    Logger.log("Row " + row + " - Response Code: " + code + ", Response Body: " + content);
-    return code === 200 || code === 201;
-  } catch (err) {
-    Logger.log("Error sending row " + row + ": " + err.toString());
-    return false;
-  }
-}
-
-// Test function you can run inside the Apps Script Editor to authorize the script and verify connection
-function testConnection() {
-  Logger.log("Testing connection to CRM...");
-  Logger.log("Webhook URL: " + WEBHOOK_URL);
-  
-  var testPayload = {
-    "Name": "Sheets Test Ping",
-    "Email": "sheet-ping@rankved.com",
-    "Phone": "+91 99999 99999",
-    "Message": "Testing connection from Apps Script Editor"
-  };
-  
-  try {
-    var response = UrlFetchApp.fetch(WEBHOOK_URL, {
-      "method": "post",
-      "contentType": "application/json",
-      "payload": JSON.stringify(testPayload),
-      "muteHttpExceptions": true
-    });
-    var code = response.getResponseCode();
-    var content = response.getContentText();
-    
-    Logger.log("Response Code: " + code);
-    Logger.log("Response Body: " + content);
-    
-    if (code === 200 || code === 201) {
-      Logger.log("✅ Success! Connection working and test lead sent.");
-    } else {
-      Logger.log("❌ Failed! The CRM returned status code: " + code);
-      Logger.log("Reason: " + content);
-    }
-  } catch (err) {
-    Logger.log("❌ Connection Error: " + err.toString());
-  }
-}`} />
-          </div>
-        )}
-
         {activeMethod === "html" && (
           <div className="animate-in fade-in zoom-in-95 duration-200 text-left">
             <h3 className="text-xl font-bold text-slate-900 flex items-center gap-3 mb-2">
-              <SVGIcons.HTML className="w-6 h-6 object-contain" /> Universal HTML Form Snippet
+              <SVGIcons.HTML className="w-6 h-6 object-contain" /> Pure HTML Form (No JS Required)
             </h3>
-            <p className="text-slate-600 mb-6">Works seamlessly with <strong>any HTML website, Framer, Webflow, or multi-step form</strong>. Just drop this script into the <code>&lt;head&gt;</code> or footer of your site.</p>
+            <p className="text-slate-600 mb-6">A bulletproof native HTML form. Zero Javascript needed, immune to ad-blockers, and handles redirects & honeypot spam protection automatically.</p>
             
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-6 text-sm text-slate-700 shadow-sm">
-              <p className="font-semibold text-slate-900 mb-1">How it works:</p>
-              This intelligent script automatically listens for any form submission on your website. When a user submits a form, it grabs all the inputs and instantly sends them to your CRM behind the scenes.
+              <p className="font-semibold text-slate-900 mb-2">How it works:</p>
+              <ul className="list-disc ml-4 space-y-2 text-slate-600">
+                <li>Copy the HTML structure below and style it however you want using CSS.</li>
+                <li>Add any extra <code>&lt;input&gt;</code> fields you need (city, budget, date)—they will be automatically tracked.</li>
+                <li>The hidden <code>_honeypot</code> field protects you from spam bots.</li>
+              </ul>
             </div>
 
-            {renderWebsiteIdSection({
-              focusRingColorClass: "focus:ring-[#E34F26]",
-              label: "Enter your Website ID to update the snippet:"
-            })}
-
-            <CopyBox language="HTML Snippet (html)" code={"<script>\ndocument.addEventListener('submit', function(e) {\n  const form = e.target.closest('form');\n  if (!form) return;\n  \n  // 1. Automatically grab EVERY field in your HTML form\n  const formData = new FormData(form);\n  const data = Object.fromEntries(formData.entries());\n  data.page_url = window.location.href;\n\n  // 2. Send to CRM silently in the background\n  fetch('" + origin + "/api/webhook/receive/" + finalSiteId + "', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify(data),\n    keepalive: true // Ensures data sends perfectly even if the page redirects\n  }).catch(console.error);\n});\n" + "</sc" + "ript>"} />
+            <CopyBox language="HTML (Form Structure)" code={"<!-- \n  Rankved Lead Automation Form\n  Ensure the action points to the correct webhook.\n-->\n<form action=\"" + origin + "/api/webhook/receive/" + (finalSiteId === 'YOUR_WEBSITE_ID' ? 'auto' : finalSiteId) + "\" method=\"POST\">\n  \n  <!-- OPTIONAL: Where should the user be redirected after submitting? -->\n  <!-- If omitted, the CRM will auto-bounce the user back to the page they came from -->\n  <input type=\"hidden\" name=\"_redirect\" value=\"https://their-website.com/thank-you\" />\n\n  <!-- SPAM PREVENTION: Hide this field from users using CSS -->\n  <div style=\"display:none;\">\n    <label>Leave this empty:</label>\n    <input type=\"text\" name=\"_honeypot\" value=\"\" tabindex=\"-1\" autocomplete=\"off\" />\n  </div>\n\n  <!-- Standard Visible Fields -->\n  <label for=\"name\">Full Name</label>\n  <input type=\"text\" id=\"name\" name=\"name\" required />\n\n  <label for=\"phone\">Phone Number</label>\n  <input type=\"tel\" id=\"phone\" name=\"phone\" required />\n\n  <label for=\"email\">Email Address</label>\n  <input type=\"email\" id=\"email\" name=\"email\" />\n\n  <button type=\"submit\">Submit Lead</button>\n</form>"} />
           </div>
         )}
 
