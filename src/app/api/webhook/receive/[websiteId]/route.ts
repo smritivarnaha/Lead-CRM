@@ -59,6 +59,13 @@ export async function POST(
       }
     }
 
+    // --- Bot Spam Prevention (Honeypot) ---
+    // If a hidden field named '_honeypot' is filled out, it's a bot. Silently drop the lead but return success.
+    if (body._honeypot && body._honeypot.trim() !== "") {
+      console.log(`[WEBHOOK] Bot detected via honeypot for website: ${websiteId}. Dropping lead.`);
+      return NextResponse.json({ success: true, message: "Lead captured successfully" }, { status: 200, headers: corsHeaders });
+    }
+
     // --- Automatic Website Detection by Domain ---
     if (websiteId === "auto") {
       const siteUrlOrDomain = body.site_url || body.site_domain || body.page_url || body.pageUrl || request.headers.get("referer") || request.headers.get("origin");
