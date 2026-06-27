@@ -514,7 +514,18 @@ export async function POST(
 
     console.log(`[WEBHOOK SUCCESS] Lead saved: ${newLead.id} for website: ${websiteId}`);
 
-    const redirectUrl = body._redirect || body.redirect_url;
+    let redirectUrl = body._redirect || body.redirect_url;
+    
+    // If no explicit redirect is set, but it was a native HTML form submission, send them back to the page they came from
+    if (!redirectUrl && (contentType.includes("application/x-www-form-urlencoded") || contentType.includes("multipart/form-data"))) {
+      const referer = request.headers.get("referer");
+      if (referer) {
+        // Append a success parameter so they know it worked
+        const separator = referer.includes("?") ? "&" : "?";
+        redirectUrl = `${referer}${separator}lead_success=true`;
+      }
+    }
+
     if (redirectUrl) {
       return NextResponse.redirect(redirectUrl, 302);
     }
