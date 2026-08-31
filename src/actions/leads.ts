@@ -13,7 +13,7 @@ export async function getLeads() {
     const isClient = role === "CLIENT" && !!user.websiteId;
     
     // Read the active profile cookie set by the frontend dropdown
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const activeWebsiteCookie = cookieStore.get("leadflow_active_website_id")?.value;
     
     // Determine which website to filter by

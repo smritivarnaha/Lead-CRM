@@ -17,7 +17,7 @@ export default async function DashboardPage() {
   const userWebsiteId = user.websiteId;
   const isClient = role === "CLIENT" && !!userWebsiteId;
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const activeWebsiteCookie = cookieStore.get("leadflow_active_website_id")?.value;
 
   if (isClient) {
