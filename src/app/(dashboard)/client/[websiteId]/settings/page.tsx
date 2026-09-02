@@ -272,25 +272,7 @@ export default function ClientSettingsPage() {
                   />
                 </div>
 
-                {/* Support Phone Number for Direct Call Button */}
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                    <PhoneCall className="w-3.5 h-3.5 text-emerald-600" /> Direct Contact / Emergency Call Button Number
-                  </label>
-                  <input 
-                    type="text"
-                    value={site.customerSupportPhone || site.adminPhone || ""}
-                    onChange={(e) => setSite({ ...site, customerSupportPhone: e.target.value })}
-                    onBlur={(e) => handleSave("customerSupportPhone", e.target.value)}
-                    placeholder="e.g. +91 98765 43210"
-                    className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500"
-                  />
-                  <p className="text-[11px] text-slate-400">
-                    This phone number creates the prominent green <strong>"📞 Call Us Directly"</strong> button in the visitor's email.
-                  </p>
-                </div>
-
-                {/* Working Hours */}
+                {/* Working Hours / Response Window */}
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-indigo-500" /> Working Hours / Response Window
@@ -303,6 +285,9 @@ export default function ClientSettingsPage() {
                     placeholder="e.g. Mon - Sat: 9:00 AM - 7:00 PM"
                     className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500"
                   />
+                  <p className="text-[11px] text-slate-400">
+                    Informs visitors of your operating hours during which your team will contact them.
+                  </p>
                 </div>
 
                 <div className="pt-2">
@@ -312,7 +297,6 @@ export default function ClientSettingsPage() {
                     onClick={() => {
                       handleSave("customerEmailSubject", site.customerEmailSubject);
                       handleSave("customerEmailMessage", site.customerEmailMessage);
-                      handleSave("customerSupportPhone", site.customerSupportPhone);
                       handleSave("customerWorkingHours", site.customerWorkingHours);
                     }}
                   >
@@ -334,7 +318,7 @@ export default function ClientSettingsPage() {
                   {/* Email Header Banner */}
                   <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-5 text-center text-white">
                     <h3 className="text-lg font-bold tracking-tight">{site.name || "Our Team"}</h3>
-                    <p className="text-xs text-indigo-100 mt-0.5">Enquiry Confirmation & Details Received</p>
+                    <p className="text-xs text-indigo-100 mt-0.5">Details Received · We Will Contact You Soon</p>
                   </div>
 
                   {/* Email Body */}
@@ -345,19 +329,6 @@ export default function ClientSettingsPage() {
                         .replace(/{{company}}/g, site.name || "Our Team")}
                     </div>
 
-                    {/* Prominent Direct Call Button */}
-                    <div className="my-5 text-center">
-                      <a 
-                        href={`tel:${(site.customerSupportPhone || site.adminPhone || "9876543210").replace(/\s+/g, '')}`}
-                        className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-5 py-2.5 rounded-lg font-bold text-xs shadow-md transition-all"
-                      >
-                        <PhoneCall className="w-3.5 h-3.5" /> Call Us Directly: {site.customerSupportPhone || site.adminPhone || "+91 98765 43210"}
-                      </a>
-                      <div className="mt-2 text-[11px] text-slate-500 flex items-center justify-center gap-1">
-                        <Clock className="w-3 h-3 text-slate-400" /> Working Hours: <strong className="text-slate-700">{site.customerWorkingHours || "Mon - Sat: 9:00 AM - 7:00 PM"}</strong>
-                      </div>
-                    </div>
-
                     {/* Submission Summary Box */}
                     <div className="bg-slate-50 border border-slate-100 rounded-lg p-3.5 space-y-1.5 text-[11px]">
                       <p className="font-bold uppercase text-slate-500 text-[10px] tracking-wider">Summary of Your Submission:</p>
@@ -365,12 +336,19 @@ export default function ClientSettingsPage() {
                         <div>• <strong>Name:</strong> John Doe</div>
                         <div>• <strong>Phone:</strong> +91 98765 43210</div>
                         <div>• <strong>Location:</strong> Mohali, Punjab</div>
-                        <div>• <strong>Status:</strong> Received & Under Review</div>
+                        <div>• <strong>Status:</strong> <span className="text-emerald-600 font-semibold">Received & In Queue</span></div>
+                        <div>• <strong>Date Received:</strong> {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
                       </div>
                     </div>
 
+                    {/* Response Window Badge */}
+                    <div className="p-3 bg-emerald-50/80 border border-emerald-200/70 rounded-lg text-emerald-800 text-[11px] flex items-center gap-2">
+                      <Clock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span><strong>Response Window:</strong> Our team will contact you during working hours ({site.customerWorkingHours || "Mon - Sat: 9:00 AM - 7:00 PM"}).</span>
+                    </div>
+
                     <div className="text-center pt-2 border-t border-slate-100 text-[10px] text-slate-400">
-                      Automated confirmation sent by {site.name}.
+                      Automated confirmation sent by {site.name}. You do not need to reply to this email.
                     </div>
                   </div>
                 </div>

@@ -561,23 +561,7 @@ export async function POST(
             .replace(/{{company}}/g, siteName)
             .replace(/\n/g, '<br />');
 
-          const supportPhone = existingSite.customerSupportPhone || existingSite.adminPhone;
           const workingHours = existingSite.customerWorkingHours || "Mon - Sat: 9:00 AM - 7:00 PM";
-
-          const callButtonHtml = supportPhone ? `
-            <div style="margin: 28px 0 16px; text-align: center;">
-              <a href="tel:${supportPhone.replace(/\s+/g, '')}" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 700; font-size: 15px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);">
-                📞 Call Us Directly: ${supportPhone}
-              </a>
-              <div style="margin-top: 10px; font-size: 12px; color: #6b7280;">
-                🕒 Working Hours: <strong>${workingHours}</strong>
-              </div>
-            </div>
-          ` : `
-            <div style="margin: 20px 0; padding: 12px; background: #f9fafb; border-radius: 6px; text-align: center; font-size: 12px; color: #6b7280;">
-              🕒 Working Hours: <strong>${workingHours}</strong>
-            </div>
-          `;
 
           const customerEmailHtml = `
             <!DOCTYPE html>
@@ -587,25 +571,28 @@ export async function POST(
                 <div style="max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e5e7eb; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.04);">
                   <div style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); padding: 28px 24px; text-align: center;">
                     <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.5px;">${siteName}</h1>
-                    <p style="color: #e9d5ff; margin: 6px 0 0; font-size: 13px;">Enquiry Confirmation & Details Received</p>
+                    <p style="color: #e9d5ff; margin: 6px 0 0; font-size: 13px;">Details Received · We Will Contact You Soon</p>
                   </div>
                   <div style="padding: 32px 24px; color: #374151; font-size: 15px; line-height: 1.6;">
                     <div style="margin-bottom: 24px;">${messageHtml}</div>
-                    
-                    ${callButtonHtml}
 
-                    <div style="margin-top: 28px; padding: 18px; background: #f9fafb; border-radius: 8px; border: 1px solid #f3f4f6;">
+                    <div style="margin: 24px 0; padding: 18px; background: #f9fafb; border-radius: 8px; border: 1px solid #f3f4f6;">
                       <h4 style="margin: 0 0 10px; font-size: 12px; text-transform: uppercase; color: #6b7280; font-weight: 700; letter-spacing: 0.05em;">Summary of Your Submission:</h4>
-                      <div style="font-size: 13.5px; color: #4b5563; line-height: 1.5;">
+                      <div style="font-size: 13.5px; color: #4b5563; line-height: 1.6;">
                         <div>• <strong>Name:</strong> ${fullName}</div>
                         ${phone ? `<div>• <strong>Phone:</strong> ${phone}</div>` : ''}
                         ${city ? `<div>• <strong>Location:</strong> ${city}</div>` : ''}
+                        <div>• <strong>Status:</strong> <span style="color: #10b981; font-weight: 600;">Received & In Queue</span></div>
                         <div>• <strong>Date Received:</strong> ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
                       </div>
                     </div>
+
+                    <div style="padding: 12px 16px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; font-size: 12.5px; color: #166534; display: flex; align-items: center; justify-content: space-between;">
+                      <span>🕒 <strong>Response Window:</strong> Our team will get back to you during working hours (${workingHours}).</span>
+                    </div>
                   </div>
                   <div style="background: #fdfdfd; padding: 16px 24px; border-top: 1px solid #f3f4f6; text-align: center; font-size: 12px; color: #9ca3af;">
-                    This is an automated confirmation sent by ${siteName}. For any urgent assistance, please use the direct call button above.
+                    This is an automated confirmation sent by ${siteName}. You do not need to reply to this email.
                   </div>
                 </div>
               </body>
