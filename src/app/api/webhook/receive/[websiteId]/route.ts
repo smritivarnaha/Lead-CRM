@@ -268,6 +268,7 @@ export async function POST(
     });
 
     const leadPayload = JSON.parse(JSON.stringify(newLead));
+    leadPayload.websiteName = existingSite.name;
 
     let smsSent = false;
     let pushSent = false;

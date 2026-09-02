@@ -32,7 +32,7 @@ export default function RootLayout({
         </head>
         <body className="min-h-full flex flex-col bg-background text-foreground">
           <TooltipProvider>{children}</TooltipProvider>
-          <Toaster richColors position="top-right" />
+          <Toaster />
           <script
             dangerouslySetInnerHTML={{
               __html: `

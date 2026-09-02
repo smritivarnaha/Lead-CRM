@@ -9,6 +9,7 @@ import { useUser } from "@clerk/nextjs";
 
 import { MobileNav } from "./MobileNav";
 import { ActiveProfileProvider } from "@/components/providers/ActiveProfileProvider";
+import { showLeadToast } from "@/components/leads/LeadAlertToast";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user } = useUser();
@@ -26,17 +27,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       .on('broadcast', { event: 'new-lead' }, (payload) => {
         console.log(`Realtime Lead Received on ${targetChannel}:`, payload);
         const lead = payload.payload;
-        toast.success(`New Lead Captured!`, {
-          description: `${lead.fullName} from ${lead.source}`,
-          duration: 10000,
-        });
+        if (lead) {
+          showLeadToast(lead);
+        }
       })
       .on('broadcast', { event: 'lead-escalated' }, (payload) => {
         console.log(`Lead Escalated on ${targetChannel}:`, payload);
         const lead = payload.payload;
-        toast.error(`ESCALATION ALERT!`, {
-          description: `Lead ${lead.fullName} has been waiting too long!`,
-          duration: Infinity, // Forces manager to manually dismiss it
+        toast.error(`⚠️ Escalation Notice`, {
+          description: `Lead ${lead?.fullName || 'Customer'} is awaiting immediate response!`,
+          duration: 10000,
         });
       })
       .subscribe();
