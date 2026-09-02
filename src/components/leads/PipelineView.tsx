@@ -36,6 +36,7 @@ type Lead = {
   phone: string | null;
   email: string | null;
   website?: { name: string };
+  emailSent?: boolean;
   smsSent?: boolean;
   pushSent?: boolean;
   followUpAt?: string | null;
@@ -688,10 +689,11 @@ export function PipelineView({ websiteId, initialLeads }: { websiteId?: string; 
                                 </div>
                                 <div className="text-[11px] text-[#6B7280] truncate leading-tight mt-0.5 flex items-center gap-1">
                                   <span>{lead.source || "Website Form"}</span>
-                                  {(lead.smsSent || lead.pushSent) && (
+                                  {(lead.emailSent || lead.smsSent || lead.pushSent) && (
                                     <>
                                       <span className="text-gray-300">•</span>
-                                      <div className="flex items-center gap-0.5 bg-[#F7F5FF] px-1 py-0.2 rounded border border-[#E8E4F3]" title="Alerts Sent">
+                                      <div className="flex items-center gap-1 bg-[#F7F5FF] px-1.5 py-0.5 rounded border border-[#E8E4F3]" title={`Alerts: ${[lead.emailSent ? 'Email Sent' : null, lead.smsSent ? 'SMS Sent' : null, lead.pushSent ? 'Push Sent' : null].filter(Boolean).join(', ')}`}>
+                                        {lead.emailSent && <Mail className="h-2.5 w-2.5 text-emerald-600" />}
                                         {lead.smsSent && <Phone className="h-2.5 w-2.5 text-indigo-500" />}
                                         {lead.pushSent && <BellRing className="h-2.5 w-2.5 text-indigo-500" />}
                                       </div>

@@ -140,8 +140,9 @@ model Lead {
   followUpAt   DateTime?
 
   // Notification Status Tracking
-  smsSent  Boolean @default(false)
-  pushSent Boolean @default(false)
+  emailSent Boolean @default(false)
+  smsSent   Boolean @default(false)
+  pushSent  Boolean @default(false)
 
   assignedTo User? @relation("AssignedTo", fields: [assignedToId], references: [id])
 

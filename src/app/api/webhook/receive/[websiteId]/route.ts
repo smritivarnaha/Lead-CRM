@@ -513,15 +513,17 @@ export async function POST(
     await Promise.allSettled([smsPromise, emailPromise, realtimePromise, pushPromise, autoResponderPromise]);
 
     // Update the Lead in the database with the notification statuses
-    if (smsSent || pushSent) {
+    if (smsSent || pushSent || emailAlertSent) {
       await prisma.lead.update({
         where: { id: newLead.id },
         data: {
+          emailSent: emailAlertSent,
           smsSent,
           pushSent,
         },
       });
       // Update payload for the UI broadcast
+      leadPayload.emailSent = emailAlertSent;
       leadPayload.smsSent = smsSent;
       leadPayload.pushSent = pushSent;
     }

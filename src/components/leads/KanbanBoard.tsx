@@ -14,6 +14,7 @@ type Lead = {
   temperature: string;
   phone: string | null;
   email: string | null;
+  emailSent?: boolean;
   smsSent?: boolean;
   pushSent?: boolean;
   followUpAt?: string | null;

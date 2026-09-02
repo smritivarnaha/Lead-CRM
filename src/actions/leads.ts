@@ -49,6 +49,7 @@ export async function getLeads() {
         createdAt: true,
         followUpAt: true,
         rawFields: true,
+        emailSent: true,
         smsSent: true,
         pushSent: true,
         callNotes: true,
