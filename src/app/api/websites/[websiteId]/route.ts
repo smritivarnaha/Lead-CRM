@@ -28,6 +28,11 @@ export async function PATCH(
     if (body.adminEmail !== undefined) data.adminEmail = body.adminEmail;
     if (body.smsAlertsEnabled !== undefined) data.smsAlertsEnabled = body.smsAlertsEnabled;
     if (body.emailAlertsEnabled !== undefined) data.emailAlertsEnabled = body.emailAlertsEnabled;
+    if (body.customerAutoReplyEnabled !== undefined) data.customerAutoReplyEnabled = body.customerAutoReplyEnabled;
+    if (body.customerEmailSubject !== undefined) data.customerEmailSubject = body.customerEmailSubject;
+    if (body.customerEmailMessage !== undefined) data.customerEmailMessage = body.customerEmailMessage;
+    if (body.customerSupportPhone !== undefined) data.customerSupportPhone = body.customerSupportPhone;
+    if (body.customerWorkingHours !== undefined) data.customerWorkingHours = body.customerWorkingHours;
 
     const updatedWebsite = await prisma.website.update({
       where: { id: websiteId },

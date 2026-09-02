@@ -541,8 +541,98 @@ export async function POST(
     // Fire auto-responders based on global rules
     const autoResponderPromise = processEmailAutomations(newLead, "NEW_LEAD");
 
+    // Handle Customer / Patient Confirmation Email (Auto-Responder)
+    const customerAutoReplyPromise = (async () => {
+      if (email && existingSite.customerAutoReplyEnabled && workspace?.emailApiKey) {
+        try {
+          const siteName = existingSite.name || "Our Team";
+          const fromStr = `${siteName} <${workspace.fromEmailAddress || "alerts@rankved.com"}>`;
+          
+          const rawSubject = existingSite.customerEmailSubject || `Thank you for contacting ${siteName} — We received your details!`;
+          const subject = rawSubject
+            .replace(/{{name}}/g, fullName !== "Unknown" ? fullName : "there")
+            .replace(/{{company}}/g, siteName);
+
+          const rawMessage = existingSite.customerEmailMessage || 
+            `Dear ${fullName !== "Unknown" ? fullName : "Valued Customer"},\n\nThank you for reaching out to ${siteName}. We have successfully received your enquiry.\n\nOur specialized team is reviewing your information and will contact you shortly.`;
+          
+          const messageHtml = rawMessage
+            .replace(/{{name}}/g, fullName !== "Unknown" ? fullName : "Valued Customer")
+            .replace(/{{company}}/g, siteName)
+            .replace(/\n/g, '<br />');
+
+          const supportPhone = existingSite.customerSupportPhone || existingSite.adminPhone;
+          const workingHours = existingSite.customerWorkingHours || "Mon - Sat: 9:00 AM - 7:00 PM";
+
+          const callButtonHtml = supportPhone ? `
+            <div style="margin: 28px 0 16px; text-align: center;">
+              <a href="tel:${supportPhone.replace(/\s+/g, '')}" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 700; font-size: 15px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);">
+                📞 Call Us Directly: ${supportPhone}
+              </a>
+              <div style="margin-top: 10px; font-size: 12px; color: #6b7280;">
+                🕒 Working Hours: <strong>${workingHours}</strong>
+              </div>
+            </div>
+          ` : `
+            <div style="margin: 20px 0; padding: 12px; background: #f9fafb; border-radius: 6px; text-align: center; font-size: 12px; color: #6b7280;">
+              🕒 Working Hours: <strong>${workingHours}</strong>
+            </div>
+          `;
+
+          const customerEmailHtml = `
+            <!DOCTYPE html>
+            <html>
+              <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+              <body style="margin: 0; padding: 20px; background-color: #f9fafb; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                <div style="max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e5e7eb; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.04);">
+                  <div style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); padding: 28px 24px; text-align: center;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.5px;">${siteName}</h1>
+                    <p style="color: #e9d5ff; margin: 6px 0 0; font-size: 13px;">Enquiry Confirmation & Details Received</p>
+                  </div>
+                  <div style="padding: 32px 24px; color: #374151; font-size: 15px; line-height: 1.6;">
+                    <div style="margin-bottom: 24px;">${messageHtml}</div>
+                    
+                    ${callButtonHtml}
+
+                    <div style="margin-top: 28px; padding: 18px; background: #f9fafb; border-radius: 8px; border: 1px solid #f3f4f6;">
+                      <h4 style="margin: 0 0 10px; font-size: 12px; text-transform: uppercase; color: #6b7280; font-weight: 700; letter-spacing: 0.05em;">Summary of Your Submission:</h4>
+                      <div style="font-size: 13.5px; color: #4b5563; line-height: 1.5;">
+                        <div>• <strong>Name:</strong> ${fullName}</div>
+                        ${phone ? `<div>• <strong>Phone:</strong> ${phone}</div>` : ''}
+                        ${city ? `<div>• <strong>Location:</strong> ${city}</div>` : ''}
+                        <div>• <strong>Date Received:</strong> ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="background: #fdfdfd; padding: 16px 24px; border-top: 1px solid #f3f4f6; text-align: center; font-size: 12px; color: #9ca3af;">
+                    This is an automated confirmation sent by ${siteName}. For any urgent assistance, please use the direct call button above.
+                  </div>
+                </div>
+              </body>
+            </html>
+          `;
+
+          await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${workspace.emailApiKey.trim()}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              from: fromStr,
+              to: [email],
+              subject: subject,
+              html: customerEmailHtml
+            })
+          });
+        } catch (autoErr) {
+          console.warn("[CUSTOMER AUTO-REPLY ERROR]", autoErr);
+        }
+      }
+    })();
+
     // Run all external notifications concurrently to drastically reduce webhook response latency (from ~20s down to ~2s)
-    await Promise.allSettled([smsPromise, emailPromise, realtimePromise, pushPromise, autoResponderPromise]);
+    await Promise.allSettled([smsPromise, emailPromise, realtimePromise, pushPromise, customerAutoReplyPromise, autoResponderPromise]);
 
     // Update the Lead in the database with the notification statuses
     if (smsSent || pushSent || emailAlertSent) {

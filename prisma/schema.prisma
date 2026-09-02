@@ -83,6 +83,13 @@ model Website {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
+  // Customer Auto-Reply / Confirmation Email Settings
+  customerAutoReplyEnabled Boolean @default(false)
+  customerEmailSubject     String? @default("Thank you for contacting {{company}} — We received your details!")
+  customerEmailMessage     String? @default("Dear {{name}},\n\nThank you for reaching out to {{company}}. We have successfully received your enquiry.\n\nOur specialized team is reviewing your information and will contact you shortly.")
+  customerSupportPhone     String?
+  customerWorkingHours     String? @default("Mon - Sat: 9:00 AM - 7:00 PM")
+
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
