@@ -152,6 +152,13 @@ export async function POST(
 
     const cleanStr = (val: any): string | null => {
       if (val === undefined || val === null || val === "") return null;
+      if (typeof val === "object") {
+        try {
+          return Array.isArray(val) ? val.join(", ") : JSON.stringify(val);
+        } catch {
+          return String(val);
+        }
+      }
       return String(val).trim();
     };
 
@@ -168,19 +175,23 @@ export async function POST(
     }) as string | undefined;
 
     const email   = cleanStr(find(["email", "your-email", "email_address", "e-mail", "mail"]) || emailByValue);
-    const phone   = cleanStr(find(["phone", "tel", "mobile", "phone_number", "your-phone", "contact", "whatsapp", "number"]) || phoneByValue);
-    const message = cleanStr(find(["message", "your-message", "comments", "query", "description", "msg", "text", "details"]));
+    const phone   = cleanStr(find(["phone", "tel", "mobile", "phone_number", "your-phone", "contact", "whatsapp", "number", "my_phone_field"]) || phoneByValue);
+    const message = cleanStr(find(["message", "your-message", "comments", "query", "description", "msg", "text", "details", "medical_concern", "medical_symptoms"]));
+    const city    = cleanStr(find(["city", "patient_city", "location", "town", "district"]));
+    const state   = cleanStr(find(["state", "province", "region", "country"]));
 
     // Name: try known keys first, then check for a value that looks like a name
-    // (2-50 chars, no @ sign, not a phone number, not an IP address)
-    const nameByKey = find(["name", "fullName", "full_name", "first_name", "your-name", "contact_name", "naam"], ["form", "page", "site", "file", "utm"]);
+    const nameByKey = find(["name", "fullName", "full_name", "first_name", "your-name", "contact_name", "patient_name", "patient", "patientname", "naam", "client_name"], ["form", "page", "site", "file", "utm"]);
     const firstLast = [find(["first_name", "firstname"]) || "", find(["last_name", "lastname"]) || ""].join(" ").trim();
     const nameByValue = !nameByKey && !firstLast
       ? Object.entries(body).find(([k, v]) => {
           const s = cleanStr(v);
+          const lowerK = k.toLowerCase();
+          if (lowerK.startsWith("_") || ["email", "phone", "mobile", "tel", "message", "source", "utm", "form_name", "form_id", "site_url", "site_domain", "page_url", "pageurl", "redirect_url"].some(p => lowerK.includes(p))) {
+            return false;
+          }
           return s
-            ? !["email", "phone", "message", "source", "utm", "form", "_", "ip", "address"].some(p => k.toLowerCase().includes(p)) &&
-              s.length >= 2 && s.length <= 60 &&
+            ? s.length >= 2 && s.length <= 60 &&
               !s.includes("@") &&
               !/^\+?[\d\s\-]{7,}$/.test(s) &&
               !/^[\d\.\:]+$/.test(s) // exclude IP addresses or numeric-only strings
@@ -249,6 +260,8 @@ export async function POST(
         fullName,
         email,
         phone,
+        city,
+        state,
         message,
         source,
         utmSource,
@@ -355,14 +368,32 @@ export async function POST(
     </div>
   </div>`;
 
+          const formatFieldLabel = (k: string) => {
+            return k
+              .replace(/^[_\-]+/, "")
+              .replace(/[_\-]+/g, " ")
+              .replace(/([a-z])([A-Z])/g, "$1 $2")
+              .replace(/\b\w/g, (c) => c.toUpperCase())
+              .trim();
+          };
+
+          const formatVal = (v: any) => {
+            if (v === undefined || v === null || v === "") return "—";
+            if (Array.isArray(v)) return v.join(", ");
+            if (typeof v === "object") {
+              try { return JSON.stringify(v); } catch { return String(v); }
+            }
+            return String(v);
+          };
+
           const allFieldsHtml = `
 <div style="background: rgba(243, 244, 246, 0.7); border: 1px solid rgba(229, 231, 235, 1); border-radius: 8px; padding: 16px; margin-top: 20px;">
   ${Object.entries(body)
-    .filter(([k]) => !['site_url', 'site_domain', 'pageUrl', 'pageTitle'].includes(k))
+    .filter(([k]) => !['site_url', 'site_domain', 'pageUrl', 'pageTitle', '_redirect', '_honeypot', 'redirect_url'].includes(k))
     .map(([k, v]) => `
     <div style="margin-bottom: 14px; border-bottom: 1px solid rgba(229, 231, 235, 0.5); padding-bottom: 8px;">
-      <div style="font-size: 12px; text-transform: uppercase; color: #6366f1; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 4px;">${k}</div>
-      <div style="font-size: 16px; font-weight: 500; margin: 0; word-break: break-word; color: #1f2937;">${v}</div>
+      <div style="font-size: 11.5px; text-transform: uppercase; color: #6366f1; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 4px;">${formatFieldLabel(k)}</div>
+      <div style="font-size: 15px; font-weight: 500; margin: 0; word-break: break-word; color: #1f2937;">${formatVal(v)}</div>
     </div>
   `).join('')}
   ${systemFieldsHtml}

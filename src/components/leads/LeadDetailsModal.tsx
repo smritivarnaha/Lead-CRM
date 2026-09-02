@@ -46,6 +46,24 @@ export function LeadDetailsModal({ lead, onClose }: { lead: any; onClose: () => 
   const customFields: { label: string; value: string }[] = [];
   const technicalFields: { label: string; value: string }[] = [];
 
+  const formatFieldTitle = (k: string) => {
+    return k
+      .replace(/^[_\-]+/, "")
+      .replace(/[_\-]+/g, " ")
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+      .trim();
+  };
+
+  const formatFieldValue = (v: any): string => {
+    if (v === undefined || v === null || v === "") return "—";
+    if (Array.isArray(v)) return v.join(", ");
+    if (typeof v === "object") {
+      try { return JSON.stringify(v); } catch { return String(v); }
+    }
+    return String(v);
+  };
+
   if (lead.rawFields) {
     try {
       const parsed = JSON.parse(lead.rawFields);
@@ -56,16 +74,16 @@ export function LeadDetailsModal({ lead, onClose }: { lead: any; onClose: () => 
           
           if (lowerK.includes("recaptcha") || lowerK.startsWith("_") || ["submit", "action", "status", "priority", "temperature", "score", "createdat", "updatedat", "websiteid", "workspaceid", "assignedtoid", "followupat", "callnotes"].includes(lowerK)) return;
 
-          const isStandardContact = ["id", "name", "fullname", "first_name", "last_name", "firstname", "lastname", "naam", "email", "your-email", "email_address", "e-mail", "mail", "phone", "tel", "mobile", "phone_number", "your-phone", "contact", "whatsapp", "number", "message", "your-message", "comments", "query", "description", "msg", "text", "details"].includes(lowerK);
+          const isStandardContact = ["id", "name", "fullname", "first_name", "last_name", "firstname", "lastname", "naam", "email", "your-email", "email_address", "e-mail", "mail", "phone", "tel", "mobile", "phone_number", "your-phone", "contact", "whatsapp", "number", "my_phone_field", "message", "your-message", "comments", "query", "description", "msg", "text", "details"].includes(lowerK);
 
-          const isTechnical = ["source", "form_name", "form_id", "ipaddress", "ip_address", "pageurl", "page_url", "pagetitle", "page_title"].includes(lowerK) || lowerK.startsWith("utm_");
+          const isTechnical = ["source", "form_name", "form_id", "ipaddress", "ip_address", "pageurl", "page_url", "pagetitle", "page_title", "site_url", "site_domain"].includes(lowerK) || lowerK.startsWith("utm_");
 
           if (isStandardContact) {
             // skip, already in Details or Header
           } else if (isTechnical) {
-            technicalFields.push({ label: k, value: String(v) });
+            technicalFields.push({ label: formatFieldTitle(k), value: formatFieldValue(v) });
           } else {
-            customFields.push({ label: k, value: String(v) });
+            customFields.push({ label: formatFieldTitle(k), value: formatFieldValue(v) });
           }
         });
       }
@@ -123,6 +141,9 @@ export function LeadDetailsModal({ lead, onClose }: { lead: any; onClose: () => 
             <div className="border border-[#E8E4F3] rounded-xl overflow-hidden shadow-sm">
               <InfoRow icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={lead.email || "—"} />
               <InfoRow icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={lead.phone || "—"} />
+              {(lead.city || lead.state) && (
+                <InfoRow icon={<MapPin className="h-3.5 w-3.5" />} label="Location" value={[lead.city, lead.state].filter(Boolean).join(", ")} />
+              )}
               <InfoRow icon={<Globe className="h-3.5 w-3.5" />} label="Website" value={lead.website?.name || "—"} />
               <InfoRow icon={<Globe className="h-3.5 w-3.5" />} label="Page URL" value={lead.pageUrl || "—"} />
               <InfoRow icon={<Tag className="h-3.5 w-3.5" />} label="Source" value={lead.source || "—"} />
