@@ -4,8 +4,9 @@ import prisma from "@/lib/prisma";
 import { clerkClient } from "@clerk/nextjs/server";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { cache } from "react";
 
-export async function getWebsites() {
+export const getWebsites = cache(async () => {
   try {
     const user = await getAuthenticatedUser();
     
@@ -81,7 +82,38 @@ export async function getWebsites() {
     console.error("Error fetching websites:", error);
     return { success: false, error: "Failed to fetch websites" };
   }
-}
+});
+
+/**
+ * Ultra-fast, lightweight website list for project tabs and dropdowns.
+ * Only selects id, name, domain, and logoUrl without heavy lead grouping/counting queries.
+ */
+export const getWebsitesList = cache(async () => {
+  try {
+    const user = await getAuthenticatedUser();
+    if (!user) return { success: false, error: "Unauthorized" };
+
+    const isClient = user.role === "CLIENT" && !!user.websiteId;
+
+    const websites = await prisma.website.findMany({
+      where: isClient ? { id: user.websiteId as string } : undefined,
+      select: {
+        id: true,
+        name: true,
+        domain: true,
+        logoUrl: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return { success: true, websites: JSON.parse(JSON.stringify(websites)) };
+  } catch (error) {
+    console.error("Error in getWebsitesList:", error);
+    return { success: false, error: "Failed to fetch websites list" };
+  }
+});
 
 export async function createWebsite(data: { name: string; domain: string }) {
   try {

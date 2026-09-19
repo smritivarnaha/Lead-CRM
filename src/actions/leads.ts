@@ -3,8 +3,9 @@
 import prisma from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { cookies } from "next/headers";
+import { cache } from "react";
 
-export async function getLeads() {
+export const getLeads = cache(async () => {
   try {
     const user = await getAuthenticatedUser();
     if (!user) return { success: false, error: "Unauthorized" };
@@ -62,9 +63,9 @@ export async function getLeads() {
     console.error("Error fetching leads:", error);
     return { success: false, error: "Failed to fetch leads" };
   }
-}
+});
 
-export async function getLeadsByWebsite(websiteId: string) {
+export const getLeadsByWebsite = cache(async (websiteId: string) => {
   try {
     const user = await getAuthenticatedUser();
     if (!user) return { success: false, error: "Unauthorized" };
@@ -106,7 +107,7 @@ export async function getLeadsByWebsite(websiteId: string) {
     console.error("Error fetching leads by website:", error);
     return { success: false, error: "Failed to fetch leads" };
   }
-}
+});
 
 export async function updateLeadStatus(leadId: string, status: string) {
   try {

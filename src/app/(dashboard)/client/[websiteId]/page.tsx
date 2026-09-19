@@ -1,6 +1,6 @@
 import { PipelineView } from "@/components/leads/PipelineView";
 import { getLeadsByWebsite } from "@/actions/leads";
-import { getWebsites } from "@/actions/websites";
+import { getWebsitesList } from "@/actions/websites";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
@@ -17,10 +17,10 @@ export default async function ClientPipelinePage({ params }: PageProps) {
     redirect("/sign-in");
   }
 
-  // Fetch the leads for this website and all websites for tabs
+  // Fetch the leads for this website and lightweight websites list in parallel
   const [leadsRes, websitesRes] = await Promise.all([
     getLeadsByWebsite(websiteId),
-    getWebsites()
+    getWebsitesList()
   ]);
 
   const leads = leadsRes.success && leadsRes.leads ? leadsRes.leads : [];

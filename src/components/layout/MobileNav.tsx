@@ -24,6 +24,7 @@ export function MobileNav() {
             <Link
               key={item.name}
               href={item.href}
+              prefetch={true}
               className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors ${
                 isActive ? "text-indigo-600" : "text-slate-500 hover:text-slate-900"
               }`}

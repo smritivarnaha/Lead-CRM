@@ -1,5 +1,6 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
+import { cache } from "react";
 
 export interface AuthenticatedUser {
   id: string;
@@ -11,12 +12,12 @@ export interface AuthenticatedUser {
   workspaceId: string | null;
 }
 
-export async function getAuthenticatedUser(): Promise<AuthenticatedUser | null> {
+export const getAuthenticatedUser = cache(async (): Promise<AuthenticatedUser | null> => {
   const { userId } = await auth();
   if (!userId) return null;
 
   try {
-    // 1. Query the local database for the user (extremely fast, ~2-5ms)
+    // 1. Query the local database for the user by primary key (instant, ~2ms)
     const dbUser = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -34,12 +35,43 @@ export async function getAuthenticatedUser(): Promise<AuthenticatedUser | null> 
       return dbUser;
     }
 
-    // 2. Fallback: User not found locally (e.g. first login). Fetch from Clerk API and upsert.
+    // 2. Fallback: User not found by id. Fetch from Clerk API and upsert.
     const clerkUser = await currentUser();
     if (!clerkUser) return null;
 
     const email = clerkUser.emailAddresses[0]?.emailAddress;
     if (!email) return null;
+
+    // Check if user already exists by email
+    const existingByEmail = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        websiteId: true,
+        workspaceId: true,
+      },
+    });
+
+    if (existingByEmail) {
+      // If user exists with different ID, update ID to match Clerk userId
+      if (existingByEmail.id !== userId) {
+        try {
+          await prisma.$executeRawUnsafe(
+            'UPDATE "User" SET "id" = $1 WHERE "email" = $2',
+            userId,
+            email
+          );
+          existingByEmail.id = userId;
+        } catch (e) {
+          // If update fails due to FK, continue with existing user record
+        }
+      }
+      return existingByEmail;
+    }
 
     const adminEmails = ["rankved.business@gmail.com", "sarthakj9u@gmail.com"];
     let role = clerkUser.publicMetadata?.role as string;
@@ -67,9 +99,8 @@ export async function getAuthenticatedUser(): Promise<AuthenticatedUser | null> 
       });
     }
 
-    const newUser = await prisma.user.upsert({
-      where: { email },
-      create: {
+    const newUser = await prisma.user.create({
+      data: {
         id: userId,
         email,
         firstName: clerkUser.firstName,
@@ -77,13 +108,6 @@ export async function getAuthenticatedUser(): Promise<AuthenticatedUser | null> 
         role,
         websiteId,
         workspaceId: workspace.id,
-      },
-      update: {
-        id: userId,
-        firstName: clerkUser.firstName,
-        lastName: clerkUser.lastName,
-        role,
-        websiteId,
       },
     });
 
@@ -100,4 +124,4 @@ export async function getAuthenticatedUser(): Promise<AuthenticatedUser | null> 
     console.error("Error in getAuthenticatedUser:", error);
     return null;
   }
-}
+});
