@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 import { useActiveProfile } from "@/components/providers/ActiveProfileProvider";
+import { WebsiteSettingsModal } from "./WebsiteSettingsModal";
 
 interface DashboardClientProps {
   initialWebsites: any[];
@@ -19,6 +20,7 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
   // Filter websites if an active profile is selected, otherwise show all
   const displayWebsites = websites.length > 0 ? (activeWebsiteId ? websites.filter(w => w.id === activeWebsiteId) : websites) : initialWebsites;
   
+  const [configuringSite, setConfiguringSite] = useState<any | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [pushStatus, setPushStatus] = useState<"loading" | "subscribed" | "unsubscribed" | "unsupported">("loading");
   const [isProcessingPush, setIsProcessingPush] = useState(false);
@@ -238,14 +240,15 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
                     </div>
                   </div>
 
-                  {/* Settings Link */}
-                  <Link 
-                    href={`/client/${site.id}/settings`}
-                    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors shrink-0"
+                  {/* Settings Button */}
+                  <button 
+                    type="button"
+                    onClick={() => setConfiguringSite(site)}
+                    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors shrink-0 cursor-pointer"
                     title="Website Settings & Integration"
                   >
                     <Settings className="w-4 h-4" />
-                  </Link>
+                  </button>
                 </div>
 
                 {/* High-Density KPI Stats Strip */}
@@ -284,12 +287,13 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
                     </span>
                   </div>
 
-                  <Link 
-                    href={`/client/${site.id}/settings`}
-                    className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 hover:underline"
+                  <button 
+                    type="button"
+                    onClick={() => setConfiguringSite(site)}
+                    className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer"
                   >
                     Configure
-                  </Link>
+                  </button>
                 </div>
               </div>
 
@@ -344,6 +348,19 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
           )}
         </div>
       </div>
+
+      {/* Website Configuration Popup Modal */}
+      {configuringSite && (
+        <WebsiteSettingsModal 
+          site={configuringSite} 
+          isOpen={!!configuringSite} 
+          onClose={() => setConfiguringSite(null)} 
+          onUpdate={(updated) => {
+            setWebsites(prev => prev.map(w => w.id === updated.id ? { ...w, ...updated } : w));
+            setConfiguringSite(updated);
+          }}
+        />
+      )}
     </div>
   );
 }
