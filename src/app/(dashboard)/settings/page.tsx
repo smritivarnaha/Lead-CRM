@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Bell, BellRing, BellOff, Smartphone, X, Link as LinkIcon, Download, Copy, Code2, Image as ImageIcon, Mail, Globe, CheckCircle2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Bell, BellRing, BellOff, Smartphone, X, Link as LinkIcon, Download, Copy, Code2, Image as ImageIcon, Mail, Globe, CheckCircle2, Sparkles, Clock, Save } from "lucide-react";
 import { toast } from "sonner";
 import IntegrationTab from "@/components/IntegrationTab";
 import { getWebsites } from "@/actions/websites";
@@ -90,6 +91,30 @@ export default function SettingsPage() {
         toast.success("Logo updated successfully!");
       } else {
         toast.error("Failed to update logo.");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Network error.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveWebsiteAutoReply = async (fields: Record<string, any>) => {
+    if (!clientWebsite?.id) return;
+    setIsSaving(true);
+    try {
+      const res = await fetch(`/api/websites/${clientWebsite.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(fields),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setClientWebsite(data.website);
+        toast.success("Customer Auto-Reply settings saved!");
+      } else {
+        toast.error("Failed to save auto-reply settings.");
       }
     } catch (e) {
       console.error(e);
@@ -512,6 +537,12 @@ export default function SettingsPage() {
         >
           Lead Alerts
         </button>
+        <button 
+          onClick={() => setActiveTab("customer-reply")}
+          className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "customer-reply" ? "border-purple-600 text-purple-600 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+        >
+          Customer Auto-Reply
+        </button>
         {!isClient && (
           <button 
             onClick={() => setActiveTab("email")}
@@ -552,7 +583,7 @@ export default function SettingsPage() {
         </button>
       </div>
 
-      <div className="max-w-2xl">
+      <div className="max-w-4xl">
         {/* ─── PUSH NOTIFICATIONS TAB ─── */}
         {activeTab === "push" && (
           <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden mb-6">
@@ -1018,6 +1049,164 @@ export default function SettingsPage() {
                 </div>
               </div>
             </div>
+        )}
+
+        {/* ─── CUSTOMER AUTO-REPLY TAB ─── */}
+        {activeTab === "customer-reply" && (
+          <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden mb-6">
+            <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
+                  <Mail className="h-5 w-5 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-900">Customer Auto-Reply (Visitor Confirmation)</h3>
+                  <p className="text-xs text-slate-500">Configure what the visitor receives immediately after submitting any form on your site</p>
+                </div>
+              </div>
+              {clientWebsite && (
+                <span className="text-xs font-bold px-2.5 py-1 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg shrink-0 self-start sm:self-auto">
+                  {clientWebsite.name}
+                </span>
+              )}
+            </div>
+
+            <div className="p-5 flex flex-col gap-6">
+              {/* Toggle Card */}
+              <div className="flex items-center justify-between bg-purple-50/50 border border-purple-100 rounded-xl p-4">
+                <div className="space-y-0.5">
+                  <h4 className="font-semibold text-slate-900 text-sm">Enable Confirmation Email to Visitors</h4>
+                  <p className="text-xs text-slate-500">
+                    When enabled, any visitor who submits a form with their email receives an instant confirmation.
+                  </p>
+                </div>
+                <Switch 
+                  checked={clientWebsite?.customerAutoReplyEnabled ?? false} 
+                  onCheckedChange={(checked) => {
+                    setClientWebsite({ ...clientWebsite, customerAutoReplyEnabled: checked });
+                    handleSaveWebsiteAutoReply({ customerAutoReplyEnabled: checked });
+                  }}
+                />
+              </div>
+
+              {/* Form & Live Preview Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                {/* Configuration Inputs */}
+                <div className="space-y-4">
+                  {/* Subject Line */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-700">Email Subject Line</label>
+                    <input 
+                      type="text"
+                      value={clientWebsite?.customerEmailSubject || `We have received your enquiry - ${clientWebsite?.name || 'Our Team'}`}
+                      onChange={(e) => setClientWebsite({ ...clientWebsite, customerEmailSubject: e.target.value })}
+                      onBlur={(e) => handleSaveWebsiteAutoReply({ customerEmailSubject: e.target.value })}
+                      placeholder="e.g. We have received your enquiry - Medisyn"
+                      className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-purple-500 font-medium"
+                    />
+                  </div>
+
+                  {/* Message Body */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-slate-700">Personalized Message Body</label>
+                      <span className="text-[11px] text-slate-400">Supports {`{{name}}`}, {`{{company}}`}</span>
+                    </div>
+                    <textarea 
+                      rows={5}
+                      value={clientWebsite?.customerEmailMessage || `Dear {{name}},\n\nThank you for reaching out to {{company}}. We have successfully received your enquiry.\n\nOur specialized team is reviewing your information and will contact you shortly.`}
+                      onChange={(e) => setClientWebsite({ ...clientWebsite, customerEmailMessage: e.target.value })}
+                      onBlur={(e) => handleSaveWebsiteAutoReply({ customerEmailMessage: e.target.value })}
+                      className="w-full text-sm rounded-lg border border-slate-200 p-3 outline-none focus:border-purple-500 leading-relaxed resize-none font-sans"
+                    />
+                  </div>
+
+                  {/* Working Hours / Response Window */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-purple-600" /> Working Hours / Response Window
+                    </label>
+                    <input 
+                      type="text"
+                      value={clientWebsite?.customerWorkingHours || "Mon - Sat: 9:00 AM - 7:00 PM"}
+                      onChange={(e) => setClientWebsite({ ...clientWebsite, customerWorkingHours: e.target.value })}
+                      onBlur={(e) => handleSaveWebsiteAutoReply({ customerWorkingHours: e.target.value })}
+                      placeholder="e.g. Mon - Sat: 9:00 AM - 7:00 PM"
+                      className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-purple-500"
+                    />
+                    <p className="text-[11px] text-slate-400">
+                      Informs visitors of your operating hours during which your team will contact them.
+                    </p>
+                  </div>
+
+                  <div className="pt-2">
+                    <Button 
+                      disabled={isSaving} 
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold"
+                      onClick={() => {
+                        handleSaveWebsiteAutoReply({
+                          customerEmailSubject: clientWebsite?.customerEmailSubject,
+                          customerEmailMessage: clientWebsite?.customerEmailMessage,
+                          customerWorkingHours: clientWebsite?.customerWorkingHours,
+                        });
+                      }}
+                    >
+                      <Save className="w-4 h-4 mr-2" /> Save Auto-Reply Settings
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Live Preview Box */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-purple-600" /> Visitor Email Live Preview
+                    </span>
+                    <span className="text-[11px] text-slate-400">Updates live</span>
+                  </div>
+
+                  <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                    {/* Header */}
+                    <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 text-center text-white">
+                      <h4 className="font-bold text-base tracking-tight">{clientWebsite?.name || "Our Team"}</h4>
+                      <p className="text-[11px] text-purple-100 mt-0.5">Details Received · We Will Contact You Soon</p>
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-4 space-y-3.5 text-slate-700 text-xs leading-relaxed">
+                      <div className="whitespace-pre-line text-slate-800 font-medium">
+                        {(clientWebsite?.customerEmailMessage || "Dear John Doe,\n\nThank you for reaching out to {{company}}. We have successfully received your enquiry.\n\nOur specialized team is reviewing your information and will contact you shortly.")
+                          .replace(/{{name}}/g, "John Doe")
+                          .replace(/{{company}}/g, clientWebsite?.name || "Our Team")}
+                      </div>
+
+                      {/* Summary Box */}
+                      <div className="bg-slate-50 border border-slate-100 rounded-lg p-3 space-y-1 text-[11px]">
+                        <p className="font-bold uppercase text-slate-500 text-[10px] tracking-wider">Summary of Your Submission:</p>
+                        <div className="space-y-0.5 text-slate-600">
+                          <div>• <strong>Name:</strong> John Doe</div>
+                          <div>• <strong>Phone:</strong> +91 98765 43210</div>
+                          <div>• <strong>Location:</strong> Mohali, Punjab</div>
+                          <div>• <strong>Status:</strong> <span className="text-emerald-600 font-semibold">Received & In Queue</span></div>
+                          <div>• <strong>Date Received:</strong> {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                        </div>
+                      </div>
+
+                      {/* Response Window Badge */}
+                      <div className="p-2.5 bg-emerald-50/80 border border-emerald-200/70 rounded-lg text-emerald-800 text-[11px] flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span><strong>Response Window:</strong> Our team will contact you during working hours ({clientWebsite?.customerWorkingHours || "Mon - Sat: 9:00 AM - 7:00 PM"}).</span>
+                      </div>
+
+                      <div className="text-center pt-2 border-t border-slate-100 text-[10px] text-slate-400">
+                        Automated confirmation sent by {clientWebsite?.name || "Our Team"}. You do not need to reply to this email.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* ─── EMAIL CONFIG TAB ─── */}
