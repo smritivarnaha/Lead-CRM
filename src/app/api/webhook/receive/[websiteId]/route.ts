@@ -28,11 +28,47 @@ export async function GET() {
   );
 }
 
+// In-memory sliding window rate limiter (prevents server crashes and flood attacks)
+const ipRateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function isIpRateLimited(ip: string, maxRequests = 40, windowMs = 60000): boolean {
+  const now = Date.now();
+  const record = ipRateLimitMap.get(ip);
+  
+  if (!record || now > record.resetAt) {
+    ipRateLimitMap.set(ip, { count: 1, resetAt: now + windowMs });
+    return false;
+  }
+  
+  record.count += 1;
+  return record.count > maxRequests;
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ websiteId: string }> }
 ) {
   try {
+    // 0. Payload Size Guard (prevents memory exhaustion DOS attacks)
+    const contentLength = parseInt(request.headers.get("content-length") || "0", 10);
+    if (contentLength > 100 * 1024) { // Max 100KB
+      console.warn(`[WEBHOOK BLOCKED] Request payload too large (${contentLength} bytes).`);
+      return NextResponse.json(
+        { success: false, error: "Payload exceeds 100KB limit." },
+        { status: 413, headers: corsHeaders }
+      );
+    }
+
+    // 0. Rate Limiting Guard (protects from webhook flooding / server crash)
+    const clientIp = request.headers.get("x-forwarded-for")?.split(',')[0].trim() || request.headers.get("x-real-ip") || "unknown";
+    if (isIpRateLimited(clientIp, 40, 60000)) {
+      console.warn(`[WEBHOOK RATE-LIMITED] IP ${clientIp} exceeded rate threshold.`);
+      return NextResponse.json(
+        { success: false, error: "Too many requests. Please wait a moment." },
+        { status: 429, headers: corsHeaders }
+      );
+    }
+
     let { websiteId } = await params;
 
     // Parse body — support both JSON and form-encoded (WordPress sends form-encoded)
@@ -200,6 +236,40 @@ export async function POST(
       : undefined;
 
     const fullName = cleanStr(nameByKey || firstLast || nameByValue) || "Unknown";
+
+    // --- Flood & Duplicate Submission Debouncing ---
+    // Prevents impatient users double-clicking, network retry storms, or spam bots
+    // from inserting duplicate leads, wasting Fast2SMS credits, or spamming emails.
+    if (phone || email) {
+      const ninetySecondsAgo = new Date(Date.now() - 90 * 1000);
+      const duplicateLead = await prisma.lead.findFirst({
+        where: {
+          websiteId,
+          createdAt: { gte: ninetySecondsAgo },
+          OR: [
+            phone ? { phone } : undefined,
+            email ? { email } : undefined,
+          ].filter(Boolean) as any,
+        },
+        select: { id: true, fullName: true, createdAt: true },
+      });
+
+      if (duplicateLead) {
+        console.log(`[WEBHOOK DEDUPLICATED] Ignored duplicate submission for website ${websiteId} (${phone || email}) within 90s.`);
+        
+        let redirectUrl = body._redirect || body.redirect_url;
+        if (redirectUrl) {
+          return NextResponse.redirect(redirectUrl, 302);
+        }
+
+        return NextResponse.json({
+          success: true,
+          message: "Lead already received",
+          leadId: duplicateLead.id,
+          deduplicated: true,
+        }, { status: 200, headers: corsHeaders });
+      }
+    }
 
     // Advanced Source Detection
     const userAgent = request.headers.get("user-agent") || "";

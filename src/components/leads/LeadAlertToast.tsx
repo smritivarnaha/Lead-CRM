@@ -9,6 +9,8 @@ export interface RealtimeLeadPayload {
   fullName: string;
   phone?: string | null;
   email?: string | null;
+  city?: string | null;
+  state?: string | null;
   source?: string | null;
   websiteId?: string;
   websiteName?: string;
@@ -58,89 +60,113 @@ export function showLeadToast(lead: RealtimeLeadPayload) {
   playLeadChime();
 
   toast.custom((t) => (
-    <div className="w-full max-w-[380px] bg-white/95 backdrop-blur-xl border border-[#E8E4F3] shadow-[0_20px_45px_-12px_rgba(124,58,237,0.22)] rounded-2xl p-4 overflow-hidden relative transition-all ring-1 ring-black/5 animate-in fade-in slide-in-from-bottom-5 duration-300">
-      {/* Top Accent Gradient Bar */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#7C3AED] via-[#A78BFA] to-[#10B981]" />
+    <div className="w-full max-w-[370px] sm:max-w-[390px] bg-[#151324]/98 text-white backdrop-blur-2xl border border-white/12 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.65),0_0_25px_rgba(124,58,237,0.25)] rounded-2xl p-4 overflow-hidden relative transition-all ring-1 ring-white/10 animate-in fade-in slide-in-from-bottom-5 duration-300">
+      {/* Top Accent Glowing Gradient Line */}
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-violet-500 via-indigo-400 to-emerald-400" />
 
-      {/* Header Row */}
-      <div className="flex items-center justify-between gap-2 mb-2.5 pt-0.5">
+      {/* Header Row: Live Radar, Category, Project Pill, Timestamp, Close */}
+      <div className="flex items-center justify-between gap-2 mb-3 pt-0.5">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="relative flex h-2 w-2">
+          <span className="relative flex h-2 w-2 shrink-0">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
-          <span className="text-[11px] font-extrabold tracking-wider uppercase text-[#7C3AED] flex items-center gap-1">
-            <Sparkles className="h-3 w-3" /> New Lead
+          <span className="text-[10.5px] font-extrabold tracking-wider uppercase text-emerald-400 shrink-0">
+            NEW INQUIRY
           </span>
           {lead.websiteName && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-[#F5F3FF] text-[#6D28D9] border border-[#DDD6FE] truncate max-w-[120px]">
-              <Globe className="h-2.5 w-2.5 shrink-0 text-[#8B5CF6]" />
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-violet-500/15 text-violet-300 border border-violet-500/30 truncate max-w-[125px]">
+              <Globe className="h-2.5 w-2.5 shrink-0 text-violet-400" />
               <span className="truncate">{lead.websiteName}</span>
             </span>
           )}
         </div>
-        <button
-          onClick={() => toast.dismiss(t)}
-          className="h-6 w-6 rounded-full flex items-center justify-center text-[#9CA3AF] hover:text-[#1A1523] hover:bg-[#F3F4F6] transition-colors shrink-0"
-          aria-label="Dismiss notification"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
+        
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-[10.5px] font-medium text-slate-400">Just now</span>
+          <button
+            onClick={() => toast.dismiss(t)}
+            className="h-5 w-5 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            aria-label="Dismiss notification"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
 
       {/* Main Lead Info */}
       <div className="flex items-start gap-3 my-2">
-        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#A78BFA] text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
+        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-violet-600 via-indigo-600 to-purple-700 text-white flex items-center justify-center font-bold text-base shrink-0 shadow-md ring-2 ring-violet-500/20">
           {lead.fullName ? lead.fullName.charAt(0).toUpperCase() : "L"}
         </div>
         <div className="min-w-0 flex-1">
-          <h4 className="text-[14px] font-bold text-[#1A1523] truncate leading-snug">
-            {lead.fullName || "New Customer"}
-          </h4>
-          <div className="flex flex-col gap-0.5 mt-1 text-[12px] text-[#4B5563]">
-            {lead.phone && (
-              <div className="flex items-center gap-1.5 truncate">
-                <Phone className="h-3 w-3 text-emerald-600 shrink-0" />
-                <span className="font-medium text-[#1F2937]">{lead.phone}</span>
-              </div>
-            )}
-            {lead.email && (
-              <div className="flex items-center gap-1.5 truncate">
-                <Mail className="h-3 w-3 text-indigo-500 shrink-0" />
-                <span className="truncate">{lead.email}</span>
-              </div>
-            )}
-            {!lead.phone && !lead.email && lead.source && (
-              <div className="text-[11.5px] text-[#6B7280] italic">
-                Source: {lead.source}
-              </div>
+          <div className="flex items-center justify-between gap-1">
+            <h4 className="text-[15px] font-bold text-white truncate leading-tight tracking-tight">
+              {lead.fullName || "New Customer"}
+            </h4>
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
+            <Sparkles className="w-2.5 h-2.5 text-violet-400 shrink-0" />
+            <span className="truncate">{lead.source || "Website Form"}</span>
+            {lead.city && (
+              <>
+                <span className="text-slate-600">•</span>
+                <span className="truncate">{lead.city}{lead.state ? `, ${lead.state}` : ''}</span>
+              </>
             )}
           </div>
         </div>
       </div>
 
+      {/* Contact Details Pills */}
+      {(lead.phone || lead.email) && (
+        <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
+          {lead.phone && (
+            <a
+              href={`tel:${lead.phone}`}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[11.5px] font-semibold hover:bg-emerald-500/20 transition-colors"
+              title="Click to dial"
+            >
+              <Phone className="h-3 w-3 text-emerald-400 shrink-0" />
+              <span className="tracking-wide">{lead.phone}</span>
+            </a>
+          )}
+          {lead.email && (
+            <div 
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-300 text-[11.5px] font-medium truncate max-w-full"
+              title={lead.email}
+            >
+              <Mail className="h-3 w-3 text-violet-400 shrink-0" />
+              <span className="truncate">{lead.email}</span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Action Footer */}
-      <div className="flex items-center justify-end gap-2 pt-2.5 mt-2 border-t border-[#F3F0FF]">
+      <div className="flex items-center gap-2 pt-3 mt-3 border-t border-white/10">
         {lead.phone && (
           <a
             href={`tel:${lead.phone}`}
             onClick={() => toast.dismiss(t)}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11.5px] font-semibold text-[#374151] hover:bg-[#F3F4F6] border border-[#E5E7EB] transition-colors"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[12px] font-bold shadow-xs transition-all cursor-pointer"
           >
-            <Phone className="h-3 w-3 text-[#6B7280]" /> Call
+            <Phone className="h-3.5 w-3.5" />
+            <span>Call Lead</span>
           </a>
         )}
         <Link
-          href={`/leads`}
+          href={lead.websiteId ? `/client/${lead.websiteId}` : `/leads`}
           onClick={() => toast.dismiss(t)}
-          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11.5px] font-bold text-white bg-gradient-to-r from-[#7C3AED] to-[#9061F9] hover:from-[#6D28D9] hover:to-[#7E3AF2] shadow-sm transition-all"
+          className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-[12px] font-bold shadow-xs shadow-violet-950/50 transition-all cursor-pointer"
         >
-          View Pipeline <ArrowUpRight className="h-3.5 w-3.5" />
+          <span>View Pipeline</span>
+          <ArrowUpRight className="h-3.5 w-3.5" />
         </Link>
       </div>
     </div>
   ), {
-    duration: 6000,
+    duration: 8000,
     id: `lead-toast-${lead.id || Date.now()}`,
   });
 }
