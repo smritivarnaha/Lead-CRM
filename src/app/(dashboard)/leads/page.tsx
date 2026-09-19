@@ -1,5 +1,6 @@
 import { PipelineView } from "@/components/leads/PipelineView";
 import { getLeads } from "@/actions/leads";
+import { getWebsites } from "@/actions/websites";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
@@ -9,9 +10,14 @@ export default async function LeadsPage() {
     redirect("/sign-in");
   }
 
-  // Fetch all leads on the server instantly
-  const res = await getLeads();
-  const leads = res.success && res.leads ? res.leads : [];
+  // Fetch all leads and websites on the server instantly
+  const [leadsRes, websitesRes] = await Promise.all([
+    getLeads(),
+    getWebsites()
+  ]);
 
-  return <PipelineView initialLeads={leads} />;
+  const leads = leadsRes.success && leadsRes.leads ? leadsRes.leads : [];
+  const websites = websitesRes.success && websitesRes.websites ? websitesRes.websites : [];
+
+  return <PipelineView initialLeads={leads} initialWebsites={websites} />;
 }

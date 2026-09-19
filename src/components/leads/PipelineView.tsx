@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { getLeads, getLeadsByWebsite, updateLeadStatus, logCallAction, bulkDeleteLeads } from "@/actions/leads";
+import { getWebsites } from "@/actions/websites";
 import { LeadDetailsModal } from "@/components/leads/LeadDetailsModal";
 import { CallLogModal } from "@/components/leads/CallLogModal";
 import {
@@ -21,7 +22,10 @@ import {
   HelpCircle,
   Clock,
   ArrowRight,
-  BellRing
+  BellRing,
+  Users,
+  Globe,
+  Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,7 +39,8 @@ type Lead = {
   temperature: string;
   phone: string | null;
   email: string | null;
-  website?: { name: string };
+  website?: { id?: string; name: string; domain?: string };
+  websiteId?: string;
   emailSent?: boolean;
   smsSent?: boolean;
   pushSent?: boolean;
@@ -314,8 +319,18 @@ function LiveTimer({ createdAt, status }: { createdAt: string, status: string })
   );
 }
 
-export function PipelineView({ websiteId, initialLeads }: { websiteId?: string; initialLeads?: Lead[] }) {
+export function PipelineView({ 
+  websiteId, 
+  initialLeads,
+  initialWebsites
+}: { 
+  websiteId?: string; 
+  initialLeads?: Lead[];
+  initialWebsites?: any[];
+}) {
   const [leads, setLeads] = useState<Lead[]>(initialLeads || []);
+  const [websites, setWebsites] = useState<any[]>(initialWebsites || []);
+  const [selectedWebsiteTab, setSelectedWebsiteTab] = useState<string>(websiteId || "all");
   const [loading, setLoading] = useState(!initialLeads);
   const [inspectLead, setInspectLead] = useState<Lead | null>(null);
   const [callLogLead, setCallLogLead] = useState<Lead | null>(null);
@@ -339,7 +354,55 @@ export function PipelineView({ websiteId, initialLeads }: { websiteId?: string; 
   // Toolbar States
   const [rowHeight, setRowHeight] = useState<"compact" | "standard" | "comfortable">("standard");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  
+
+  // Fetch websites if not provided
+  useEffect(() => {
+    if (!initialWebsites) {
+      getWebsites().then((res) => {
+        if (res.success && res.websites) setWebsites(res.websites);
+      });
+    }
+  }, [initialWebsites]);
+
+  // Dynamically compute project tabs from both websites list and existing leads
+  const projectTabs = (() => {
+    const map = new Map<string, { id: string; name: string; domain?: string; count: number; newCount: number }>();
+
+    // 1. Prepopulate from known websites
+    websites.forEach((w) => {
+      if (w?.id && w?.name) {
+        map.set(w.id, { id: w.id, name: w.name, domain: w.domain, count: 0, newCount: 0 });
+      }
+    });
+
+    // 2. Count leads per website
+    leads.forEach((lead) => {
+      const siteId = lead.website?.id || (lead as any).websiteId;
+      const siteName = lead.website?.name;
+
+      if (siteId) {
+        if (!map.has(siteId)) {
+          map.set(siteId, { id: siteId, name: siteName || siteId, count: 0, newCount: 0 });
+        }
+        const entry = map.get(siteId)!;
+        entry.count += 1;
+        if (lead.status === "NEW") entry.newCount += 1;
+      } else if (siteName) {
+        const existing = Array.from(map.values()).find(
+          (m) => m.name.toLowerCase() === siteName.toLowerCase()
+        );
+        if (existing) {
+          existing.count += 1;
+          if (lead.status === "NEW") existing.newCount += 1;
+        } else {
+          map.set(siteName, { id: siteName, name: siteName, count: 1, newCount: lead.status === "NEW" ? 1 : 0 });
+        }
+      }
+    });
+
+    return Array.from(map.values());
+  })();
+
   const handleBulkDelete = async () => {
     if (selectedLeadIds.size === 0) return;
     if (!confirm(`Are you sure you want to delete ${selectedLeadIds.size} leads? This action cannot be undone.`)) return;
@@ -360,18 +423,33 @@ export function PipelineView({ websiteId, initialLeads }: { websiteId?: string; 
   };
 
   const filteredLeads = leads.filter(lead => {
+    // 1. Website / Project Tab Filter
+    if (selectedWebsiteTab !== "all") {
+      const leadSiteId = lead.website?.id || (lead as any).websiteId;
+      const leadSiteName = lead.website?.name?.toLowerCase();
+      const target = selectedWebsiteTab.toLowerCase();
+
+      const isMatch = (leadSiteId && leadSiteId.toLowerCase() === target) ||
+                      (leadSiteName && leadSiteName === target) ||
+                      (lead.website?.name && lead.website.name.toLowerCase().includes(target));
+
+      if (!isMatch) return false;
+    }
+
+    // 2. Status / Stage Filter
     if (statusFilter === "HOT") {
       return lead.temperature === "HOT";
     } else if (statusFilter) {
       return lead.status === statusFilter;
     }
+
     return true;
   });
 
   const today = new Date();
   today.setHours(23, 59, 59, 999);
   
-  const upcomingFollowUps = leads.filter(l => 
+  const upcomingFollowUps = filteredLeads.filter(l => 
     l.status === 'FOLLOW_UP' && l.followUpAt && new Date(l.followUpAt) <= today
   ).sort((a, b) => new Date(a.followUpAt!).getTime() - new Date(b.followUpAt!).getTime());
 
@@ -497,32 +575,78 @@ export function PipelineView({ websiteId, initialLeads }: { websiteId?: string; 
         </div>
       )}
 
-      {/* ─── TOOLBAR ─── */}
+      {/* ─── TOOLBAR & DYNAMIC PROJECT TABS ─── */}
       <div 
-        className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-8 py-3 bg-white border-b gap-3 sm:gap-0"
+        className="flex flex-col xl:flex-row xl:items-center justify-between px-4 sm:px-6 py-2.5 bg-white border-b gap-3 xl:gap-0"
         style={{ borderColor: "#E8E4F3", flexShrink: 0 }}
       >
-        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto pb-1 sm:pb-0">
-          <button className="flex items-center justify-center w-7 h-7 text-[#9CA3AF] hover:text-[#1A1523] hover:bg-slate-100 rounded transition-colors">
-            <ArrowRightToLine className="h-4 w-4" strokeWidth={2} />
-          </button>
-          
-          <div className="h-4 w-px bg-[#E8E4F3]" />
-          
-          <ToolbarDropdown 
-            label={statusFilter ? STAGE_STYLE[statusFilter]?.label || "Filtered" : "All opportunities"} 
-            icon={UsersIcon} 
-            isActive={true}
+        {/* Left Side: Dynamic Project / Website Tabs Bar */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5 max-w-full xl:max-w-[70%]">
+          {/* All Opportunities Tab */}
+          <button
+            type="button"
+            onClick={() => setSelectedWebsiteTab("all")}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12.5px] font-semibold transition-all shrink-0 border cursor-pointer ${
+              selectedWebsiteTab === "all"
+                ? "bg-[#F7F5FF] border-[#7C3AED]/40 text-[#7C3AED] shadow-xs"
+                : "bg-white border-slate-200/80 text-slate-600 hover:text-slate-900 hover:bg-slate-50 hover:border-slate-300"
+            }`}
           >
-            <button className={`w-full text-left px-3 py-1.5 text-[13px] hover:bg-slate-50 ${!statusFilter ? "font-bold text-indigo-600 bg-[#F7F5FF] text-[#7C3AED]" : "text-slate-700"}`} onClick={() => setStatusFilter(null)}>
-              All opportunities
+            <Users className="h-3.5 w-3.5" />
+            <span className="whitespace-nowrap">All opportunities</span>
+            <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold leading-none ${
+              selectedWebsiteTab === "all" ? "bg-[#7C3AED] text-white" : "bg-slate-100 text-slate-600"
+            }`}>
+              {leads.length}
+            </span>
+          </button>
+
+          {/* Dynamic Tabs for Each Project/Website */}
+          {projectTabs.map((site) => {
+            const isSelected = selectedWebsiteTab === site.id || selectedWebsiteTab.toLowerCase() === site.name.toLowerCase();
+            return (
+              <button
+                key={site.id}
+                type="button"
+                onClick={() => setSelectedWebsiteTab(site.id)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12.5px] font-semibold transition-all shrink-0 border cursor-pointer ${
+                  isSelected
+                    ? "bg-[#F7F5FF] border-[#7C3AED]/40 text-[#7C3AED] shadow-xs"
+                    : "bg-white border-slate-200/80 text-slate-600 hover:text-slate-900 hover:bg-slate-50 hover:border-slate-300"
+                }`}
+              >
+                <Globe className={`h-3.5 w-3.5 ${isSelected ? "text-[#7C3AED]" : "text-slate-400"}`} />
+                <span className="whitespace-nowrap">{site.name}</span>
+                <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold leading-none ${
+                  isSelected ? "bg-[#7C3AED] text-white" : "bg-slate-100 text-slate-600"
+                }`}>
+                  {site.count}
+                </span>
+                {site.newCount > 0 && (
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title={`${site.newCount} new unread lead(s)`} />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Right Side: Quick Stage Filter, Fields, Filters, Row Height, Layout */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-[13px] font-medium text-[#6B7280]">
+          {/* Quick Stage Filter */}
+          <ToolbarDropdown 
+            label={statusFilter ? STAGE_STYLE[statusFilter]?.label || "Filtered" : "Stage"} 
+            icon={Filter}
+            isActive={!!statusFilter}
+          >
+            <button className={`w-full text-left px-3 py-1.5 text-[13px] hover:bg-slate-50 ${!statusFilter ? "font-bold text-[#7C3AED] bg-[#F7F5FF]" : "text-slate-700"}`} onClick={() => setStatusFilter(null)}>
+              All Stages
             </button>
             <div className="h-px bg-slate-100 my-1" />
-            <div className="px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">By Stage</div>
+            <div className="px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Filter By Stage</div>
             {Object.entries(STAGE_STYLE).map(([key, config]) => (
               <button 
                 key={key} 
-                className={`w-full flex items-center px-3 py-1.5 text-[13px] hover:bg-slate-50 ${statusFilter === key ? "font-bold text-slate-900" : "text-slate-700"}`}
+                className={`w-full flex items-center px-3 py-1.5 text-[13px] hover:bg-slate-50 ${statusFilter === key ? "font-bold text-slate-900 bg-slate-50" : "text-slate-700"}`}
                 onClick={() => setStatusFilter(key)}
               >
                 <div className={`h-2.5 w-2.5 rounded-full mr-2 shrink-0 ${config.fill === 'bg-transparent' ? config.ring + ' border' : config.fill}`} />
@@ -530,9 +654,6 @@ export function PipelineView({ websiteId, initialLeads }: { websiteId?: string; 
               </button>
             ))}
           </ToolbarDropdown>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-[13px] font-medium text-[#6B7280]">
           {/* Workable Fields Dropdown */}
           <ToolbarDropdown label="Fields" icon={Columns3}>
             <div className="px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Visible Columns</div>
