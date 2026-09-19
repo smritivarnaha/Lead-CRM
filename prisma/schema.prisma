@@ -163,6 +163,10 @@ model Lead {
 
   emailRecipients EmailRecipient[]
   emailQueues     EmailQueue[]
+
+  @@index([websiteId, createdAt(sort: Desc)])
+  @@index([websiteId, status])
+  @@index([createdAt(sort: Desc)])
 }
 
 model EmailCampaign {

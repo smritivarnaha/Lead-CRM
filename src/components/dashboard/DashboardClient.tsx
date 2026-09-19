@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Building2, Download, ExternalLink, Image as ImageIcon, Smartphone, Bell, BellOff, BellRing } from "lucide-react";
+import Link from "next/link";
+import { Building2, Download, ExternalLink, Image as ImageIcon, Smartphone, Bell, BellOff, BellRing, ArrowRight, Settings, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -175,167 +176,133 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {displayWebsites.map((site: any) => (
-            <div key={site.id} className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col">
-              <div className="p-6 flex-1 flex flex-col">
-                <div className="flex items-start justify-between mb-6">
-                  {/* Logo Container */}
-                  <div className="relative group/logo">
-                    <div className="w-16 h-16 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden p-1">
-                      {site.logoUrl ? (
-                        <img src={site.logoUrl} alt={site.name} className="w-full h-full object-contain rounded-md" />
-                      ) : (
-                        <Building2 className="w-6 h-6 text-slate-400" />
+            <div 
+              key={site.id} 
+              className="group bg-white rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md hover:border-indigo-200 transition-all duration-200 flex flex-col overflow-hidden"
+            >
+              {/* Card Main Body */}
+              <div className="p-5 flex-1 flex flex-col justify-between">
+                {/* Header: Logo, Brand Name, Domain & Settings Button */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {/* Compact Logo (42x42) */}
+                    <div className="relative shrink-0">
+                      <div className="w-10 h-10 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center justify-center overflow-hidden p-1 shadow-2xs">
+                        {site.logoUrl ? (
+                          <img src={site.logoUrl} alt={site.name} className="w-full h-full object-contain rounded-lg" />
+                        ) : (
+                          <Building2 className="w-5 h-5 text-slate-400" />
+                        )}
+                      </div>
+                      {!isClient && (
+                        <label className="absolute -bottom-1 -right-1 w-5 h-5 bg-white border border-slate-200 rounded-full flex items-center justify-center shadow-xs cursor-pointer hover:bg-slate-50 opacity-0 group-hover:opacity-100 transition-opacity" title="Upload Logo">
+                          <input 
+                            type="file" 
+                            accept="image/png, image/webp" 
+                            className="hidden" 
+                            onChange={(e) => handleImageUpload(e, site.id)} 
+                          />
+                          <ImageIcon className="w-2.5 h-2.5 text-slate-600" />
+                        </label>
                       )}
                     </div>
-                    {!isClient && (
-                      <label className="absolute -bottom-2 -right-2 w-7 h-7 bg-white border border-slate-200 rounded-full flex items-center justify-center shadow-sm cursor-pointer hover:bg-slate-50 transition-colors" title="Upload Badge Logo">
+
+                    {/* Brand Name & Domain */}
+                    <div className="min-w-0 flex-1">
+                      {!isClient ? (
                         <input 
-                          type="file" 
-                          accept="image/png, image/webp" 
-                          className="hidden" 
-                          onChange={(e) => handleImageUpload(e, site.id)} 
+                          type="text"
+                          value={site.name}
+                          onChange={(e) => setWebsites(prev => prev.map(w => w.id === site.id ? { ...w, name: e.target.value } : w))}
+                          onBlur={(e) => handleSave(site.id, "name", e.target.value)}
+                          className="text-[15px] font-bold text-slate-900 leading-tight bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:outline-none transition-colors truncate max-w-full"
+                          placeholder="Brand Name"
+                          title="Click to edit name"
                         />
-                        <ImageIcon className="w-3.5 h-3.5 text-slate-600" />
-                      </label>
-                    )}
-                  </div>
-                  
-                  <div className="text-right flex-1 ml-4 overflow-hidden">
-                    {!isClient ? (
-                      <input 
-                        type="text"
-                        value={site.name}
-                        onChange={(e) => setWebsites(prev => prev.map(w => w.id === site.id ? { ...w, name: e.target.value } : w))}
-                        onBlur={(e) => handleSave(site.id, "name", e.target.value)}
-                        className="text-lg font-bold text-slate-900 leading-tight text-right w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:outline-none transition-colors truncate"
-                        placeholder="Brand Name"
-                        title="Edit Brand Name"
-                      />
-                    ) : (
-                      <h3 className="text-lg font-bold text-slate-900 leading-tight truncate">
-                        {site.name}
-                      </h3>
-                    )}
-                    <a href={site.domain.startsWith('http') ? site.domain : `https://${site.domain}`} target="_blank" rel="noreferrer" className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center justify-end mt-1 truncate">
-                      <span className="truncate">{site.domain}</span> <ExternalLink className="w-3 h-3 ml-1 opacity-70 flex-shrink-0" />
-                    </a>
-                  </div>
-                </div>
-
-                {/* Stats Section */}
-                <div className="grid grid-cols-3 gap-2 mb-6">
-                  <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 flex flex-col items-center justify-center">
-                    <span className="text-lg font-bold text-slate-800">{site.stats?.total || 0}</span>
-                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mt-0.5">Total</span>
-                  </div>
-                  <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 flex flex-col items-center justify-center">
-                    <span className="text-lg font-bold text-slate-800">{site.stats?.newThisWeek || 0}</span>
-                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mt-0.5">This Wk</span>
-                  </div>
-                  <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 flex flex-col items-center justify-center relative">
-                    {(site.stats?.unread || 0) > 0 && (
-                      <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full animate-pulse" />
-                    )}
-                    <span className="text-lg font-bold text-slate-800">{site.stats?.unread || 0}</span>
-                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mt-0.5">Unread</span>
-                  </div>
-                </div>
-
-                {/* Inline Alert Editors */}
-                <div className="mt-auto flex flex-col gap-3">
-                  {/* Phone Input */}
-                  <div>
-                    <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1 flex items-center justify-between">
-                      <span>SMS Alerts</span>
-                      <button
-                        onClick={() => handleSave(site.id, "smsAlertsEnabled", !site.smsAlertsEnabled)}
-                        className={`relative inline-flex h-3 w-5 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-1 focus:ring-indigo-600 focus:ring-offset-1 disabled:opacity-50 ${
-                          site.smsAlertsEnabled !== false ? "bg-indigo-600" : "bg-slate-300"
-                        }`}
-                      >
-                        <span className={`pointer-events-none inline-block h-2 w-2 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${site.smsAlertsEnabled !== false ? "translate-x-2" : "translate-x-0"}`} />
-                      </button>
-                    </label>
-                    <div className={`bg-white rounded-md border border-slate-200 flex items-center px-2 py-1.5 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all ${site.smsAlertsEnabled === false ? 'opacity-50' : ''}`}>
-                      <Smartphone className="w-3.5 h-3.5 text-slate-400 mr-2" />
-                      <input 
-                        type="text" 
-                        placeholder="Phone number"
-                        disabled={site.smsAlertsEnabled === false}
-                        className="bg-transparent border-none outline-none text-xs font-medium text-slate-800 w-full placeholder:text-slate-300 disabled:cursor-not-allowed"
-                        value={site.adminPhone || ""}
-                        onChange={(e) => setWebsites(prev => prev.map(w => w.id === site.id ? { ...w, adminPhone: e.target.value } : w))}
-                        onBlur={(e) => handleSave(site.id, "adminPhone", e.target.value)}
-                      />
-                      {savingId === `${site.id}-adminPhone` && <div className="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin ml-2" />}
-                    </div>
-                  </div>
-
-                  {/* Email Input */}
-                  <div>
-                    <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1 flex items-center justify-between">
-                      <span>Email Alerts</span>
-                      <button
-                        onClick={() => handleSave(site.id, "emailAlertsEnabled", !site.emailAlertsEnabled)}
-                        className={`relative inline-flex h-3 w-5 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-1 focus:ring-indigo-600 focus:ring-offset-1 disabled:opacity-50 ${
-                          site.emailAlertsEnabled !== false ? "bg-indigo-600" : "bg-slate-300"
-                        }`}
-                      >
-                        <span className={`pointer-events-none inline-block h-2 w-2 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${site.emailAlertsEnabled !== false ? "translate-x-2" : "translate-x-0"}`} />
-                      </button>
-                    </label>
-                    <div className={`bg-white rounded-md border border-slate-200 flex items-center px-2 py-1.5 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all ${site.emailAlertsEnabled === false ? 'opacity-50' : ''}`}>
-                      <svg className="w-3.5 h-3.5 text-slate-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                      <input 
-                        type="email" 
-                        multiple
-                        placeholder="admin@example.com, sales@example.com"
-                        disabled={site.emailAlertsEnabled === false}
-                        className="bg-transparent border-none outline-none text-xs font-medium text-slate-800 w-full placeholder:text-slate-300 disabled:cursor-not-allowed"
-                        value={site.adminEmail || ""}
-                        onChange={(e) => setWebsites(prev => prev.map(w => w.id === site.id ? { ...w, adminEmail: e.target.value } : w))}
-                        onBlur={(e) => handleSave(site.id, "adminEmail", e.target.value)}
-                      />
-                      {savingId === `${site.id}-adminEmail` && <div className="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin ml-2" />}
-                    </div>
-                  </div>
-
-                  {/* Push Notifications Button */}
-                  <div className="flex flex-col gap-1 mt-2">
-                    <Button 
-                      onClick={togglePush} 
-                      disabled={isProcessingPush || pushStatus === "loading" || pushStatus === "unsupported"}
-                      variant={pushStatus === "subscribed" ? "outline" : "default"}
-                      size="sm"
-                      className={`w-full text-[11px] h-8 flex items-center justify-center gap-2 transition-all ${
-                        pushStatus === "subscribed" 
-                          ? "border-slate-200 text-slate-600 hover:bg-slate-50" 
-                          : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
-                      }`}
-                    >
-                      {pushStatus === "subscribed" ? (
-                        <><BellOff className="w-3.5 h-3.5" /> Disable Push on this Device</>
-                      ) : pushStatus === "unsupported" ? (
-                        "Push Not Supported"
                       ) : (
-                        <><BellRing className="w-3.5 h-3.5 animate-pulse" /> Enable Notifications on this Device</>
+                        <h3 className="text-[15px] font-bold text-slate-900 leading-tight truncate">
+                          {site.name}
+                        </h3>
                       )}
-                    </Button>
+                      <a 
+                        href={site.domain.startsWith('http') ? site.domain : `https://${site.domain}`} 
+                        target="_blank" 
+                        rel="noreferrer" 
+                        className="text-[11.5px] font-medium text-slate-400 hover:text-indigo-600 inline-flex items-center gap-1 mt-0.5 transition-colors truncate max-w-[180px]"
+                      >
+                        <span className="truncate">{site.domain.replace(/^https?:\/\//, '')}</span>
+                        <ExternalLink className="w-2.5 h-2.5 opacity-60 shrink-0" />
+                      </a>
+                    </div>
                   </div>
+
+                  {/* Settings Link */}
+                  <Link 
+                    href={`/client/${site.id}/settings`}
+                    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors shrink-0"
+                    title="Website Settings & Integration"
+                  >
+                    <Settings className="w-4 h-4" />
+                  </Link>
+                </div>
+
+                {/* High-Density KPI Stats Strip */}
+                <div className="grid grid-cols-3 gap-2 mt-4 bg-slate-50/80 border border-slate-100 rounded-xl p-2.5">
+                  <div className="flex flex-col items-center justify-center">
+                    <span className="text-base font-bold text-slate-900 leading-none">{site.stats?.total || 0}</span>
+                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mt-1">Total</span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center border-x border-slate-200/60">
+                    <span className="text-base font-bold text-slate-900 leading-none">{site.stats?.newThisWeek || 0}</span>
+                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mt-1">This Wk</span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center relative">
+                    {(site.stats?.unread || 0) > 0 && (
+                      <span className="absolute -top-1 right-2 w-2 h-2 bg-rose-500 rounded-full animate-pulse" />
+                    )}
+                    <span className={`text-base font-bold leading-none ${(site.stats?.unread || 0) > 0 ? 'text-rose-600 font-extrabold' : 'text-slate-900'}`}>
+                      {site.stats?.unread || 0}
+                    </span>
+                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mt-1">Unread</span>
+                  </div>
+                </div>
+
+                {/* Compact Alert Status Row */}
+                <div className="flex items-center justify-between mt-3 text-[11px] text-slate-500 pt-2.5 border-t border-slate-100">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10.5px] font-semibold ${
+                      site.smsAlertsEnabled !== false && site.adminPhone ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-400'
+                    }`} title={site.adminPhone ? `SMS: ${site.adminPhone}` : 'SMS Inactive'}>
+                      <Smartphone className="w-2.5 h-2.5" /> SMS
+                    </span>
+                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10.5px] font-semibold ${
+                      site.emailAlertsEnabled !== false && site.adminEmail ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-400'
+                    }`} title={site.adminEmail ? `Email: ${site.adminEmail}` : 'Email Inactive'}>
+                      <Mail className="w-2.5 h-2.5" /> Email
+                    </span>
+                  </div>
+
+                  <Link 
+                    href={`/client/${site.id}/settings`}
+                    className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 hover:underline"
+                  >
+                    Configure
+                  </Link>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="p-4 bg-slate-50 border-t border-slate-200 rounded-b-xl">
-                <a href={`/client/${site.id}`} className="block">
-                  <Button className="w-full bg-slate-900 hover:bg-slate-800 text-white shadow-sm">
-                    Open Pipeline
-                  </Button>
-                </a>
+              {/* Action Footer: Open Pipeline */}
+              <div className="px-5 py-3 bg-slate-50/60 border-t border-slate-100">
+                <Link 
+                  href={`/client/${site.id}`}
+                  prefetch={true}
+                  className="w-full inline-flex items-center justify-center gap-2 bg-[#1A1523] hover:bg-indigo-600 text-white text-xs font-semibold py-2 px-4 rounded-xl shadow-xs transition-colors"
+                >
+                  <span>Open Pipeline</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
               </div>
             </div>
           ))}

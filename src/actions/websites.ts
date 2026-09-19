@@ -17,7 +17,7 @@ export async function getWebsites() {
 
     const isClient = user.role === "CLIENT" && !!user.websiteId;
 
-    const websites = await prisma.website.findMany({
+    const websitesPromise = prisma.website.findMany({
       where: isClient ? { id: user.websiteId as string } : undefined,
       include: {
         users: {
@@ -35,28 +35,44 @@ export async function getWebsites() {
       },
     });
 
-    // We fetch the 'new this week' separately because some older prisma versions don't support where inside _count select
-    const websitesWithStats = await Promise.all(websites.map(async (site) => {
-      const newThisWeek = await prisma.lead.count({
-        where: {
-          websiteId: site.id,
-          createdAt: { gte: oneWeekAgo }
-        }
-      });
-      const unreadLeads = await prisma.lead.count({
-        where: {
-          websiteId: site.id,
-          status: "NEW"
-        }
-      });
-      return {
-        ...site,
-        stats: {
-          total: site._count.leads,
-          newThisWeek,
-          unread: unreadLeads
-        }
-      };
+    // Batch query stats in single database roundtrips instead of N*2 roundtrips
+    const newThisWeekPromise = prisma.lead.groupBy({
+      by: ['websiteId'],
+      where: {
+        ...(isClient ? { websiteId: user.websiteId as string } : {}),
+        createdAt: { gte: oneWeekAgo }
+      },
+      _count: { id: true }
+    });
+
+    const unreadPromise = prisma.lead.groupBy({
+      by: ['websiteId'],
+      where: {
+        ...(isClient ? { websiteId: user.websiteId as string } : {}),
+        status: "NEW"
+      },
+      _count: { id: true }
+    });
+
+    const [websites, newThisWeekGroups, unreadGroups] = await Promise.all([
+      websitesPromise,
+      newThisWeekPromise,
+      unreadPromise
+    ]);
+
+    const newThisWeekMap = new Map<string, number>();
+    newThisWeekGroups.forEach(g => newThisWeekMap.set(g.websiteId, g._count.id));
+
+    const unreadMap = new Map<string, number>();
+    unreadGroups.forEach(g => unreadMap.set(g.websiteId, g._count.id));
+
+    const websitesWithStats = websites.map((site) => ({
+      ...site,
+      stats: {
+        total: site._count.leads,
+        newThisWeek: newThisWeekMap.get(site.id) || 0,
+        unread: unreadMap.get(site.id) || 0
+      }
     }));
 
     const plainWebsites = JSON.parse(JSON.stringify(websitesWithStats));
