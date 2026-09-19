@@ -65,6 +65,113 @@ const HEAT_STYLE: Record<string, { dot: string }> = {
   COLD: { dot: "bg-[#EF4444]" }, 
 };
 
+// ─── PROJECT TABS COLOR PALETTES ───
+interface ProjectTheme {
+  active: string;
+  inactive: string;
+  badgeActive: string;
+  badgeInactive: string;
+  dot: string;
+}
+
+const ALL_OPPORTUNITIES_THEME: ProjectTheme = {
+  active: "bg-[#7C3AED] text-white border-[#7C3AED] shadow-sm ring-2 ring-[#7C3AED]/20",
+  inactive: "bg-[#F7F5FF] text-[#7C3AED] border-[#DDD6FE] hover:bg-[#EDE9FE] hover:border-[#C4B5FD]",
+  badgeActive: "bg-white/25 text-white",
+  badgeInactive: "bg-[#EDE9FE] text-[#7C3AED]",
+  dot: "bg-[#7C3AED]",
+};
+
+const PROJECT_PALETTES: Record<string, ProjectTheme> = {
+  rankved: {
+    active: "bg-emerald-600 text-white border-emerald-600 shadow-sm ring-2 ring-emerald-500/20",
+    inactive: "bg-emerald-50 text-emerald-800 border-emerald-200/80 hover:bg-emerald-100/90 hover:border-emerald-300",
+    badgeActive: "bg-white/25 text-white",
+    badgeInactive: "bg-emerald-200/80 text-emerald-900",
+    dot: "bg-emerald-500",
+  },
+  medisyn: {
+    active: "bg-sky-600 text-white border-sky-600 shadow-sm ring-2 ring-sky-500/20",
+    inactive: "bg-sky-50 text-sky-800 border-sky-200/80 hover:bg-sky-100/90 hover:border-sky-300",
+    badgeActive: "bg-white/25 text-white",
+    badgeInactive: "bg-sky-200/80 text-sky-900",
+    dot: "bg-sky-500",
+  },
+  ninza: {
+    active: "bg-amber-600 text-white border-amber-600 shadow-sm ring-2 ring-amber-500/20",
+    inactive: "bg-amber-50 text-amber-900 border-amber-200/80 hover:bg-amber-100/90 hover:border-amber-300",
+    badgeActive: "bg-white/25 text-white",
+    badgeInactive: "bg-amber-200/80 text-amber-950",
+    dot: "bg-amber-500",
+  },
+  clags: {
+    active: "bg-rose-600 text-white border-rose-600 shadow-sm ring-2 ring-rose-500/20",
+    inactive: "bg-rose-50 text-rose-800 border-rose-200/80 hover:bg-rose-100/90 hover:border-rose-300",
+    badgeActive: "bg-white/25 text-white",
+    badgeInactive: "bg-rose-200/80 text-rose-900",
+    dot: "bg-rose-500",
+  },
+};
+
+const FALLBACK_PALETTES: ProjectTheme[] = [
+  {
+    active: "bg-indigo-600 text-white border-indigo-600 shadow-sm ring-2 ring-indigo-500/20",
+    inactive: "bg-indigo-50 text-indigo-800 border-indigo-200/80 hover:bg-indigo-100/90 hover:border-indigo-300",
+    badgeActive: "bg-white/25 text-white",
+    badgeInactive: "bg-indigo-200/80 text-indigo-900",
+    dot: "bg-indigo-500",
+  },
+  {
+    active: "bg-teal-600 text-white border-teal-600 shadow-sm ring-2 ring-teal-500/20",
+    inactive: "bg-teal-50 text-teal-800 border-teal-200/80 hover:bg-teal-100/90 hover:border-teal-300",
+    badgeActive: "bg-white/25 text-white",
+    badgeInactive: "bg-teal-200/80 text-teal-900",
+    dot: "bg-teal-500",
+  },
+  {
+    active: "bg-purple-600 text-white border-purple-600 shadow-sm ring-2 ring-purple-500/20",
+    inactive: "bg-purple-50 text-purple-800 border-purple-200/80 hover:bg-purple-100/90 hover:border-purple-300",
+    badgeActive: "bg-white/25 text-white",
+    badgeInactive: "bg-purple-200/80 text-purple-900",
+    dot: "bg-purple-500",
+  },
+  {
+    active: "bg-cyan-600 text-white border-cyan-600 shadow-sm ring-2 ring-cyan-500/20",
+    inactive: "bg-cyan-50 text-cyan-800 border-cyan-200/80 hover:bg-cyan-100/90 hover:border-cyan-300",
+    badgeActive: "bg-white/25 text-white",
+    badgeInactive: "bg-cyan-200/80 text-cyan-900",
+    dot: "bg-cyan-500",
+  },
+  {
+    active: "bg-fuchsia-600 text-white border-fuchsia-600 shadow-sm ring-2 ring-fuchsia-500/20",
+    inactive: "bg-fuchsia-50 text-fuchsia-800 border-fuchsia-200/80 hover:bg-fuchsia-100/90 hover:border-fuchsia-300",
+    badgeActive: "bg-white/25 text-white",
+    badgeInactive: "bg-fuchsia-200/80 text-fuchsia-900",
+    dot: "bg-fuchsia-500",
+  },
+  {
+    active: "bg-blue-600 text-white border-blue-600 shadow-sm ring-2 ring-blue-500/20",
+    inactive: "bg-blue-50 text-blue-800 border-blue-200/80 hover:bg-blue-100/90 hover:border-blue-300",
+    badgeActive: "bg-white/25 text-white",
+    badgeInactive: "bg-blue-200/80 text-blue-900",
+    dot: "bg-blue-500",
+  },
+];
+
+function getProjectTheme(name: string, index: number = 0): ProjectTheme {
+  const lower = (name || "").toLowerCase();
+  for (const [key, theme] of Object.entries(PROJECT_PALETTES)) {
+    if (lower.includes(key)) return theme;
+  }
+  let hash = index;
+  for (let i = 0; i < lower.length; i++) {
+    hash = (hash << 5) - hash + lower.charCodeAt(i);
+    hash |= 0;
+  }
+  const idx = Math.abs(hash) % FALLBACK_PALETTES.length;
+  return FALLBACK_PALETTES[idx];
+}
+
 function getScore(lead: Lead) {
   if (lead.score) return lead.score;
   if (lead.temperature === "HOT") return 88;
@@ -366,12 +473,12 @@ export function PipelineView({
 
   // Dynamically compute project tabs from both websites list and existing leads
   const projectTabs = (() => {
-    const map = new Map<string, { id: string; name: string; domain?: string; count: number; newCount: number }>();
+    const map = new Map<string, { id: string; name: string; domain?: string; logoUrl?: string; count: number; newCount: number }>();
 
     // 1. Prepopulate from known websites
     websites.forEach((w) => {
       if (w?.id && w?.name) {
-        map.set(w.id, { id: w.id, name: w.name, domain: w.domain, count: 0, newCount: 0 });
+        map.set(w.id, { id: w.id, name: w.name, domain: w.domain, logoUrl: (w as any).logoUrl, count: 0, newCount: 0 });
       }
     });
 
@@ -588,42 +695,48 @@ export function PipelineView({
             onClick={() => setSelectedWebsiteTab("all")}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12.5px] font-semibold transition-all shrink-0 border cursor-pointer ${
               selectedWebsiteTab === "all"
-                ? "bg-[#F7F5FF] border-[#7C3AED]/40 text-[#7C3AED] shadow-xs"
-                : "bg-white border-slate-200/80 text-slate-600 hover:text-slate-900 hover:bg-slate-50 hover:border-slate-300"
+                ? ALL_OPPORTUNITIES_THEME.active
+                : ALL_OPPORTUNITIES_THEME.inactive
             }`}
           >
-            <Users className="h-3.5 w-3.5" />
+            <Users className="h-3.5 w-3.5 shrink-0" />
             <span className="whitespace-nowrap">All opportunities</span>
             <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold leading-none ${
-              selectedWebsiteTab === "all" ? "bg-[#7C3AED] text-white" : "bg-slate-100 text-slate-600"
+              selectedWebsiteTab === "all" ? ALL_OPPORTUNITIES_THEME.badgeActive : ALL_OPPORTUNITIES_THEME.badgeInactive
             }`}>
               {leads.length}
             </span>
           </button>
 
           {/* Dynamic Tabs for Each Project/Website */}
-          {projectTabs.map((site) => {
+          {projectTabs.map((site, idx) => {
             const isSelected = selectedWebsiteTab === site.id || selectedWebsiteTab.toLowerCase() === site.name.toLowerCase();
+            const theme = getProjectTheme(site.name, idx);
             return (
               <button
                 key={site.id}
                 type="button"
                 onClick={() => setSelectedWebsiteTab(site.id)}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12.5px] font-semibold transition-all shrink-0 border cursor-pointer ${
-                  isSelected
-                    ? "bg-[#F7F5FF] border-[#7C3AED]/40 text-[#7C3AED] shadow-xs"
-                    : "bg-white border-slate-200/80 text-slate-600 hover:text-slate-900 hover:bg-slate-50 hover:border-slate-300"
+                  isSelected ? theme.active : theme.inactive
                 }`}
               >
-                <Globe className={`h-3.5 w-3.5 ${isSelected ? "text-[#7C3AED]" : "text-slate-400"}`} />
+                {site.logoUrl ? (
+                  <img src={site.logoUrl} alt={site.name} className="w-3.5 h-3.5 rounded-xs object-contain shrink-0" />
+                ) : (
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${isSelected ? "bg-white" : theme.dot}`} />
+                )}
                 <span className="whitespace-nowrap">{site.name}</span>
                 <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold leading-none ${
-                  isSelected ? "bg-[#7C3AED] text-white" : "bg-slate-100 text-slate-600"
+                  isSelected ? theme.badgeActive : theme.badgeInactive
                 }`}>
                   {site.count}
                 </span>
                 {site.newCount > 0 && (
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title={`${site.newCount} new unread lead(s)`} />
+                  <span 
+                    className={`w-2 h-2 rounded-full animate-pulse shrink-0 ${isSelected ? "bg-white ring-2 ring-white/50" : "bg-emerald-500"}`} 
+                    title={`${site.newCount} new unread lead(s)`} 
+                  />
                 )}
               </button>
             );
