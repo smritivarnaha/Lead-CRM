@@ -424,7 +424,7 @@ export async function POST(
             : (workspace.fromEmailAddress || "onboarding@resend.dev");
 
           const defaultEmailTemplate = "You have a new lead from {{source}}:\n\n{{all_fields}}\n\nURL: {{url}}";
-          const rawTemplate = workspace.emailAlertTemplate || defaultEmailTemplate;
+          const rawTemplate = (existingSite as any).adminEmailTemplate || workspace.emailAlertTemplate || defaultEmailTemplate;
           
           const systemFieldsHtml = `
   <div style="margin-top: 16px; padding-top: 12px; border-top: 1px dashed rgba(229, 231, 235, 0.8);">
@@ -469,11 +469,14 @@ export async function POST(
   ${systemFieldsHtml}
 </div>`;
 
+          const siteName = existingSite.name || "Website";
+
           let textBody = rawTemplate
             .replace(/{{name}}/g, fullName)
             .replace(/{{email}}/g, email || "N/A")
             .replace(/{{phone}}/g, phone || "N/A")
             .replace(/{{message}}/g, message || "N/A")
+            .replace(/{{company}}/g, siteName)
             .replace(/{{source}}/g, source || "Website")
             .replace(/{{url}}/g, pageUrl || "N/A")
             .replace(/{{ip}}/g, ipAddress || "Unknown");
@@ -485,12 +488,19 @@ export async function POST(
           } else if (Object.keys(body).length > 0) {
             rawHtmlBody += `<br /><br />${allFieldsHtml}`;
           }
-          const siteName = existingSite.name || "Website";
+
           const finalHtmlBody = generateEmailHtml(
             ((workspace as any)?.emailDesignTheme as EmailTheme) || "modern_minimal",
-            `New Lead from ${siteName}`,
+            `New Lead: ${fullName}`,
             rawHtmlBody
           );
+
+          const subjectTemplate = (existingSite as any).adminEmailSubject || `🔔 New Lead: {{name}} - {{company}}`;
+          const emailSubject = subjectTemplate
+            .replace(/{{name}}/g, fullName)
+            .replace(/{{company}}/g, siteName)
+            .replace(/{{phone}}/g, phone || "N/A")
+            .replace(/{{source}}/g, source || "Website");
 
           const emailRes = await fetch("https://api.resend.com/emails", {
             method: "POST",
@@ -501,7 +511,7 @@ export async function POST(
             body: JSON.stringify({
               from: fromStr,
               to: targetEmail.split(',').map((e: string) => e.trim()).filter(Boolean),
-              subject: `🔔 New Lead: ${fullName}`,
+              subject: emailSubject,
               html: finalHtmlBody,
             })
           });

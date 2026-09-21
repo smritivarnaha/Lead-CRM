@@ -26,6 +26,8 @@ export async function PATCH(
     if (body.logoUrl !== undefined) data.logoUrl = body.logoUrl;
     if (body.adminPhone !== undefined) data.adminPhone = body.adminPhone;
     if (body.adminEmail !== undefined) data.adminEmail = body.adminEmail;
+    if (body.adminEmailSubject !== undefined) data.adminEmailSubject = body.adminEmailSubject;
+    if (body.adminEmailTemplate !== undefined) data.adminEmailTemplate = body.adminEmailTemplate;
     if (body.smsAlertsEnabled !== undefined) data.smsAlertsEnabled = body.smsAlertsEnabled;
     if (body.emailAlertsEnabled !== undefined) data.emailAlertsEnabled = body.emailAlertsEnabled;
     if (body.customerAutoReplyEnabled !== undefined) data.customerAutoReplyEnabled = body.customerAutoReplyEnabled;

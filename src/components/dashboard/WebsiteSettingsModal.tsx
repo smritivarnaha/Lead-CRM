@@ -29,7 +29,7 @@ interface WebsiteSettingsModalProps {
 
 export function WebsiteSettingsModal({ site, isOpen, onClose, onUpdate }: WebsiteSettingsModalProps) {
   const [currentSite, setCurrentSite] = useState<any>(site);
-  const [activeTab, setActiveTab] = useState<"general" | "auto_reply" | "integration">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "admin_email" | "auto_reply" | "integration">("general");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -200,6 +200,19 @@ export function WebsiteSettingsModal({ site, isOpen, onClose, onUpdate }: Websit
 
           <button 
             type="button"
+            onClick={() => setActiveTab("admin_email")}
+            className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-semibold transition-colors border-b-2 cursor-pointer ${
+              activeTab === "admin_email" 
+                ? "border-indigo-600 text-indigo-700 font-bold" 
+                : "border-transparent text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            <Mail className="w-4 h-4 text-indigo-500" />
+            <span>Admin Email (Instant Lead Alerts)</span>
+          </button>
+
+          <button 
+            type="button"
             onClick={() => setActiveTab("auto_reply")}
             className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-semibold transition-colors border-b-2 cursor-pointer ${
               activeTab === "auto_reply" 
@@ -264,11 +277,20 @@ export function WebsiteSettingsModal({ site, isOpen, onClose, onUpdate }: Websit
                 </div>
               </div>
 
-              {/* Admin Email Card */}
+              {/* Admin Email Card with link to detailed tab */}
               <div className="bg-slate-50/50 border border-slate-200/80 rounded-xl p-5 space-y-3">
-                <h3 className="font-semibold text-slate-900 text-sm flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-indigo-500" /> Admin Email (Instant Lead Alerts)
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-slate-900 text-sm flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-indigo-500" /> Admin Email (Instant Lead Alerts)
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("admin_email")}
+                    className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold cursor-pointer flex items-center gap-1"
+                  >
+                    Customize Format & Preview →
+                  </button>
+                </div>
                 <p className="text-xs text-slate-500">
                   The email address(es) that receive new lead alerts whenever a visitor submits a form. Separate multiple emails with commas.
                 </p>
@@ -315,6 +337,232 @@ export function WebsiteSettingsModal({ site, isOpen, onClose, onUpdate }: Websit
                   >
                     <Save className="w-3.5 h-3.5 mr-1.5" /> Save
                   </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "admin_email" && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              {/* Main Toggle Card */}
+              <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold text-slate-900">Send Instant Email Alerts to Admins</h3>
+                      <span className={`text-[10.5px] font-semibold px-2 py-0.5 rounded-full border ${
+                        currentSite.emailAlertsEnabled !== false
+                          ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                          : "bg-slate-100 text-slate-500 border-slate-200"
+                      }`}>
+                        {currentSite.emailAlertsEnabled !== false ? "⚡ Instant Alerts Active" : "Alerts Paused"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 max-w-xl">
+                      When enabled, your team will immediately receive a rich email alert with complete customer details every time a lead submits a form on this website.
+                    </p>
+                  </div>
+                  <Switch 
+                    checked={currentSite.emailAlertsEnabled !== false}
+                    onCheckedChange={(val: boolean) => {
+                      setCurrentSite({ ...currentSite, emailAlertsEnabled: val });
+                      handleSave("emailAlertsEnabled", val);
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Form Controls */}
+                <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs space-y-4">
+                  <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider text-slate-500 flex items-center gap-2 border-b border-slate-100 pb-3">
+                    <Mail className="w-3.5 h-3.5 text-indigo-500" /> Admin Alert Configuration
+                  </h4>
+
+                  {/* Recipient Email */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
+                      <span>Recipient Admin Email(s)</span>
+                      <span className="text-[10px] text-slate-400 font-normal">Comma-separated</span>
+                    </label>
+                    <input 
+                      type="text"
+                      value={currentSite.adminEmail || ""}
+                      onChange={(e) => setCurrentSite({ ...currentSite, adminEmail: e.target.value })}
+                      placeholder="e.g. alerts@yourdomain.com, admin@yourdomain.com"
+                      className="w-full text-xs rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500"
+                    />
+                    <p className="text-[10.5px] text-slate-400">
+                      The inbox(es) where hot lead notifications are delivered.
+                    </p>
+                  </div>
+
+                  {/* Subject Line */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
+                      <span>Email Subject Line</span>
+                      <span className="text-[10px] text-slate-400 font-normal">Supports &#123;&#123;name&#125;&#125;, &#123;&#123;company&#125;&#125;, &#123;&#123;phone&#125;&#125;</span>
+                    </label>
+                    <input 
+                      type="text"
+                      value={currentSite.adminEmailSubject || `🔔 New Lead: {{name}} - {{company}}`}
+                      onChange={(e) => setCurrentSite({ ...currentSite, adminEmailSubject: e.target.value })}
+                      placeholder="e.g. 🔔 New Lead: {{name}} - {{company}}"
+                      className="w-full text-xs rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                  {/* Custom Alert Message / Header Note */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
+                      <span>Custom Alert Message / Header Note</span>
+                      <span className="text-[10px] text-slate-400 font-normal">Supports &#123;&#123;name&#125;&#125;, &#123;&#123;company&#125;&#125;</span>
+                    </label>
+                    <textarea 
+                      rows={3}
+                      value={currentSite.adminEmailTemplate || `You have received a new hot lead on {{company}}!\n\nReview the contact details below and connect immediately.`}
+                      onChange={(e) => setCurrentSite({ ...currentSite, adminEmailTemplate: e.target.value })}
+                      placeholder="e.g. You have received a new hot lead on {{company}}! Review the contact details below and connect immediately."
+                      className="w-full text-xs rounded-lg border border-slate-200 p-3 outline-none focus:border-indigo-500 leading-relaxed resize-none font-sans"
+                    />
+                  </div>
+
+                  {/* Dynamic Placeholders */}
+                  <div className="bg-slate-50 border border-slate-100 rounded-lg p-3 space-y-1.5">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Dynamic Placeholders:</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {["{{name}}", "{{phone}}", "{{email}}", "{{company}}", "{{source}}", "{{all_fields}}"].map((tag) => (
+                        <code key={tag} className="text-[10.5px] bg-white border border-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-mono">
+                          {tag}
+                        </code>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <Button 
+                      disabled={saving} 
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs py-2 cursor-pointer"
+                      onClick={() => {
+                        handleSaveBatch({
+                          adminEmail: currentSite.adminEmail,
+                          adminEmailSubject: currentSite.adminEmailSubject,
+                          adminEmailTemplate: currentSite.adminEmailTemplate,
+                          emailAlertsEnabled: currentSite.emailAlertsEnabled,
+                        });
+                      }}
+                    >
+                      <Save className="w-3.5 h-3.5 mr-1.5" /> Save Admin Alert Settings
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Interactive Live Email Preview */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-xs uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-indigo-500" /> Admin Email Live Preview
+                    </h4>
+                    <span className="text-[10.5px] text-slate-400">Interactive Preview</span>
+                  </div>
+
+                  <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+                    {/* Email Header Banner */}
+                    <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-4 text-white">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="text-[10px] font-bold bg-rose-500 text-white px-2 py-0.5 rounded-full uppercase tracking-wider">
+                          ⚡ Hot Lead Alert
+                        </span>
+                        <span className="text-[10.5px] text-slate-300 font-medium">
+                          {currentSite.name || "Our Team"}
+                        </span>
+                      </div>
+                      <h3 className="text-sm font-bold tracking-tight text-white leading-snug">
+                        {(currentSite.adminEmailSubject || "🔔 New Lead: {{name}} - {{company}}")
+                          .replace(/{{name}}/g, "John Doe")
+                          .replace(/{{company}}/g, currentSite.name || "Our Team")
+                          .replace(/{{phone}}/g, "+91 98765 43210")
+                          .replace(/{{source}}/g, "Website Form")}
+                      </h3>
+                      <p className="text-[11px] text-slate-300 mt-1 flex items-center gap-1.5">
+                        <span>Recipient: {currentSite.adminEmail || "alerts@yourdomain.com"}</span>
+                      </p>
+                    </div>
+
+                    {/* Email Body */}
+                    <div className="p-4 space-y-3.5 text-slate-700 text-xs leading-relaxed">
+                      {/* Intro Message */}
+                      <div className="whitespace-pre-line text-slate-800 font-medium text-[11.5px] bg-indigo-50/50 border border-indigo-100 rounded-lg p-3">
+                        {(currentSite.adminEmailTemplate || "You have received a new hot lead on {{company}}!\n\nReview the contact details below and connect immediately.")
+                          .replace(/{{name}}/g, "John Doe")
+                          .replace(/{{company}}/g, currentSite.name || "Our Team")
+                          .replace(/{{source}}/g, "Website Form")}
+                      </div>
+
+                      {/* Lead Details Table */}
+                      <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-3 space-y-2 text-[11px]">
+                        <div className="flex items-center justify-between border-b border-slate-200/60 pb-1.5">
+                          <span className="font-bold uppercase text-slate-500 text-[9.5px] tracking-wider">Submitted Lead Details</span>
+                          <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                            Verified Submission
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-slate-700">
+                          <div>
+                            <span className="text-[10px] text-slate-400 block">Full Name:</span>
+                            <span className="font-bold text-slate-900">John Doe</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 block">Phone Number:</span>
+                            <span className="font-bold text-indigo-600">+91 98765 43210</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 block">Email Address:</span>
+                            <span className="font-semibold text-slate-800">john.doe@example.com</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 block">City / Location:</span>
+                            <span className="font-medium text-slate-800">Mohali, Punjab</span>
+                          </div>
+                          <div className="col-span-2">
+                            <span className="text-[10px] text-slate-400 block">Requirement / Message:</span>
+                            <span className="text-slate-800">Interested in 3 BHK Luxury Apartment, please share brochure & pricing.</span>
+                          </div>
+                        </div>
+
+                        {/* System Details */}
+                        <div className="mt-2 pt-2 border-t border-dashed border-slate-200 text-[10px] text-slate-500 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span>Source URL:</span>
+                            <span className="text-indigo-600 font-mono">https://{currentSite.domain ? currentSite.domain.replace(/^https?:\/\//, '') : 'example.com'}/contact</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>IP Address:</span>
+                            <span className="font-mono">103.45.22.89</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Received At:</span>
+                            <span>{new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* CTA Button */}
+                      <div className="pt-1 text-center">
+                        <div className="inline-flex items-center justify-center gap-1.5 w-full bg-[#1A1523] text-white py-2 px-4 rounded-lg text-xs font-semibold shadow-xs">
+                          <span>Open Lead in CRM</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+
+                      {/* Email Footer */}
+                      <div className="text-center pt-2 border-t border-slate-100 text-[10px] text-slate-400 leading-tight">
+                        Lead Automation CRM Developed By Rankved Healthcare Martech<br />
+                        Dispatched instantly to {currentSite.adminEmail || "alerts@yourdomain.com"}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

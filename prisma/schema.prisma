@@ -78,6 +78,8 @@ model Website {
   logoUrl            String? // Client's specific logo (used for push badge)
   adminPhone         String? // Client's specific phone for SMS alerts
   adminEmail         String? // Client's specific email for email alerts
+  adminEmailSubject  String?  @default("🔔 New Lead Alert: {{name}} - {{company}}")
+  adminEmailTemplate String?  @default("You have received a new hot lead on {{company}}!\n\nReview the contact details below and connect immediately.")
   smsAlertsEnabled   Boolean  @default(true)
   emailAlertsEnabled Boolean  @default(true)
   createdAt          DateTime @default(now())
