@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { X, Save, ArrowLeft, Image as ImageIcon, Smartphone, Mail, PhoneCall, Clock, CheckCircle2, Sparkles, Send, ExternalLink, ShieldCheck } from "lucide-react";
+import { X, Save, ArrowLeft, Image as ImageIcon, Smartphone, Mail, PhoneCall, Clock, CheckCircle2, Sparkles, Send, ExternalLink, ShieldCheck, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
@@ -19,11 +19,43 @@ export default function ClientSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"general" | "admin_email" | "auto_reply" | "integration">("general");
 
+  const parseAdminAlertData = (siteData: any) => {
+    let notice = `This verified lead was received from your website {{company}} via Rankved Healthcare Martech.`;
+    let message = `You have received a new hot lead on {{company}}!\n\nReview the contact details below and connect immediately.`;
+    let cta = `Open Lead in CRM`;
+
+    if (siteData?.adminEmailTemplate) {
+      if (typeof siteData.adminEmailTemplate === "string" && siteData.adminEmailTemplate.trim().startsWith("{")) {
+        try {
+          const parsed = JSON.parse(siteData.adminEmailTemplate);
+          if (parsed.notice) notice = parsed.notice;
+          if (parsed.message) message = parsed.message;
+          if (parsed.cta) cta = parsed.cta;
+        } catch (e) {
+          message = siteData.adminEmailTemplate;
+        }
+      } else {
+        message = siteData.adminEmailTemplate;
+      }
+    }
+    return { notice, message, cta };
+  };
+
+  const [adminNotice, setAdminNotice] = useState<string>("This verified lead was received from your website {{company}} via Rankved Healthcare Martech.");
+  const [adminMessage, setAdminMessage] = useState<string>("You have received a new hot lead on {{company}}!\n\nReview the contact details below and connect immediately.");
+  const [adminCta, setAdminCta] = useState<string>("Open Lead in CRM");
+
   useEffect(() => {
     getWebsites().then(res => {
       if (res.success && res.websites) {
         const found = res.websites.find((w: any) => w.id === websiteId);
-        if (found) setSite(found);
+        if (found) {
+          setSite(found);
+          const alertData = parseAdminAlertData(found);
+          setAdminNotice(alertData.notice);
+          setAdminMessage(alertData.message);
+          setAdminCta(alertData.cta);
+        }
       }
       setLoading(false);
     });
@@ -279,9 +311,14 @@ export default function ClientSettingsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Form Controls */}
               <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-5">
-                <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2 border-b border-slate-100 pb-3">
-                  <Mail className="w-4 h-4 text-indigo-500" /> Admin Alert Configuration
-                </h4>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-indigo-500" /> Admin Alert Configuration
+                  </h4>
+                  <span className="text-[11px] text-indigo-600 font-semibold bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
+                    Rankved Martech Brand
+                  </span>
+                </div>
 
                 {/* Recipient Email */}
                 <div className="space-y-2">
@@ -318,6 +355,24 @@ export default function ClientSettingsPage() {
                   />
                 </div>
 
+                {/* Website Source Notice / Client Identification */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
+                    <span>Website Source Notice (Client Identification)</span>
+                    <span className="text-[11px] text-slate-400 font-normal">Supports &#123;&#123;company&#125;&#125;, &#123;&#123;url&#125;&#125;</span>
+                  </label>
+                  <textarea 
+                    rows={2}
+                    value={adminNotice}
+                    onChange={(e) => setAdminNotice(e.target.value)}
+                    placeholder="e.g. This verified lead was received from your website {{company}} via Rankved Healthcare Martech."
+                    className="w-full text-sm rounded-lg border border-slate-200 p-3 outline-none focus:border-indigo-500 leading-relaxed resize-none"
+                  />
+                  <p className="text-[11px] text-slate-400">
+                    Explicitly lets the client or admin know this lead originated from their specific website.
+                  </p>
+                </div>
+
                 {/* Custom Alert Message / Header Note */}
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
@@ -326,10 +381,25 @@ export default function ClientSettingsPage() {
                   </label>
                   <textarea 
                     rows={3}
-                    value={site.adminEmailTemplate || `You have received a new hot lead on {{company}}!\n\nReview the contact details below and connect immediately.`}
-                    onChange={(e) => setSite({ ...site, adminEmailTemplate: e.target.value })}
-                    onBlur={(e) => handleSave("adminEmailTemplate", e.target.value)}
+                    value={adminMessage}
+                    onChange={(e) => setAdminMessage(e.target.value)}
+                    placeholder="e.g. You have received a new hot lead on {{company}}! Review the contact details below and connect immediately."
                     className="w-full text-sm rounded-lg border border-slate-200 p-3 outline-none focus:border-indigo-500 leading-relaxed resize-none"
+                  />
+                </div>
+
+                {/* Action CTA Button Label */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
+                    <span>Action CTA Button Label</span>
+                    <span className="text-[11px] text-slate-400 font-normal">Button Text</span>
+                  </label>
+                  <input 
+                    type="text"
+                    value={adminCta}
+                    onChange={(e) => setAdminCta(e.target.value)}
+                    placeholder="e.g. Open Lead in CRM"
+                    className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500"
                   />
                 </div>
 
@@ -337,7 +407,7 @@ export default function ClientSettingsPage() {
                 <div className="bg-slate-50 border border-slate-100 rounded-lg p-3.5 space-y-2">
                   <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Dynamic Placeholders:</p>
                   <div className="flex flex-wrap gap-2">
-                    {["{{name}}", "{{phone}}", "{{email}}", "{{company}}", "{{source}}", "{{all_fields}}"].map((tag) => (
+                    {["{{name}}", "{{phone}}", "{{email}}", "{{company}}", "{{url}}", "{{source}}", "{{all_fields}}"].map((tag) => (
                       <code key={tag} className="text-xs bg-white border border-slate-200 text-slate-700 px-2 py-0.5 rounded font-mono">
                         {tag}
                       </code>
@@ -350,10 +420,15 @@ export default function ClientSettingsPage() {
                     disabled={saving} 
                     className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold cursor-pointer"
                     onClick={() => {
+                      const combinedTemplate = JSON.stringify({
+                        notice: adminNotice,
+                        message: adminMessage,
+                        cta: adminCta,
+                      });
                       handleSaveBatch({
                         adminEmail: site.adminEmail,
                         adminEmailSubject: site.adminEmailSubject,
-                        adminEmailTemplate: site.adminEmailTemplate,
+                        adminEmailTemplate: combinedTemplate,
                         emailAlertsEnabled: site.emailAlertsEnabled,
                       });
                     }}
@@ -373,10 +448,24 @@ export default function ClientSettingsPage() {
                 </div>
 
                 <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-md">
+                  {/* Rankved Healthcare Martech Top Brand Bar */}
+                  <div className="bg-white px-5 py-3.5 border-b border-slate-200/80 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <img 
+                        src="https://rankved.com/wp-content/uploads/2025/04/Rankved-Logo-Official-Black.avif" 
+                        alt="Rankved Healthcare Martech" 
+                        className="h-7 w-auto object-contain"
+                      />
+                    </div>
+                    <span className="text-[10px] font-bold tracking-wider uppercase text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-md">
+                      Lead Automation Engine
+                    </span>
+                  </div>
+
                   {/* Email Header Banner */}
-                  <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-5 text-white">
+                  <div className="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 p-5 text-white">
                     <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="text-[10px] font-bold bg-rose-500 text-white px-2 py-0.5 rounded-full uppercase tracking-wider">
+                      <span className="text-[10px] font-bold bg-rose-500 text-white px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
                         ⚡ Hot Lead Alert
                       </span>
                       <span className="text-xs text-slate-300 font-medium">
@@ -397,9 +486,22 @@ export default function ClientSettingsPage() {
 
                   {/* Email Body */}
                   <div className="p-5 space-y-4 text-slate-700 text-xs leading-relaxed">
+                    {/* Website Source Notice Box */}
+                    <div className="bg-emerald-50/90 border border-emerald-200/90 rounded-lg p-3.5 space-y-1">
+                      <div className="flex items-center gap-1.5 text-[10.5px] font-bold text-emerald-800 uppercase tracking-wider">
+                        <Globe className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>Verified Website Lead Source</span>
+                      </div>
+                      <p className="text-xs text-emerald-950 font-medium leading-relaxed">
+                        {(adminNotice || "This verified lead was received from your website {{company}} via Rankved Healthcare Martech.")
+                          .replace(/{{company}}/g, site.name || "Our Team")
+                          .replace(/{{url}}/g, site.domain ? site.domain.replace(/^https?:\/\//, '') : "your-website.com")}
+                      </p>
+                    </div>
+
                     {/* Intro Message */}
-                    <div className="whitespace-pre-line text-slate-800 font-medium text-xs bg-indigo-50/50 border border-indigo-100 rounded-lg p-3">
-                      {(site.adminEmailTemplate || "You have received a new hot lead on {{company}}!\n\nReview the contact details below and connect immediately.")
+                    <div className="whitespace-pre-line text-slate-800 font-medium text-xs bg-slate-50 border border-slate-200/70 rounded-lg p-3.5">
+                      {(adminMessage || "You have received a new hot lead on {{company}}!\n\nReview the contact details below and connect immediately.")
                         .replace(/{{name}}/g, "John Doe")
                         .replace(/{{company}}/g, site.name || "Our Team")
                         .replace(/{{source}}/g, "Website Form")}
@@ -457,15 +559,22 @@ export default function ClientSettingsPage() {
                     {/* CTA Button */}
                     <div className="pt-1 text-center">
                       <div className="inline-flex items-center justify-center gap-1.5 w-full bg-[#1A1523] text-white py-2.5 px-4 rounded-lg text-xs font-semibold shadow-sm">
-                        <span>Open Lead in CRM</span>
+                        <span>{adminCta || "Open Lead in CRM"}</span>
                         <ExternalLink className="w-3.5 h-3.5" />
                       </div>
                     </div>
 
                     {/* Email Footer */}
-                    <div className="text-center pt-2 border-t border-slate-100 text-[10px] text-slate-400 leading-tight">
-                      Lead Automation CRM Developed By Rankved Healthcare Martech<br />
-                      Dispatched instantly to {site.adminEmail || "alerts@yourdomain.com"}
+                    <div className="text-center pt-2 border-t border-slate-100 text-[10px] text-slate-400 leading-tight space-y-1">
+                      <div className="flex items-center justify-center">
+                        <img 
+                          src="https://rankved.com/wp-content/uploads/2025/04/Rankved-Logo-Official-Black.avif" 
+                          alt="Rankved Healthcare Martech" 
+                          className="h-3.5 w-auto object-contain opacity-70"
+                        />
+                      </div>
+                      <p className="font-semibold text-slate-500">Lead Automation CRM Developed By Rankved Healthcare Martech</p>
+                      <p>Dispatched instantly to {site.adminEmail || "alerts@yourdomain.com"}</p>
                     </div>
                   </div>
                 </div>

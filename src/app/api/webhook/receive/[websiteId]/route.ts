@@ -425,6 +425,26 @@ export async function POST(
 
           const defaultEmailTemplate = "You have a new lead from {{source}}:\n\n{{all_fields}}\n\nURL: {{url}}";
           const rawTemplate = (existingSite as any).adminEmailTemplate || workspace.emailAlertTemplate || defaultEmailTemplate;
+          const siteName = existingSite.name || "Website";
+
+          let noticeText = `This verified lead was received from your website ${siteName} via Rankved Healthcare Martech.`;
+          let messageBody = `You have received a new hot lead on ${siteName}!\n\nReview the contact details below and connect immediately.`;
+          let ctaLabel = `Open Lead in CRM`;
+
+          if (rawTemplate) {
+            if (typeof rawTemplate === "string" && rawTemplate.trim().startsWith("{")) {
+              try {
+                const parsed = JSON.parse(rawTemplate);
+                if (parsed.notice) noticeText = parsed.notice.replace(/{{company}}/g, siteName).replace(/{{url}}/g, pageUrl || siteName);
+                if (parsed.message) messageBody = parsed.message.replace(/{{company}}/g, siteName).replace(/{{name}}/g, fullName);
+                if (parsed.cta) ctaLabel = parsed.cta;
+              } catch (e) {
+                messageBody = rawTemplate;
+              }
+            } else {
+              messageBody = rawTemplate;
+            }
+          }
           
           const systemFieldsHtml = `
   <div style="margin-top: 16px; padding-top: 12px; border-top: 1px dashed rgba(229, 231, 235, 0.8);">
@@ -469,9 +489,25 @@ export async function POST(
   ${systemFieldsHtml}
 </div>`;
 
-          const siteName = existingSite.name || "Website";
+          const rankvedHeaderHtml = `
+<div style="text-align: center; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0; margin-bottom: 20px;">
+  <img src="https://rankved.com/wp-content/uploads/2025/04/Rankved-Logo-Official-Black.avif" alt="Rankved Healthcare Martech" style="height: 38px; max-width: 220px; object-fit: contain; margin-bottom: 6px; display: inline-block;" />
+  <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #6366f1; letter-spacing: 0.08em;">
+    Lead Automation Engine · Rankved Healthcare Martech
+  </div>
+</div>`;
 
-          let textBody = rawTemplate
+          const websiteNoticeHtml = `
+<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #16a34a; padding: 14px 16px; border-radius: 8px; margin-bottom: 20px;">
+  <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #15803d; letter-spacing: 0.05em; margin-bottom: 4px;">
+    🌐 Verified Website Lead Source
+  </div>
+  <div style="font-size: 13.5px; color: #166534; line-height: 1.5; font-weight: 500;">
+    ${noticeText}
+  </div>
+</div>`;
+
+          let textBody = messageBody
             .replace(/{{name}}/g, fullName)
             .replace(/{{email}}/g, email || "N/A")
             .replace(/{{phone}}/g, phone || "N/A")
@@ -482,17 +518,28 @@ export async function POST(
             .replace(/{{ip}}/g, ipAddress || "Unknown");
 
           let rawHtmlBody = textBody.replace(/\n/g, '<br />');
-          
+
+          const ctaButtonHtml = `
+<div style="text-align: center; margin-top: 24px; margin-bottom: 20px;">
+  <a href="${pageUrl || 'https://rankved.com'}" style="background: #1A1523; color: #ffffff; padding: 12px 28px; border-radius: 8px; font-weight: 700; font-size: 13.5px; text-decoration: none; display: inline-block;">
+    ${ctaLabel} ↗
+  </a>
+</div>`;
+
+          let finalContentHtml = `${rankvedHeaderHtml}${websiteNoticeHtml}<div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px 16px; border-radius: 8px; margin-bottom: 16px; color: #1e293b; font-size: 14px; line-height: 1.6;">${rawHtmlBody}</div>`;
+
           if (rawHtmlBody.includes("{{all_fields}}")) {
-            rawHtmlBody = rawHtmlBody.replace(/{{all_fields}}/g, allFieldsHtml);
+            finalContentHtml = finalContentHtml.replace(/{{all_fields}}/g, allFieldsHtml);
           } else if (Object.keys(body).length > 0) {
-            rawHtmlBody += `<br /><br />${allFieldsHtml}`;
+            finalContentHtml += allFieldsHtml;
           }
+
+          finalContentHtml += ctaButtonHtml;
 
           const finalHtmlBody = generateEmailHtml(
             ((workspace as any)?.emailDesignTheme as EmailTheme) || "modern_minimal",
             `New Lead: ${fullName}`,
-            rawHtmlBody
+            finalContentHtml
           );
 
           const subjectTemplate = (existingSite as any).adminEmailSubject || `🔔 New Lead: {{name}} - {{company}}`;
