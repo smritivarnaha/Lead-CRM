@@ -33,28 +33,35 @@ export function WebsiteSettingsModal({ site, isOpen, onClose, onUpdate }: Websit
   const [saving, setSaving] = useState(false);
 
   const parseAdminAlertData = (siteData: any) => {
+    let subject = `🔔 New Lead: {{name}} - {{company}}`;
     let notice = `This verified lead was received from your website {{company}} via Rankved Healthcare Martech.`;
     let message = `You have received a new hot lead on {{company}}!\n\nReview the contact details below and connect immediately.`;
     let cta = `Open Lead in CRM`;
 
-    if (siteData?.adminEmailTemplate) {
-      if (typeof siteData.adminEmailTemplate === "string" && siteData.adminEmailTemplate.trim().startsWith("{")) {
+    const raw = siteData?.apiKey || siteData?.adminEmailTemplate;
+    if (raw) {
+      if (typeof raw === "string" && raw.trim().startsWith("{")) {
         try {
-          const parsed = JSON.parse(siteData.adminEmailTemplate);
+          const parsed = JSON.parse(raw);
+          if (parsed.subject) subject = parsed.subject;
           if (parsed.notice) notice = parsed.notice;
           if (parsed.message) message = parsed.message;
           if (parsed.cta) cta = parsed.cta;
         } catch (e) {
-          message = siteData.adminEmailTemplate;
+          message = raw;
         }
       } else {
-        message = siteData.adminEmailTemplate;
+        message = raw;
       }
     }
-    return { notice, message, cta };
+    if (siteData?.adminEmailSubject) {
+      subject = siteData.adminEmailSubject;
+    }
+    return { subject, notice, message, cta };
   };
 
   const initialAlertData = parseAdminAlertData(site);
+  const [adminSubject, setAdminSubject] = useState<string>(initialAlertData.subject);
   const [adminNotice, setAdminNotice] = useState<string>(initialAlertData.notice);
   const [adminMessage, setAdminMessage] = useState<string>(initialAlertData.message);
   const [adminCta, setAdminCta] = useState<string>(initialAlertData.cta);
@@ -62,6 +69,7 @@ export function WebsiteSettingsModal({ site, isOpen, onClose, onUpdate }: Websit
   useEffect(() => {
     setCurrentSite(site);
     const data = parseAdminAlertData(site);
+    setAdminSubject(data.subject);
     setAdminNotice(data.notice);
     setAdminMessage(data.message);
     setAdminCta(data.cta);
@@ -441,8 +449,8 @@ export function WebsiteSettingsModal({ site, isOpen, onClose, onUpdate }: Websit
                     </label>
                     <input 
                       type="text"
-                      value={currentSite.adminEmailSubject || `🔔 New Lead: {{name}} - {{company}}`}
-                      onChange={(e) => setCurrentSite({ ...currentSite, adminEmailSubject: e.target.value })}
+                      value={adminSubject}
+                      onChange={(e) => setAdminSubject(e.target.value)}
                       placeholder="e.g. 🔔 New Lead: {{name}} - {{company}}"
                       className="w-full text-xs rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500"
                     />
@@ -514,14 +522,14 @@ export function WebsiteSettingsModal({ site, isOpen, onClose, onUpdate }: Websit
                       className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs py-2 cursor-pointer"
                       onClick={() => {
                         const combinedTemplate = JSON.stringify({
+                          subject: adminSubject,
                           notice: adminNotice,
                           message: adminMessage,
                           cta: adminCta,
                         });
                         handleSaveBatch({
                           adminEmail: currentSite.adminEmail,
-                          adminEmailSubject: currentSite.adminEmailSubject,
-                          adminEmailTemplate: combinedTemplate,
+                          apiKey: combinedTemplate,
                           emailAlertsEnabled: currentSite.emailAlertsEnabled,
                         });
                       }}
@@ -566,7 +574,7 @@ export function WebsiteSettingsModal({ site, isOpen, onClose, onUpdate }: Websit
                         </span>
                       </div>
                       <h3 className="text-sm font-bold tracking-tight text-white leading-snug">
-                        {(currentSite.adminEmailSubject || "🔔 New Lead: {{name}} - {{company}}")
+                        {(adminSubject || "🔔 New Lead: {{name}} - {{company}}")
                           .replace(/{{name}}/g, "John Doe")
                           .replace(/{{company}}/g, currentSite.name || "Our Team")
                           .replace(/{{phone}}/g, "+91 98765 43210")

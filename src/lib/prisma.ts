@@ -7,10 +7,7 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error("DATABASE_URL environment variable is not set.");
-  }
+  const connectionString = process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/postgres";
 
   // Prisma 7 requires a driver adapter for database connections.
   // Using @prisma/adapter-pg with the Supabase connection pooler URL.

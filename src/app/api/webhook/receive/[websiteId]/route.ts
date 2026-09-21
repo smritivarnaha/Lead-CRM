@@ -5,6 +5,8 @@ import { sendPushToAll } from "@/lib/push";
 import { generateEmailHtml, EmailTheme } from "@/lib/emailTemplates";
 import { processEmailAutomations } from "@/lib/emailAutomations";
 
+export const dynamic = "force-dynamic";
+
 // Fixed seed IDs — must match prisma/seed.ts
 const WORKSPACE_ID = "mock_workspace_id";
 
@@ -424,26 +426,26 @@ export async function POST(
             : (workspace.fromEmailAddress || "onboarding@resend.dev");
 
           const defaultEmailTemplate = "You have a new lead from {{source}}:\n\n{{all_fields}}\n\nURL: {{url}}";
-          const rawTemplate = (existingSite as any).adminEmailTemplate || workspace.emailAlertTemplate || defaultEmailTemplate;
           const siteName = existingSite.name || "Website";
 
           let noticeText = `This verified lead was received from your website ${siteName} via Rankved Healthcare Martech.`;
           let messageBody = `You have received a new hot lead on ${siteName}!\n\nReview the contact details below and connect immediately.`;
           let ctaLabel = `Open Lead in CRM`;
+          let subjectTemplate = `🔔 New Lead: {{name}} - {{company}}`;
 
-          if (rawTemplate) {
-            if (typeof rawTemplate === "string" && rawTemplate.trim().startsWith("{")) {
-              try {
-                const parsed = JSON.parse(rawTemplate);
-                if (parsed.notice) noticeText = parsed.notice.replace(/{{company}}/g, siteName).replace(/{{url}}/g, pageUrl || siteName);
-                if (parsed.message) messageBody = parsed.message.replace(/{{company}}/g, siteName).replace(/{{name}}/g, fullName);
-                if (parsed.cta) ctaLabel = parsed.cta;
-              } catch (e) {
-                messageBody = rawTemplate;
-              }
-            } else {
-              messageBody = rawTemplate;
+          const rawConfig = existingSite.apiKey;
+          if (rawConfig && typeof rawConfig === "string" && rawConfig.trim().startsWith("{")) {
+            try {
+              const parsed = JSON.parse(rawConfig);
+              if (parsed.subject) subjectTemplate = parsed.subject;
+              if (parsed.notice) noticeText = parsed.notice.replace(/{{company}}/g, siteName).replace(/{{url}}/g, pageUrl || siteName);
+              if (parsed.message) messageBody = parsed.message.replace(/{{company}}/g, siteName).replace(/{{name}}/g, fullName);
+              if (parsed.cta) ctaLabel = parsed.cta;
+            } catch (e) {
+              messageBody = rawConfig;
             }
+          } else if (workspace?.emailAlertTemplate) {
+            messageBody = workspace.emailAlertTemplate;
           }
           
           const systemFieldsHtml = `
@@ -542,7 +544,6 @@ export async function POST(
             finalContentHtml
           );
 
-          const subjectTemplate = (existingSite as any).adminEmailSubject || `🔔 New Lead: {{name}} - {{company}}`;
           const emailSubject = subjectTemplate
             .replace(/{{name}}/g, fullName)
             .replace(/{{company}}/g, siteName)

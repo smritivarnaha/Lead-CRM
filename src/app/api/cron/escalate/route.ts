@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { sendPushToAll } from "@/lib/push";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
   // Vercel Cron auth check
   const authHeader = request.headers.get("authorization");

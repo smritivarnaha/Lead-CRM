@@ -20,27 +20,34 @@ export default function ClientSettingsPage() {
   const [activeTab, setActiveTab] = useState<"general" | "admin_email" | "auto_reply" | "integration">("general");
 
   const parseAdminAlertData = (siteData: any) => {
+    let subject = `🔔 New Lead: {{name}} - {{company}}`;
     let notice = `This verified lead was received from your website {{company}} via Rankved Healthcare Martech.`;
     let message = `You have received a new hot lead on {{company}}!\n\nReview the contact details below and connect immediately.`;
     let cta = `Open Lead in CRM`;
 
-    if (siteData?.adminEmailTemplate) {
-      if (typeof siteData.adminEmailTemplate === "string" && siteData.adminEmailTemplate.trim().startsWith("{")) {
+    const raw = siteData?.apiKey || siteData?.adminEmailTemplate;
+    if (raw) {
+      if (typeof raw === "string" && raw.trim().startsWith("{")) {
         try {
-          const parsed = JSON.parse(siteData.adminEmailTemplate);
+          const parsed = JSON.parse(raw);
+          if (parsed.subject) subject = parsed.subject;
           if (parsed.notice) notice = parsed.notice;
           if (parsed.message) message = parsed.message;
           if (parsed.cta) cta = parsed.cta;
         } catch (e) {
-          message = siteData.adminEmailTemplate;
+          message = raw;
         }
       } else {
-        message = siteData.adminEmailTemplate;
+        message = raw;
       }
     }
-    return { notice, message, cta };
+    if (siteData?.adminEmailSubject) {
+      subject = siteData.adminEmailSubject;
+    }
+    return { subject, notice, message, cta };
   };
 
+  const [adminSubject, setAdminSubject] = useState<string>("🔔 New Lead: {{name}} - {{company}}");
   const [adminNotice, setAdminNotice] = useState<string>("This verified lead was received from your website {{company}} via Rankved Healthcare Martech.");
   const [adminMessage, setAdminMessage] = useState<string>("You have received a new hot lead on {{company}}!\n\nReview the contact details below and connect immediately.");
   const [adminCta, setAdminCta] = useState<string>("Open Lead in CRM");
@@ -52,6 +59,7 @@ export default function ClientSettingsPage() {
         if (found) {
           setSite(found);
           const alertData = parseAdminAlertData(found);
+          setAdminSubject(alertData.subject);
           setAdminNotice(alertData.notice);
           setAdminMessage(alertData.message);
           setAdminCta(alertData.cta);
@@ -347,9 +355,8 @@ export default function ClientSettingsPage() {
                   </label>
                   <input 
                     type="text"
-                    value={site.adminEmailSubject || `🔔 New Lead: {{name}} - {{company}}`}
-                    onChange={(e) => setSite({ ...site, adminEmailSubject: e.target.value })}
-                    onBlur={(e) => handleSave("adminEmailSubject", e.target.value)}
+                    value={adminSubject}
+                    onChange={(e) => setAdminSubject(e.target.value)}
                     placeholder="e.g. 🔔 New Lead: {{name}} - {{company}}"
                     className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500"
                   />
@@ -421,14 +428,14 @@ export default function ClientSettingsPage() {
                     className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold cursor-pointer"
                     onClick={() => {
                       const combinedTemplate = JSON.stringify({
+                        subject: adminSubject,
                         notice: adminNotice,
                         message: adminMessage,
                         cta: adminCta,
                       });
                       handleSaveBatch({
                         adminEmail: site.adminEmail,
-                        adminEmailSubject: site.adminEmailSubject,
-                        adminEmailTemplate: combinedTemplate,
+                        apiKey: combinedTemplate,
                         emailAlertsEnabled: site.emailAlertsEnabled,
                       });
                     }}
@@ -473,7 +480,7 @@ export default function ClientSettingsPage() {
                       </span>
                     </div>
                     <h3 className="text-base font-bold tracking-tight text-white leading-snug">
-                      {(site.adminEmailSubject || "🔔 New Lead: {{name}} - {{company}}")
+                      {(adminSubject || "🔔 New Lead: {{name}} - {{company}}")
                         .replace(/{{name}}/g, "John Doe")
                         .replace(/{{company}}/g, site.name || "Our Team")
                         .replace(/{{phone}}/g, "+91 98765 43210")
