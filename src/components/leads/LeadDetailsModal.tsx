@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { X, MapPin, Mail, Phone, Globe, Tag, Clock, Calendar, TrendingUp, StickyNote, Plus, Flame, Sun, Snowflake } from "lucide-react";
+import { getDeduplicatedFields } from "@/lib/fieldDeduplication";
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; dot: string }> = {
   NEW:         { label: "New",         bg: "bg-blue-50",   text: "text-blue-700",   dot: "bg-blue-500" },
@@ -42,55 +43,15 @@ export function LeadDetailsModal({ lead, onClose }: { lead: any; onClose: () => 
 
   const initials = lead.fullName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
 
-  // Parse all fields from rawFields JSON
-  const customFields: { label: string; value: string }[] = [];
-  const technicalFields: { label: string; value: string }[] = [];
-
-  const formatFieldTitle = (k: string) => {
-    return k
-      .replace(/^[_\-]+/, "")
-      .replace(/[_\-]+/g, " ")
-      .replace(/([a-z])([A-Z])/g, "$1 $2")
-      .replace(/\b\w/g, (c) => c.toUpperCase())
-      .trim();
-  };
-
-  const formatFieldValue = (v: any): string => {
-    if (v === undefined || v === null || v === "") return "—";
-    if (Array.isArray(v)) return v.join(", ");
-    if (typeof v === "object") {
-      try { return JSON.stringify(v); } catch { return String(v); }
-    }
-    return String(v);
-  };
-
-  if (lead.rawFields) {
-    try {
-      const parsed = JSON.parse(lead.rawFields);
-      if (parsed && typeof parsed === "object") {
-        Object.entries(parsed).forEach(([k, v]) => {
-          if (v === undefined || v === null || v === "") return;
-          const lowerK = k.toLowerCase();
-          
-          if (lowerK.includes("recaptcha") || lowerK.startsWith("_") || ["submit", "action", "status", "priority", "temperature", "score", "createdat", "updatedat", "websiteid", "workspaceid", "assignedtoid", "followupat", "callnotes"].includes(lowerK)) return;
-
-          const isStandardContact = ["id", "name", "fullname", "first_name", "last_name", "firstname", "lastname", "naam", "email", "your-email", "email_address", "e-mail", "mail", "phone", "tel", "mobile", "phone_number", "your-phone", "contact", "whatsapp", "number", "my_phone_field", "message", "your-message", "comments", "query", "description", "msg", "text", "details"].includes(lowerK);
-
-          const isTechnical = ["source", "form_name", "form_id", "ipaddress", "ip_address", "pageurl", "page_url", "pagetitle", "page_title", "site_url", "site_domain"].includes(lowerK) || lowerK.startsWith("utm_");
-
-          if (isStandardContact) {
-            // skip, already in Details or Header
-          } else if (isTechnical) {
-            technicalFields.push({ label: formatFieldTitle(k), value: formatFieldValue(v) });
-          } else {
-            customFields.push({ label: formatFieldTitle(k), value: formatFieldValue(v) });
-          }
-        });
-      }
-    } catch (e) {
-      // Ignore JSON parse errors
-    }
-  }
+  // Parse clean, deduplicated custom and technical fields from rawFields
+  const { customFieldsOnly: customFields, technicalFields } = getDeduplicatedFields(lead.rawFields, {
+    fullName: lead.fullName,
+    phone: lead.phone,
+    email: lead.email,
+    message: lead.message,
+    city: lead.city,
+    state: lead.state,
+  });
 
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[100] flex justify-end" onClick={onClose}>

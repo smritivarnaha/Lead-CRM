@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { sendPushToAll } from "@/lib/push";
 import { generateEmailHtml, EmailTheme } from "@/lib/emailTemplates";
 import { processEmailAutomations } from "@/lib/emailAutomations";
+import { getDeduplicatedFields } from "@/lib/fieldDeduplication";
 
 export const dynamic = "force-dynamic";
 
@@ -368,9 +369,17 @@ export async function POST(
     const smsPromise = (async () => {
       if (existingSite.smsAlertsEnabled !== false && workspace?.fast2smsApiKey && targetPhone) {
         try {
-          const allFieldsText = Object.entries(body)
-            .filter(([k]) => !['site_url', 'site_domain', 'pageUrl', 'pageTitle'].includes(k))
-            .map(([k, v]) => `${k}: ${v}`)
+          const { allDeduplicatedFields: smsFields } = getDeduplicatedFields(body, {
+            fullName,
+            phone,
+            email,
+            message,
+            city,
+            state,
+          });
+
+          const allFieldsText = smsFields
+            .map(f => `${f.label}: ${f.value}`)
             .join('\n');
 
           const smsTemplate = workspace.smsTemplate || "🔥 New Lead: {{name}}\n\n{{all_fields}}";
@@ -478,14 +487,22 @@ export async function POST(
             return String(v);
           };
 
+          const { allDeduplicatedFields } = getDeduplicatedFields(body, {
+            fullName,
+            phone,
+            email,
+            message,
+            city,
+            state,
+          });
+
           const allFieldsHtml = `
 <div style="background: rgba(243, 244, 246, 0.7); border: 1px solid rgba(229, 231, 235, 1); border-radius: 8px; padding: 16px; margin-top: 20px;">
-  ${Object.entries(body)
-    .filter(([k]) => !['site_url', 'site_domain', 'pageUrl', 'pageTitle', '_redirect', '_honeypot', 'redirect_url'].includes(k))
-    .map(([k, v]) => `
+  ${allDeduplicatedFields
+    .map((f) => `
     <div style="margin-bottom: 14px; border-bottom: 1px solid rgba(229, 231, 235, 0.5); padding-bottom: 8px;">
-      <div style="font-size: 11.5px; text-transform: uppercase; color: #6366f1; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 4px;">${formatFieldLabel(k)}</div>
-      <div style="font-size: 15px; font-weight: 500; margin: 0; word-break: break-word; color: #1f2937;">${formatVal(v)}</div>
+      <div style="font-size: 11.5px; text-transform: uppercase; color: #6366f1; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 4px;">${f.label}</div>
+      <div style="font-size: 15px; font-weight: 500; margin: 0; word-break: break-word; color: #1f2937;">${f.value}</div>
     </div>
   `).join('')}
   ${systemFieldsHtml}
