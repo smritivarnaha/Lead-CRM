@@ -3,8 +3,92 @@
 import prisma from "@/lib/prisma";
 import { clerkClient } from "@clerk/nextjs/server";
 import { getAuthenticatedUser } from "@/lib/auth";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { cache } from "react";
+
+const getCachedWebsitesList = unstable_cache(
+  async (isClient: boolean, websiteId?: string | null) => {
+    return prisma.website.findMany({
+      where: isClient && websiteId ? { id: websiteId } : undefined,
+      select: {
+        id: true,
+        name: true,
+        domain: true,
+        logoUrl: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+  },
+  ["websites_list_cache"],
+  { revalidate: 60, tags: ["websites_list"] }
+);
+
+const getCachedWebsitesWithStats = unstable_cache(
+  async (isClient: boolean, websiteId?: string | null) => {
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const websitesPromise = prisma.website.findMany({
+      where: isClient && websiteId ? { id: websiteId } : undefined,
+      include: {
+        users: {
+          where: { role: "CLIENT" },
+          select: { id: true, email: true, firstName: true, lastName: true },
+        },
+        _count: {
+          select: {
+            leads: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    const newThisWeekPromise = prisma.lead.groupBy({
+      by: ["websiteId"],
+      where: {
+        ...(isClient && websiteId ? { websiteId } : {}),
+        createdAt: { gte: oneWeekAgo },
+      },
+      _count: { id: true },
+    });
+
+    const unreadPromise = prisma.lead.groupBy({
+      by: ["websiteId"],
+      where: {
+        ...(isClient && websiteId ? { websiteId } : {}),
+        status: "NEW",
+      },
+      _count: { id: true },
+    });
+
+    const [websites, newThisWeekGroups, unreadGroups] = await Promise.all([
+      websitesPromise,
+      newThisWeekPromise,
+      unreadPromise,
+    ]);
+
+    const newThisWeekMap = new Map<string, number>();
+    newThisWeekGroups.forEach((g) => newThisWeekMap.set(g.websiteId, g._count.id));
+
+    const unreadMap = new Map<string, number>();
+    unreadGroups.forEach((g) => unreadMap.set(g.websiteId, g._count.id));
+
+    return websites.map((site) => ({
+      ...site,
+      stats: {
+        total: site._count.leads,
+        newThisWeek: newThisWeekMap.get(site.id) || 0,
+        unread: unreadMap.get(site.id) || 0,
+      },
+    }));
+  },
+  ["websites_with_stats_cache"],
+  { revalidate: 20, tags: ["websites_stats"] }
+);
 
 export const getWebsites = cache(async () => {
   try {
@@ -14,71 +98,12 @@ export const getWebsites = cache(async () => {
       return { success: false, error: "Unauthorized" };
     }
 
-    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-
     const isClient = user.role === "CLIENT" && !!user.websiteId;
+    const websitesWithStats = await getCachedWebsitesWithStats(isClient, user.websiteId || null);
 
-    const websitesPromise = prisma.website.findMany({
-      where: isClient ? { id: user.websiteId as string } : undefined,
-      include: {
-        users: {
-          where: { role: "CLIENT" },
-          select: { id: true, email: true, firstName: true, lastName: true },
-        },
-        _count: {
-          select: {
-            leads: true,
-          }
-        }
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    // Batch query stats in single database roundtrips instead of N*2 roundtrips
-    const newThisWeekPromise = prisma.lead.groupBy({
-      by: ['websiteId'],
-      where: {
-        ...(isClient ? { websiteId: user.websiteId as string } : {}),
-        createdAt: { gte: oneWeekAgo }
-      },
-      _count: { id: true }
-    });
-
-    const unreadPromise = prisma.lead.groupBy({
-      by: ['websiteId'],
-      where: {
-        ...(isClient ? { websiteId: user.websiteId as string } : {}),
-        status: "NEW"
-      },
-      _count: { id: true }
-    });
-
-    const [websites, newThisWeekGroups, unreadGroups] = await Promise.all([
-      websitesPromise,
-      newThisWeekPromise,
-      unreadPromise
-    ]);
-
-    const newThisWeekMap = new Map<string, number>();
-    newThisWeekGroups.forEach(g => newThisWeekMap.set(g.websiteId, g._count.id));
-
-    const unreadMap = new Map<string, number>();
-    unreadGroups.forEach(g => unreadMap.set(g.websiteId, g._count.id));
-
-    const websitesWithStats = websites.map((site) => ({
-      ...site,
-      stats: {
-        total: site._count.leads,
-        newThisWeek: newThisWeekMap.get(site.id) || 0,
-        unread: unreadMap.get(site.id) || 0
-      }
-    }));
-
-    const plainWebsites = JSON.parse(JSON.stringify(websitesWithStats));
-    return { success: true, websites: plainWebsites };
-  } catch (error) {
+    return { success: true, websites: JSON.parse(JSON.stringify(websitesWithStats)) };
+  } catch (error: any) {
+    if (error?.digest === "DYNAMIC_SERVER_USAGE") throw error;
     console.error("Error fetching websites:", error);
     return { success: false, error: "Failed to fetch websites" };
   }
@@ -94,22 +119,11 @@ export const getWebsitesList = cache(async () => {
     if (!user) return { success: false, error: "Unauthorized" };
 
     const isClient = user.role === "CLIENT" && !!user.websiteId;
-
-    const websites = await prisma.website.findMany({
-      where: isClient ? { id: user.websiteId as string } : undefined,
-      select: {
-        id: true,
-        name: true,
-        domain: true,
-        logoUrl: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+    const websites = await getCachedWebsitesList(isClient, user.websiteId || null);
 
     return { success: true, websites: JSON.parse(JSON.stringify(websites)) };
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.digest === "DYNAMIC_SERVER_USAGE") throw error;
     console.error("Error in getWebsitesList:", error);
     return { success: false, error: "Failed to fetch websites list" };
   }
@@ -187,6 +201,11 @@ export async function createWebsite(data: { name: string; domain: string }) {
 
     const plainSite = JSON.parse(JSON.stringify(newSite));
     revalidatePath("/websites");
+    revalidatePath("/", "layout");
+    try {
+      (revalidateTag as any)("websites_list", { expire: 0 });
+      (revalidateTag as any)("websites_stats", { expire: 0 });
+    } catch (e) {}
     return { success: true, website: plainSite };
   } catch (error) {
     console.error("Error creating website:", error);

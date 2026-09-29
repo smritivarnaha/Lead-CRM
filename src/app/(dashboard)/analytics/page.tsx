@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getWebsites } from "@/actions/websites";
+import { getWebsitesList } from "@/actions/websites";
 import { getLeads } from "@/actions/leads";
 import { useUser } from "@clerk/nextjs";
 import { 
@@ -64,7 +64,7 @@ export default function AnalyticsPage() {
     }
     try {
       const [webRes, leadRes] = await Promise.all([
-        getWebsites(),
+        getWebsitesList(),
         getLeads()
       ]);
 

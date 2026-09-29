@@ -2,6 +2,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import PushPermissionBanner from "@/components/PushPermissionBanner";
 
 import { getAuthenticatedUser } from "@/lib/auth";
+import { getWebsitesList } from "@/actions/websites";
 import { AlertCircle } from "lucide-react";
 
 export default async function DashboardLayout({
@@ -9,7 +10,10 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getAuthenticatedUser();
+  const [user, websitesRes] = await Promise.all([
+    getAuthenticatedUser(),
+    getWebsitesList()
+  ]);
   
   if (user?.role === "STAFF" && !user.websiteId && !user.workspaceId) {
     return (
@@ -32,8 +36,10 @@ export default async function DashboardLayout({
     );
   }
 
+  const initialWebsites = websitesRes.success && websitesRes.websites ? websitesRes.websites : [];
+
   return (
-    <AppLayout>
+    <AppLayout initialWebsites={initialWebsites}>
       {children}
       <PushPermissionBanner />
     </AppLayout>

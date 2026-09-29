@@ -40,6 +40,12 @@ export async function PATCH(
       data,
     });
 
+    try {
+      const { revalidateTag } = await import("next/cache");
+      (revalidateTag as any)("websites_list", { expire: 0 });
+      (revalidateTag as any)("websites_stats", { expire: 0 });
+    } catch (e) {}
+
     return NextResponse.json({ success: true, website: updatedWebsite });
   } catch (error) {
     console.error("Error updating website:", error);

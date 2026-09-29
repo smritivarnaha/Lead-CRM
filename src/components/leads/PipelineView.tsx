@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { getLeads, getLeadsByWebsite, updateLeadStatus, logCallAction, bulkDeleteLeads } from "@/actions/leads";
-import { getWebsites } from "@/actions/websites";
+import { getWebsitesList } from "@/actions/websites";
 import { LeadDetailsModal } from "@/components/leads/LeadDetailsModal";
 import { CallLogModal } from "@/components/leads/CallLogModal";
 import {
@@ -465,7 +465,7 @@ export function PipelineView({
   // Fetch websites if not provided
   useEffect(() => {
     if (!initialWebsites) {
-      getWebsites().then((res) => {
+      getWebsitesList().then((res) => {
         if (res.success && res.websites) setWebsites(res.websites);
       });
     }

@@ -12,13 +12,11 @@ export interface AuthenticatedUser {
   workspaceId: string | null;
 }
 
-export const getAuthenticatedUser = cache(async (): Promise<AuthenticatedUser | null> => {
-  const { userId } = await auth();
-  if (!userId) return null;
+import { unstable_cache } from "next/cache";
 
-  try {
-    // 1. Query the local database for the user by primary key (instant, ~2ms)
-    const dbUser = await prisma.user.findUnique({
+const getCachedUserById = unstable_cache(
+  async (userId: string) => {
+    return prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
@@ -30,6 +28,18 @@ export const getAuthenticatedUser = cache(async (): Promise<AuthenticatedUser | 
         workspaceId: true,
       },
     });
+  },
+  ["auth_user_by_id"],
+  { revalidate: 60, tags: ["auth_user"] }
+);
+
+export const getAuthenticatedUser = cache(async (): Promise<AuthenticatedUser | null> => {
+  const { userId } = await auth();
+  if (!userId) return null;
+
+  try {
+    // 1. Query cached user record (0ms in memory, revalidated after 60s)
+    const dbUser = await getCachedUserById(userId);
 
     if (dbUser) {
       return dbUser;

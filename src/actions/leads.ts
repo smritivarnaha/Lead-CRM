@@ -28,6 +28,7 @@ export const getLeads = cache(async () => {
     const leads = await prisma.lead.findMany({
       where: filterWebsiteId ? { websiteId: filterWebsiteId } : {},
       orderBy: { createdAt: "desc" },
+      take: 200,
       select: {
         id: true,
         fullName: true,
@@ -73,6 +74,7 @@ export const getLeadsByWebsite = cache(async (websiteId: string) => {
     const leads = await prisma.lead.findMany({
       where: { websiteId },
       orderBy: { createdAt: "desc" },
+      take: 200,
       select: {
         id: true,
         fullName: true,

@@ -11,7 +11,13 @@ import { MobileNav } from "./MobileNav";
 import { ActiveProfileProvider } from "@/components/providers/ActiveProfileProvider";
 import { showLeadToast } from "@/components/leads/LeadAlertToast";
 
-export function AppLayout({ children }: { children: React.ReactNode }) {
+export function AppLayout({ 
+  children,
+  initialWebsites 
+}: { 
+  children: React.ReactNode;
+  initialWebsites?: any[];
+}) {
   const { user } = useUser();
 
   useEffect(() => {
@@ -47,7 +53,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   return (
-    <ActiveProfileProvider>
+    <ActiveProfileProvider initialWebsites={initialWebsites}>
       <div
         className="flex h-screen overflow-hidden"
         style={{ background: "#F7F5FF", color: "#1A1523" }}

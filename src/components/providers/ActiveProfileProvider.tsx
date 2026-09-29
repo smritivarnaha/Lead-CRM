@@ -1,20 +1,20 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { getWebsites } from "@/actions/websites";
+import { getWebsitesList } from "@/actions/websites";
 import { useUser } from "@clerk/nextjs";
 
 export type Website = {
   id: string;
   name: string;
   domain: string;
-  webhookUrl: string;
-  isActive: boolean;
+  webhookUrl?: string;
+  isActive?: boolean;
   logoUrl?: string | null;
   adminPhone?: string | null;
   adminEmail?: string | null;
-  smsAlertsEnabled: boolean;
-  emailAlertsEnabled: boolean;
+  smsAlertsEnabled?: boolean;
+  emailAlertsEnabled?: boolean;
   stats?: {
     total: number;
     newThisWeek: number;
@@ -33,12 +33,47 @@ interface ActiveProfileContextType {
 
 const ActiveProfileContext = createContext<ActiveProfileContextType | undefined>(undefined);
 
-export function ActiveProfileProvider({ children }: { children: React.ReactNode }) {
-  const [websites, setWebsites] = useState<Website[]>([]);
+export function ActiveProfileProvider({ 
+  children,
+  initialWebsites 
+}: { 
+  children: React.ReactNode;
+  initialWebsites?: Website[];
+}) {
+  const [websites, setWebsites] = useState<Website[]>(initialWebsites || []);
   const [activeWebsiteId, setActiveWebsiteId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!initialWebsites || initialWebsites.length === 0);
   const { user, isLoaded } = useUser();
 
+  // Keep state in sync if initialWebsites updates
+  useEffect(() => {
+    if (initialWebsites && initialWebsites.length > 0) {
+      setWebsites(initialWebsites);
+      setIsLoading(false);
+    }
+  }, [initialWebsites]);
+
+  // Determine active profile from user role or localStorage
+  useEffect(() => {
+    if (!isLoaded || !user) return;
+
+    const role = user.publicMetadata?.role as string | undefined;
+    const isClient = role === "CLIENT";
+    const currentList = websites.length > 0 ? websites : (initialWebsites || []);
+
+    if (isClient && currentList.length > 0) {
+      setActiveWebsiteId(currentList[0].id);
+    } else if (!isClient && currentList.length > 0) {
+      const savedId = localStorage.getItem("leadflow_active_website_id");
+      if (savedId && currentList.some((w: Website) => w.id === savedId)) {
+        setActiveWebsiteId(savedId);
+      } else {
+        setActiveWebsiteId(null);
+      }
+    }
+  }, [isLoaded, user, websites]);
+
+  // Only fetch on client if initialWebsites was not provided
   useEffect(() => {
     if (!isLoaded) return;
     if (!user) {
@@ -46,9 +81,14 @@ export function ActiveProfileProvider({ children }: { children: React.ReactNode 
       return;
     }
 
+    if (initialWebsites && initialWebsites.length > 0) {
+      setIsLoading(false);
+      return;
+    }
+
     const fetchSites = async () => {
       try {
-        const res = await getWebsites();
+        const res = await getWebsitesList();
         if (res?.success && res.websites) {
           setWebsites(res.websites);
           
@@ -58,7 +98,6 @@ export function ActiveProfileProvider({ children }: { children: React.ReactNode 
           if (isClient && res.websites.length > 0) {
             setActiveWebsiteId(res.websites[0].id);
           } else if (!isClient) {
-            // For admins, default to "all" (null) or load from localStorage if previously selected
             const savedId = localStorage.getItem("leadflow_active_website_id");
             if (savedId && res.websites.some((w: Website) => w.id === savedId)) {
               setActiveWebsiteId(savedId);
@@ -75,7 +114,7 @@ export function ActiveProfileProvider({ children }: { children: React.ReactNode 
     };
     
     fetchSites();
-  }, [isLoaded, user]);
+  }, [isLoaded, user, initialWebsites]);
 
   // Sync to localStorage AND cookie whenever it changes
   useEffect(() => {
