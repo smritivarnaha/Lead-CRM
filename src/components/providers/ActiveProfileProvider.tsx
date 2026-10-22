@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { getWebsitesList } from "@/actions/websites";
 import { useUser } from "@clerk/nextjs";
 
@@ -44,8 +44,9 @@ export function ActiveProfileProvider({
   const [activeWebsiteId, setActiveWebsiteId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(!initialWebsites || initialWebsites.length === 0);
   const { user, isLoaded } = useUser();
+  const hasInitializedProfile = useRef(false);
 
-  // Keep state in sync if initialWebsites updates
+  // Keep state in sync if initialWebsites updates from server
   useEffect(() => {
     if (initialWebsites && initialWebsites.length > 0) {
       setWebsites(initialWebsites);
@@ -53,17 +54,19 @@ export function ActiveProfileProvider({
     }
   }, [initialWebsites]);
 
-  // Determine active profile from user role or localStorage
+  // Initialize active profile once from user role or localStorage
   useEffect(() => {
-    if (!isLoaded || !user) return;
+    if (!isLoaded || !user || hasInitializedProfile.current) return;
+
+    const currentList = websites.length > 0 ? websites : (initialWebsites || []);
+    if (currentList.length === 0) return;
 
     const role = user.publicMetadata?.role as string | undefined;
     const isClient = role === "CLIENT";
-    const currentList = websites.length > 0 ? websites : (initialWebsites || []);
 
-    if (isClient && currentList.length > 0) {
+    if (isClient) {
       setActiveWebsiteId(currentList[0].id);
-    } else if (!isClient && currentList.length > 0) {
+    } else {
       const savedId = localStorage.getItem("leadflow_active_website_id");
       if (savedId && currentList.some((w: Website) => w.id === savedId)) {
         setActiveWebsiteId(savedId);
@@ -71,7 +74,8 @@ export function ActiveProfileProvider({
         setActiveWebsiteId(null);
       }
     }
-  }, [isLoaded, user, websites]);
+    hasInitializedProfile.current = true;
+  }, [isLoaded, user, websites, initialWebsites]);
 
   // Only fetch on client if initialWebsites was not provided
   useEffect(() => {
@@ -91,20 +95,6 @@ export function ActiveProfileProvider({
         const res = await getWebsitesList();
         if (res?.success && res.websites) {
           setWebsites(res.websites);
-          
-          const role = user.publicMetadata?.role as string | undefined;
-          const isClient = role === "CLIENT";
-          
-          if (isClient && res.websites.length > 0) {
-            setActiveWebsiteId(res.websites[0].id);
-          } else if (!isClient) {
-            const savedId = localStorage.getItem("leadflow_active_website_id");
-            if (savedId && res.websites.some((w: Website) => w.id === savedId)) {
-              setActiveWebsiteId(savedId);
-            } else {
-              setActiveWebsiteId(null);
-            }
-          }
         }
       } catch (e) {
         console.error("Error fetching websites for context:", e);
@@ -116,8 +106,10 @@ export function ActiveProfileProvider({
     fetchSites();
   }, [isLoaded, user, initialWebsites]);
 
-  // Sync to localStorage AND cookie whenever it changes
+  // Sync to localStorage AND cookie only after initial profile resolution
   useEffect(() => {
+    if (!hasInitializedProfile.current) return;
+
     if (activeWebsiteId) {
       localStorage.setItem("leadflow_active_website_id", activeWebsiteId);
       document.cookie = `leadflow_active_website_id=${activeWebsiteId}; path=/; max-age=31536000; SameSite=Lax`;

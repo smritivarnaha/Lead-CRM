@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { getLeads, getLeadsByWebsite, updateLeadStatus, logCallAction, bulkDeleteLeads } from "@/actions/leads";
 import { getWebsitesList } from "@/actions/websites";
 import { LeadDetailsModal } from "@/components/leads/LeadDetailsModal";
@@ -28,6 +28,22 @@ import {
   Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
+import { KanbanBoard } from "./KanbanBoard";
+
+const DATE_FORMATTER = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" });
+const TIME_FORMATTER = new Intl.DateTimeFormat("en-US", { hour: "2-digit", minute: "2-digit" });
+
+function formatLeadDate(dateStr: string) {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "";
+  return DATE_FORMATTER.format(d);
+}
+
+function formatLeadTime(dateStr: string) {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "";
+  return TIME_FORMATTER.format(d);
+}
 
 type Lead = {
   id: string;
@@ -179,8 +195,6 @@ function getScore(lead: Lead) {
   return 24;
 }
 
-import { KanbanBoard } from "./KanbanBoard";
-
 // --- Custom Stage / Action Selector Component ---
 function StageSelector({ lead, stageConfig, handleStatusChange, isMobile = false }: { lead: any, stageConfig: any, handleStatusChange: any, isMobile?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -189,6 +203,7 @@ function StageSelector({ lead, stageConfig, handleStatusChange, isMobile = false
   const ref = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
+    if (!isOpen) return;
     const handleClickOutside = (event: MouseEvent) => {
       if (ref.current && !ref.current.contains(event.target as Node)) {
         setIsOpen(false);
@@ -196,7 +211,7 @@ function StageSelector({ lead, stageConfig, handleStatusChange, isMobile = false
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [isOpen]);
 
   const saveNote = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -258,6 +273,7 @@ function StageSelector({ lead, stageConfig, handleStatusChange, isMobile = false
                     e.stopPropagation();
                     e.preventDefault();
                     handleStatusChange(lead.id, statusKey);
+                    setIsOpen(false);
                   }}
                   className={`flex items-center gap-2 px-2.5 py-2 text-left rounded-lg transition-colors border ${
                     lead.status === statusKey 
@@ -306,6 +322,7 @@ function ToolbarDropdown({ label, icon: Icon, children, isActive = false, indica
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!isOpen) return;
     const handleClickOutside = (event: MouseEvent) => {
       if (ref.current && !ref.current.contains(event.target as Node)) {
         setIsOpen(false);
@@ -313,7 +330,7 @@ function ToolbarDropdown({ label, icon: Icon, children, isActive = false, indica
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [isOpen]);
 
   return (
     <div className="relative" ref={ref}>
@@ -344,6 +361,7 @@ function BulkStatusDropdown({ selectedLeadIds, handleStatusChange, setSelectedLe
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!isOpen) return;
     const handleClickOutside = (event: MouseEvent) => {
       if (ref.current && !ref.current.contains(event.target as Node)) {
         setIsOpen(false);
@@ -351,7 +369,7 @@ function BulkStatusDropdown({ selectedLeadIds, handleStatusChange, setSelectedLe
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [isOpen]);
 
   return (
     <div className="relative" ref={ref}>
@@ -387,33 +405,17 @@ function BulkStatusDropdown({ selectedLeadIds, handleStatusChange, setSelectedLe
 }
 // ------------------------------------------------
 
-function LiveTimer({ createdAt, status }: { createdAt: string, status: string }) {
-  const [timeText, setTimeText] = useState("");
-
-  useEffect(() => {
-    if (status === "CONTACTED" || status === "CONVERTED") return;
-    
-    const updateTime = () => {
-      const now = new Date().getTime();
-      const created = new Date(createdAt).getTime();
-      const diff = Math.max(0, now - created);
-      
-      const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const m = Math.floor((diff / 1000 / 60) % 60);
-      
-      setTimeText(`${d} D : ${h} H : ${m} Min`);
-    };
-    
-    updateTime();
-    // we can update every minute instead of every second since we only show minutes
-    const interval = setInterval(updateTime, 60000);
-    return () => clearInterval(interval);
-  }, [createdAt, status]);
-
+function LiveTimer({ createdAt, status, nowMs }: { createdAt: string, status: string, nowMs: number }) {
   if (status === "CONTACTED" || status === "CONVERTED") {
     return <span className="text-emerald-500 font-bold text-[12px] flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Completed</span>;
   }
+
+  const created = new Date(createdAt).getTime();
+  const diff = Math.max(0, nowMs - created);
+  const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+  const m = Math.floor((diff / 1000 / 60) % 60);
+  const timeText = `${d} D : ${h} H : ${m} Min`;
 
   return (
     <div className="flex flex-col">
@@ -441,7 +443,14 @@ export function PipelineView({
   const [loading, setLoading] = useState(!initialLeads);
   const [inspectLead, setInspectLead] = useState<Lead | null>(null);
   const [callLogLead, setCallLogLead] = useState<Lead | null>(null);
+  const [nowMs, setNowMs] = useState<number>(() => Date.now());
   
+  // Single shared 60-second timer for all LiveTimer cells
+  useEffect(() => {
+    const interval = setInterval(() => setNowMs(Date.now()), 60000);
+    return () => clearInterval(interval);
+  }, []);
+
   // View Toggle State
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
 
@@ -472,7 +481,7 @@ export function PipelineView({
   }, [initialWebsites]);
 
   // Dynamically compute project tabs from both websites list and existing leads
-  const projectTabs = (() => {
+  const projectTabs = useMemo(() => {
     const map = new Map<string, { id: string; name: string; domain?: string; logoUrl?: string; count: number; newCount: number }>();
 
     // 1. Prepopulate from known websites
@@ -508,7 +517,7 @@ export function PipelineView({
     });
 
     return Array.from(map.values());
-  })();
+  }, [websites, leads]);
 
   const handleBulkDelete = async () => {
     if (selectedLeadIds.size === 0) return;
@@ -529,36 +538,39 @@ export function PipelineView({
     }
   };
 
-  const filteredLeads = leads.filter(lead => {
-    // 1. Website / Project Tab Filter
-    if (selectedWebsiteTab !== "all") {
-      const leadSiteId = lead.website?.id || (lead as any).websiteId;
-      const leadSiteName = lead.website?.name?.toLowerCase();
-      const target = selectedWebsiteTab.toLowerCase();
+  const filteredLeads = useMemo(() => {
+    return leads.filter(lead => {
+      // 1. Website / Project Tab Filter
+      if (selectedWebsiteTab !== "all") {
+        const leadSiteId = lead.website?.id || (lead as any).websiteId;
+        const leadSiteName = lead.website?.name?.toLowerCase();
+        const target = selectedWebsiteTab.toLowerCase();
 
-      const isMatch = (leadSiteId && leadSiteId.toLowerCase() === target) ||
-                      (leadSiteName && leadSiteName === target) ||
-                      (lead.website?.name && lead.website.name.toLowerCase().includes(target));
+        const isMatch = (leadSiteId && leadSiteId.toLowerCase() === target) ||
+                        (leadSiteName && leadSiteName === target) ||
+                        (lead.website?.name && lead.website.name.toLowerCase().includes(target));
 
-      if (!isMatch) return false;
-    }
+        if (!isMatch) return false;
+      }
 
-    // 2. Status / Stage Filter
-    if (statusFilter === "HOT") {
-      return lead.temperature === "HOT";
-    } else if (statusFilter) {
-      return lead.status === statusFilter;
-    }
+      // 2. Status / Stage Filter
+      if (statusFilter === "HOT") {
+        return lead.temperature === "HOT";
+      } else if (statusFilter) {
+        return lead.status === statusFilter;
+      }
 
-    return true;
-  });
+      return true;
+    });
+  }, [leads, selectedWebsiteTab, statusFilter]);
 
-  const today = new Date();
-  today.setHours(23, 59, 59, 999);
-  
-  const upcomingFollowUps = filteredLeads.filter(l => 
-    l.status === 'FOLLOW_UP' && l.followUpAt && new Date(l.followUpAt) <= today
-  ).sort((a, b) => new Date(a.followUpAt!).getTime() - new Date(b.followUpAt!).getTime());
+  const upcomingFollowUps = useMemo(() => {
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    return filteredLeads.filter(l => 
+      l.status === 'FOLLOW_UP' && l.followUpAt && new Date(l.followUpAt) <= today
+    ).sort((a, b) => new Date(a.followUpAt!).getTime() - new Date(b.followUpAt!).getTime());
+  }, [filteredLeads]);
 
   useEffect(() => {
     if (initialLeads) return;
@@ -635,8 +647,8 @@ export function PipelineView({
   };
 
   const toggleAll = () => {
-    if (selectedLeadIds.size === leads.length) setSelectedLeadIds(new Set());
-    else setSelectedLeadIds(new Set(leads.map(l => l.id)));
+    if (selectedLeadIds.size === filteredLeads.length) setSelectedLeadIds(new Set());
+    else setSelectedLeadIds(new Set(filteredLeads.map(l => l.id)));
   };
 
   const borderClass = "border-[#E8E4F3]";
@@ -670,7 +682,7 @@ export function PipelineView({
                 <div className="text-left">
                   <div className="text-[12px] font-bold text-orange-900 group-hover:text-orange-700 leading-tight truncate max-w-[100px]">{lead.fullName}</div>
                   <div className="text-[10px] text-orange-600 font-medium">
-                    {new Date(lead.followUpAt!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {formatLeadTime(lead.followUpAt!)}
                   </div>
                 </div>
               </button>
@@ -879,13 +891,12 @@ export function PipelineView({
                     <tr><td colSpan={9} className="text-center py-12 text-[#9CA3AF]">No leads found.</td></tr>
                   ) : filteredLeads.map((lead) => {
                     const stage = STAGE_STYLE[lead.status] || STAGE_STYLE.NEW;
-                    const heat = HEAT_STYLE[lead.temperature] || HEAT_STYLE.WARM;
-                    const score = getScore(lead);
-                    
                     const colors = ["#FEE2E2", "#FEF3C7", "#D1FAE5", "#DBEAFE", "#EDE9FE"];
-                    const char = lead.fullName.charAt(0).toUpperCase();
+                    const char = (lead.fullName || "?").charAt(0).toUpperCase();
                     const idx = char.charCodeAt(0) % colors.length;
                     const logoBg = colors[idx];
+                    const dateText = formatLeadDate(lead.createdAt);
+                    const timeText = formatLeadTime(lead.createdAt);
                     
                     const trHeightClass = rowHeight === "compact" ? "h-[40px]" : rowHeight === "comfortable" ? "h-[68px]" : "h-[50px]";
                     
@@ -905,10 +916,10 @@ export function PipelineView({
                         </td>
                         <td className={`px-4 py-1 border-r ${borderClass}`}>
                           <div className="font-bold text-[#1A1523] text-[11.5px] leading-tight">
-                            {new Date(lead.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                            {dateText}
                           </div>
                           <div className="text-[10.5px] text-[#6B7280] leading-none mt-0.5 font-medium">
-                            {new Date(lead.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {timeText}
                           </div>
                         </td>
                         {cols.name && (
@@ -954,12 +965,12 @@ export function PipelineView({
                         )}
                         {cols.timeInStage && (
                           <td className={`px-4 py-1 border-r ${borderClass} hidden lg:table-cell`}>
-                            <LiveTimer createdAt={lead.createdAt} status={lead.status} />
+                            <LiveTimer createdAt={lead.createdAt} status={lead.status} nowMs={nowMs} />
                           </td>
                         )}
                         {cols.closeDate && (
                           <td className={`px-4 py-0 border-r font-medium text-[#1A1523] text-[12.5px] ${borderClass}`}>
-                            {new Date(lead.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                            {dateText}
                           </td>
                         )}
                         {cols.stage && (
@@ -1004,9 +1015,11 @@ export function PipelineView({
               ) : filteredLeads.map((lead) => {
                 const stage = STAGE_STYLE[lead.status] || STAGE_STYLE.NEW;
                 const colors = ["#FEE2E2", "#FEF3C7", "#D1FAE5", "#DBEAFE", "#EDE9FE"];
-                const char = lead.fullName.charAt(0).toUpperCase();
+                const char = (lead.fullName || "?").charAt(0).toUpperCase();
                 const idx = char.charCodeAt(0) % colors.length;
                 const logoBg = colors[idx];
+                const dateText = formatLeadDate(lead.createdAt);
+                const timeText = formatLeadTime(lead.createdAt);
                 
                 return (
                   <div key={lead.id} className="bg-white border border-[#E8E4F3] rounded-xl p-4 shadow-sm flex flex-col gap-3">
@@ -1020,10 +1033,10 @@ export function PipelineView({
                           <div className="text-[12px] text-slate-500 truncate mt-0.5">{lead.phone || lead.email || "No contact info"}</div>
                           {/* Mobile Date/Time display */}
                           <div className="text-[10.5px] text-[#7C3AED] font-semibold mt-1">
-                            Submitted: {new Date(lead.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })} at {new Date(lead.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            Submitted: {dateText} at {timeText}
                           </div>
                           <div className="mt-1.5 bg-slate-50 border border-slate-100 rounded-md p-2">
-                            <LiveTimer createdAt={lead.createdAt} status={lead.status} />
+                            <LiveTimer createdAt={lead.createdAt} status={lead.status} nowMs={nowMs} />
                           </div>
                         </div>
                       </div>
@@ -1112,17 +1125,5 @@ export function PipelineView({
         />
       )}
     </div>
-  );
-}
-
-// Dummy icon
-function UsersIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
   );
 }

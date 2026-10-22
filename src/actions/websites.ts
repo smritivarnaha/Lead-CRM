@@ -10,12 +10,6 @@ const getCachedWebsitesList = unstable_cache(
   async (isClient: boolean, websiteId?: string | null) => {
     return prisma.website.findMany({
       where: isClient && websiteId ? { id: websiteId } : undefined,
-      select: {
-        id: true,
-        name: true,
-        domain: true,
-        logoUrl: true,
-      },
       orderBy: {
         createdAt: "desc",
       },
@@ -110,8 +104,8 @@ export const getWebsites = cache(async () => {
 });
 
 /**
- * Ultra-fast, lightweight website list for project tabs and dropdowns.
- * Only selects id, name, domain, and logoUrl without heavy lead grouping/counting queries.
+ * Ultra-fast, lightweight website list for project tabs, dropdowns, and settings.
+ * Selects all scalar website fields without heavy lead grouping/counting queries.
  */
 export const getWebsitesList = cache(async () => {
   try {
@@ -266,6 +260,11 @@ export async function createClientLogin(data: {
       },
     });
 
+    try {
+      (revalidateTag as any)("websites_stats", { expire: 0 });
+      (revalidateTag as any)("auth_user", { expire: 0 });
+    } catch (e) {}
+
     return { 
       success: true, 
       tempPassword,
@@ -313,6 +312,10 @@ export async function deleteClientLogin(userId: string) {
     });
 
     revalidatePath("/websites");
+    try {
+      (revalidateTag as any)("websites_stats", { expire: 0 });
+      (revalidateTag as any)("auth_user", { expire: 0 });
+    } catch (e) {}
     return { success: true };
   } catch (error: unknown) {
     console.error("Error deleting client user:", error);
@@ -346,6 +349,7 @@ export async function getIntegrationsData() {
       prisma.lead.findMany({
         where: leadsWhereClause,
         orderBy: { createdAt: "desc" },
+        take: 300,
         select: {
           id: true,
           fullName: true,

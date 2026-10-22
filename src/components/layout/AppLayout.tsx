@@ -31,19 +31,22 @@ export function AppLayout({
 
     const channel = supabase.channel(targetChannel)
       .on('broadcast', { event: 'new-lead' }, (payload) => {
-        console.log(`Realtime Lead Received on ${targetChannel}:`, payload);
         const lead = payload.payload;
         if (lead) {
           showLeadToast(lead);
         }
       })
       .on('broadcast', { event: 'lead-escalated' }, (payload) => {
-        console.log(`Lead Escalated on ${targetChannel}:`, payload);
         const lead = payload.payload;
         toast.error(`⚠️ Escalation Notice`, {
           description: `Lead ${lead?.fullName || 'Customer'} is awaiting immediate response!`,
           duration: 10000,
         });
+      })
+      .on('broadcast', { event: 'push-status' }, (payload) => {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("leadflow:push-status", { detail: payload.payload }));
+        }
       })
       .subscribe();
 

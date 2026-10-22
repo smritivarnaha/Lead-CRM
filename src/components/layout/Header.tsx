@@ -4,14 +4,10 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus, BellRing, Menu, LayoutDashboard, Users, Globe, BarChart3, Briefcase, Activity, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { useActiveProfile } from "@/components/providers/ActiveProfileProvider";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 const navItems = [
   { name: "Dashboard",    href: "/",           icon: LayoutDashboard },
@@ -36,27 +32,22 @@ export function Header() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   useEffect(() => {
-    if (!supabaseUrl || !supabaseAnonKey) return;
-    
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    const channel = supabase.channel("leads-channel");
+    let resetTimer: ReturnType<typeof setTimeout> | null = null;
+    const handlePushStatus = (event: Event) => {
+      const status = (event as CustomEvent)?.detail;
+      if (status?.success && status?.count > 0) {
+        setPushStatus("success");
+      } else {
+        setPushStatus("error");
+      }
+      if (resetTimer) clearTimeout(resetTimer);
+      resetTimer = setTimeout(() => setPushStatus("idle"), 10000);
+    };
 
-    channel
-      .on("broadcast", { event: "push-status" }, (payload) => {
-        const status = payload.payload;
-        if (status.success && status.count > 0) {
-          setPushStatus("success");
-        } else {
-          setPushStatus("error");
-        }
-        
-        // Reset to idle after 10 seconds
-        setTimeout(() => setPushStatus("idle"), 10000);
-      })
-      .subscribe();
-
+    window.addEventListener("leadflow:push-status", handlePushStatus);
     return () => {
-      supabase.removeChannel(channel);
+      window.removeEventListener("leadflow:push-status", handlePushStatus);
+      if (resetTimer) clearTimeout(resetTimer);
     };
   }, []);
 
@@ -125,8 +116,6 @@ export function Header() {
           <Link href="/" className="flex h-full items-center text-[15px] md:text-[14px] font-bold text-slate-900">
             LeadFlow
           </Link>
-          
-
         </div>
 
         {/* Right side: Push Status Indicator & Settings */}

@@ -16,9 +16,19 @@ interface DashboardClientProps {
 }
 
 export function DashboardClient({ initialWebsites, role, userWebsiteId }: DashboardClientProps) {
-  const { websites, setWebsites, activeWebsiteId } = useActiveProfile();
+  const { setWebsites, activeWebsiteId } = useActiveProfile();
+  const [sites, setSites] = useState<any[]>(initialWebsites || []);
+
+  useEffect(() => {
+    if (initialWebsites && initialWebsites.length > 0) {
+      setSites(initialWebsites);
+    }
+  }, [initialWebsites]);
+
   // Filter websites if an active profile is selected, otherwise show all
-  const displayWebsites = websites.length > 0 ? (activeWebsiteId ? websites.filter(w => w.id === activeWebsiteId) : websites) : initialWebsites;
+  const displayWebsites = activeWebsiteId
+    ? sites.filter((w) => w.id === activeWebsiteId)
+    : sites;
   
   const [configuringSite, setConfiguringSite] = useState<any | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -113,6 +123,7 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
       const data = await res.json();
       if (data.success) {
         toast.success("Client updated successfully.");
+        setSites(prev => prev.map(w => w.id === siteId ? { ...w, [field]: value } : w));
         setWebsites(prev => prev.map(w => w.id === siteId ? { ...w, [field]: value } : w));
       } else {
         toast.error("Failed to update.");
@@ -217,7 +228,11 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
                         <input 
                           type="text"
                           value={site.name}
-                          onChange={(e) => setWebsites(prev => prev.map(w => w.id === site.id ? { ...w, name: e.target.value } : w))}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setSites(prev => prev.map(w => w.id === site.id ? { ...w, name: val } : w));
+                            setWebsites(prev => prev.map(w => w.id === site.id ? { ...w, name: val } : w));
+                          }}
                           onBlur={(e) => handleSave(site.id, "name", e.target.value)}
                           className="text-[15px] font-bold text-slate-900 leading-tight bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:outline-none transition-colors truncate max-w-full"
                           placeholder="Brand Name"
@@ -301,7 +316,6 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
               <div className="px-5 py-3 bg-slate-50/60 border-t border-slate-100">
                 <Link 
                   href={`/client/${site.id}`}
-                  prefetch={true}
                   className="w-full inline-flex items-center justify-center gap-2 bg-[#1A1523] hover:bg-indigo-600 text-white text-xs font-semibold py-2 px-4 rounded-xl shadow-xs transition-colors"
                 >
                   <span>Open Pipeline</span>
@@ -356,6 +370,7 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
           isOpen={!!configuringSite} 
           onClose={() => setConfiguringSite(null)} 
           onUpdate={(updated) => {
+            setSites(prev => prev.map(w => w.id === updated.id ? { ...w, ...updated } : w));
             setWebsites(prev => prev.map(w => w.id === updated.id ? { ...w, ...updated } : w));
             setConfiguringSite(updated);
           }}

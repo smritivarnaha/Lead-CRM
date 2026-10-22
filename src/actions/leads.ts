@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { cookies } from "next/headers";
+import { revalidateTag } from "next/cache";
 import { cache } from "react";
 
 export const getLeads = cache(async () => {
@@ -31,6 +32,7 @@ export const getLeads = cache(async () => {
       take: 200,
       select: {
         id: true,
+        websiteId: true,
         fullName: true,
         email: true,
         phone: true,
@@ -38,6 +40,7 @@ export const getLeads = cache(async () => {
         state: true,
         message: true,
         source: true,
+        pageUrl: true,
         formName: true,
         utmSource: true,
         utmMedium: true,
@@ -60,7 +63,8 @@ export const getLeads = cache(async () => {
     });
 
     return { success: true, leads: JSON.parse(JSON.stringify(leads)) };
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.digest === "DYNAMIC_SERVER_USAGE") throw error;
     console.error("Error fetching leads:", error);
     return { success: false, error: "Failed to fetch leads" };
   }
@@ -77,6 +81,7 @@ export const getLeadsByWebsite = cache(async (websiteId: string) => {
       take: 200,
       select: {
         id: true,
+        websiteId: true,
         fullName: true,
         email: true,
         phone: true,
@@ -84,6 +89,7 @@ export const getLeadsByWebsite = cache(async (websiteId: string) => {
         state: true,
         message: true,
         source: true,
+        pageUrl: true,
         formName: true,
         utmSource: true,
         utmMedium: true,
@@ -97,6 +103,7 @@ export const getLeadsByWebsite = cache(async (websiteId: string) => {
         createdAt: true,
         followUpAt: true,
         rawFields: true,
+        emailSent: true,
         smsSent: true,
         pushSent: true,
         callNotes: true,
@@ -105,7 +112,8 @@ export const getLeadsByWebsite = cache(async (websiteId: string) => {
     });
 
     return { success: true, leads: JSON.parse(JSON.stringify(leads)) };
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.digest === "DYNAMIC_SERVER_USAGE") throw error;
     console.error("Error fetching leads by website:", error);
     return { success: false, error: "Failed to fetch leads" };
   }
@@ -121,6 +129,7 @@ export async function updateLeadStatus(leadId: string, status: string) {
       data: { status },
     });
 
+    (revalidateTag as any)("websites_stats", { expire: 0 });
     return { success: true, lead: JSON.parse(JSON.stringify(updatedLead)) };
   } catch (error) {
     console.error("Error updating lead:", error);
@@ -151,6 +160,7 @@ export async function deleteLead(leadId: string) {
     if (!user) return { success: false, error: "Unauthorized" };
 
     await prisma.lead.delete({ where: { id: leadId } });
+    (revalidateTag as any)("websites_stats", { expire: 0 });
     return { success: true };
   } catch (error) {
     console.error("Error deleting lead:", error);
@@ -171,6 +181,7 @@ export async function bulkDeleteLeads(leadIds: string[]) {
       }
     });
 
+    (revalidateTag as any)("websites_stats", { expire: 0 });
     return { success: true, count: result.count };
   } catch (error) {
     console.error("Error bulk deleting leads:", error);
@@ -192,6 +203,7 @@ export async function logCallAction(leadId: string, status: string, callNotes?: 
       data: dataToUpdate,
     });
 
+    (revalidateTag as any)("websites_stats", { expire: 0 });
     return { success: true, lead: JSON.parse(JSON.stringify(updatedLead)) };
   } catch (error) {
     console.error("Error logging call:", error);
