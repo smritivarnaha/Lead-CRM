@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { revalidateTag } from "next/cache";
 
 export async function POST(request: Request) {
   try {
@@ -16,6 +17,10 @@ export async function POST(request: Request) {
         followUpAt: followUpAt ? new Date(followUpAt) : null,
       },
     });
+
+    try {
+      (revalidateTag as any)("leads_cache", { expire: 0 });
+    } catch (e) {}
 
     return NextResponse.json({ success: true, lead: updatedLead });
   } catch (e) {

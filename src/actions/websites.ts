@@ -323,17 +323,10 @@ export async function deleteClientLogin(userId: string) {
   }
 }
 
-export async function getIntegrationsData() {
-  try {
-    const user = await getAuthenticatedUser();
-    if (!user) return { success: false, error: "Unauthorized" };
-
-    const role = user.role;
-    const websiteId = user.websiteId;
-    const isClient = role === "CLIENT" && !!websiteId;
-
-    const whereClause = isClient ? { id: websiteId } : {};
-    const leadsWhereClause = isClient ? { websiteId } : {};
+const getCachedIntegrationsData = unstable_cache(
+  async (isClient: boolean, websiteId: string | null) => {
+    const whereClause = isClient && websiteId ? { id: websiteId } : {};
+    const leadsWhereClause = isClient && websiteId ? { websiteId } : {};
 
     const [websites, leads] = await Promise.all([
       prisma.website.findMany({
@@ -359,16 +352,33 @@ export async function getIntegrationsData() {
           createdAt: true,
           websiteId: true,
         },
-      })
+      }),
     ]);
 
     return {
-      success: true,
       websites: JSON.parse(JSON.stringify(websites)),
       leads: JSON.parse(JSON.stringify(leads)),
+    };
+  },
+  ["integrations_data_cache"],
+  { revalidate: 20, tags: ["websites_list", "leads_cache"] }
+);
+
+export const getIntegrationsData = cache(async () => {
+  try {
+    const user = await getAuthenticatedUser();
+    if (!user) return { success: false, error: "Unauthorized" };
+
+    const isClient = user.role === "CLIENT" && !!user.websiteId;
+    const data = await getCachedIntegrationsData(isClient, user.websiteId || null);
+
+    return {
+      success: true,
+      websites: data.websites,
+      leads: data.leads,
     };
   } catch (error) {
     console.error("Error fetching integrations data:", error);
     return { success: false, error: "Failed to fetch integrations data" };
   }
-}
+});

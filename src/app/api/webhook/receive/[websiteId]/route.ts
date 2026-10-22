@@ -784,6 +784,13 @@ export async function POST(
 
     console.log(`[WEBHOOK SUCCESS] Lead saved: ${newLead.id} for website: ${websiteId}`);
 
+    try {
+      const { revalidateTag } = await import("next/cache");
+      (revalidateTag as any)("leads_cache", { expire: 0 });
+      (revalidateTag as any)("websites_stats", { expire: 0 });
+      (revalidateTag as any)("activity_cache", { expire: 0 });
+    } catch (e) {}
+
     let redirectUrl = body._redirect || body.redirect_url;
     
     // If no explicit redirect is set, but it was a native HTML form submission, send them back to the page they came from

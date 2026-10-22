@@ -5,16 +5,15 @@ import { getAuthenticatedUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export default async function LeadsPage() {
-  const user = await getAuthenticatedUser();
+  const [user, leadsRes, websitesRes] = await Promise.all([
+    getAuthenticatedUser(),
+    getLeads(),
+    getWebsitesList(),
+  ]);
+
   if (!user) {
     redirect("/sign-in");
   }
-
-  // Fetch all leads and lightweight websites list in parallel
-  const [leadsRes, websitesRes] = await Promise.all([
-    getLeads(),
-    getWebsitesList()
-  ]);
 
   const leads = leadsRes.success && leadsRes.leads ? leadsRes.leads : [];
   const websites = websitesRes.success && websitesRes.websites ? websitesRes.websites : [];

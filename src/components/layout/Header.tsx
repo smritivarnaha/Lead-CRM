@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   Plus,
@@ -41,14 +41,12 @@ const navItems = [
 
 export function Header() {
   const pathname = usePathname();
-  const router = useRouter();
   const { user } = useUser();
   const { websites, activeWebsiteId, setActiveWebsiteId } = useActiveProfile();
   const role = user?.publicMetadata?.role as string | undefined;
   const isClient = role === "CLIENT";
   const isSuperAdmin = role === "SUPER_ADMIN" || !role;
   
-  // "idle" = no lead yet, "success" = push sent to mobile, "error" = push failed/nobody subscribed
   const [pushStatus, setPushStatus] = useState<"idle" | "success" | "error">("idle");
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
@@ -124,6 +122,7 @@ export function Header() {
                         <Link
                           key={item.name}
                           href={item.href}
+                          prefetch={true}
                           onClick={() => setIsSheetOpen(false)}
                           className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] font-medium transition-colors ${
                             isActive ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
@@ -142,7 +141,7 @@ export function Header() {
             </Sheet>
           </div>
 
-          <Link href="/" className="md:hidden flex h-full items-center gap-2 text-[15px] font-bold text-slate-900">
+          <Link href="/" prefetch={true} className="md:hidden flex h-full items-center gap-2 text-[15px] font-bold text-slate-900">
             <div
               className="flex h-6 w-6 items-center justify-center rounded-md text-white text-[11px] font-bold flex-shrink-0"
               style={{ background: "linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%)" }}
@@ -158,6 +157,7 @@ export function Header() {
           {!isClient && (
             <Link
               href="/websites"
+              prefetch={true}
               title="Add or Manage Websites"
               className="hidden md:flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
             >
@@ -187,11 +187,11 @@ export function Header() {
             </TooltipContent>
           </Tooltip>
 
-          <Link href="/settings" className="hidden md:block text-xs font-medium text-slate-500 hover:text-slate-900 transition-colors mr-1">
+          <Link href="/settings" prefetch={true} className="hidden md:block text-xs font-medium text-slate-500 hover:text-slate-900 transition-colors mr-1">
             Settings
           </Link>
           
-          {/* Active Profile Selector */}
+          {/* Active Profile Selector (0ms Instant Client Filter) */}
           {!isClient ? (
             <div className="hidden sm:block">
               <select
@@ -199,7 +199,6 @@ export function Header() {
                 value={activeWebsiteId || "all"}
                 onChange={(e) => {
                   setActiveWebsiteId(e.target.value === "all" ? null : e.target.value);
-                  router.refresh();
                 }}
               >
                 <option value="all">All Profiles</option>

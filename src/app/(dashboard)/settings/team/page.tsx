@@ -1,7 +1,7 @@
 import { getAuthenticatedUser } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { Shield, User as UserIcon, Mail, Building, Globe } from "lucide-react";
+import { Shield, Mail, Globe } from "lucide-react";
 
 export default async function TeamPage() {
   const currentUser = await getAuthenticatedUser();
@@ -17,12 +17,8 @@ export default async function TeamPage() {
     },
   });
 
-  const websites = await prisma.website.findMany({
-    orderBy: { name: "asc" },
-  });
-
   return (
-    <div className="flex flex-col h-full gap-6">
+    <div className="flex flex-col h-full gap-6 p-4 md:p-8">
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-slate-900">Team Management</h2>
         <p className="text-sm text-slate-500 mt-1">Manage users, roles, and website assignments.</p>

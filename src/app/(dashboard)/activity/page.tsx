@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getActivityLog, ActivityItem } from "@/actions/activity";
+import { useActiveProfile } from "@/components/providers/ActiveProfileProvider";
 import { 
   Activity, 
   MessageSquare, 
@@ -12,8 +13,6 @@ import {
   ArrowUpRight, 
   RefreshCw,
   Search,
-  Filter,
-  UserCheck
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -27,15 +26,20 @@ import {
 } from "@/components/ui/table";
 
 export default function ActivityPage() {
+  const { activeWebsiteId } = useActiveProfile();
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [filteredActivities, setFilteredActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState<"all" | "leads" | "notes" | "alerts">("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const hasFetchedRef = useRef(false);
 
   useEffect(() => {
-    fetchLogs(false);
+    if (!hasFetchedRef.current) {
+      hasFetchedRef.current = true;
+      fetchLogs(false);
+    }
   }, []);
 
   const fetchLogs = async (silent = false) => {
@@ -48,7 +52,6 @@ export default function ActivityPage() {
       const res = await getActivityLog();
       if (res.success && res.activities) {
         setActivities(res.activities);
-        setFilteredActivities(res.activities);
       } else {
         toast.error("Failed to load activity logs.");
       }
@@ -64,13 +67,18 @@ export default function ActivityPage() {
   useEffect(() => {
     let result = activities;
 
+    // 0ms Filter by active website profile
+    if (activeWebsiteId) {
+      result = result.filter((a) => !a.websiteId || a.websiteId === activeWebsiteId);
+    }
+
     // Filter by type
     if (activeFilter === "leads") {
-      result = activities.filter((a) => a.type === "lead_create");
+      result = result.filter((a) => a.type === "lead_create");
     } else if (activeFilter === "notes") {
-      result = activities.filter((a) => a.type === "note_create");
+      result = result.filter((a) => a.type === "note_create");
     } else if (activeFilter === "alerts") {
-      result = activities.filter((a) => a.type === "sms_alert" || a.type === "push_alert");
+      result = result.filter((a) => a.type === "sms_alert" || a.type === "push_alert");
     }
 
     // Filter by search term
@@ -85,9 +93,8 @@ export default function ActivityPage() {
     }
 
     setFilteredActivities(result);
-  }, [activeFilter, searchTerm, activities]);
+  }, [activeFilter, searchTerm, activities, activeWebsiteId]);
 
-  // Helper for relative time formatting
   const formatRelativeTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -110,7 +117,6 @@ export default function ActivityPage() {
     });
   };
 
-  // Helper to fetch details icon based on type
   const getActivityIcon = (type: string) => {
     switch (type) {
       case "lead_create":
@@ -146,21 +152,15 @@ export default function ActivityPage() {
     }
   };
 
-  // Compute stat metrics
-  const totalActions = activities.length;
-  const noteActions = activities.filter(a => a.type === 'note_create').length;
-  const alertActions = activities.filter(a => a.type === 'sms_alert' || a.type === 'push_alert').length;
-
-  if (loading) {
-    return (
-      <div className="flex-1 p-8 bg-[#FAFAFA] flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
-      </div>
-    );
-  }
+  const siteScopedActivities = activeWebsiteId
+    ? activities.filter((a) => !a.websiteId || a.websiteId === activeWebsiteId)
+    : activities;
+  const totalActions = siteScopedActivities.length;
+  const noteActions = siteScopedActivities.filter(a => a.type === 'note_create').length;
+  const alertActions = siteScopedActivities.filter(a => a.type === 'sms_alert' || a.type === 'push_alert').length;
 
   return (
-    <div className="flex-1 p-6 sm:p-8 bg-[#FAFAFA] overflow-y-auto space-y-8 animate-in fade-in duration-300">
+    <div className="flex-1 p-6 sm:p-8 bg-[#FAFAFA] overflow-y-auto space-y-8">
       
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -173,7 +173,7 @@ export default function ActivityPage() {
           onClick={() => fetchLogs(true)} 
           className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-[#E8E4F3] hover:bg-[#F3F0FF] hover:text-[#7C3AED] text-slate-700 text-xs font-bold rounded-xl shadow-sm transition-all self-start sm:self-auto"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} /> Refresh Log
+          <RefreshCw className={`w-3.5 h-3.5 ${refreshing || loading ? "animate-spin" : ""}`} /> Refresh Log
         </button>
       </div>
 
@@ -185,7 +185,7 @@ export default function ActivityPage() {
           </div>
           <div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Actions</span>
-            <span className="text-2xl font-extrabold text-slate-900">{totalActions}</span>
+            <span className="text-2xl font-extrabold text-slate-900">{loading ? "—" : totalActions}</span>
           </div>
         </div>
 
@@ -195,7 +195,7 @@ export default function ActivityPage() {
           </div>
           <div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Logs Recorded</span>
-            <span className="text-2xl font-extrabold text-slate-900">{noteActions}</span>
+            <span className="text-2xl font-extrabold text-slate-900">{loading ? "—" : noteActions}</span>
           </div>
         </div>
 
@@ -205,7 +205,7 @@ export default function ActivityPage() {
           </div>
           <div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Alerts Sent</span>
-            <span className="text-2xl font-extrabold text-slate-900">{alertActions}</span>
+            <span className="text-2xl font-extrabold text-slate-900">{loading ? "—" : alertActions}</span>
           </div>
         </div>
       </div>
@@ -256,7 +256,13 @@ export default function ActivityPage() {
 
       {/* Activity Table */}
       <div className="bg-white border border-[#E8E4F3] rounded-2xl shadow-sm overflow-hidden mt-4">
-        {filteredActivities.length > 0 ? (
+        {loading ? (
+          <div className="p-6 space-y-3">
+            <div className="h-10 bg-slate-50 rounded-xl animate-pulse" />
+            <div className="h-10 bg-slate-50/70 rounded-xl animate-pulse" />
+            <div className="h-10 bg-slate-50/50 rounded-xl animate-pulse" />
+          </div>
+        ) : filteredActivities.length > 0 ? (
           <Table>
             <TableHeader className="bg-[#F7F5FF] border-b border-[#E8E4F3]">
               <TableRow>
@@ -318,7 +324,7 @@ export default function ActivityPage() {
                   </TableCell>
 
                   <TableCell className="text-right align-middle">
-                    <Link href={act.link} className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-[#7C3AED] hover:underline whitespace-nowrap">
+                    <Link href={act.link} prefetch={true} className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-[#7C3AED] hover:underline whitespace-nowrap">
                       View Lead <ArrowUpRight className="w-3.5 h-3.5" />
                     </Link>
                   </TableCell>

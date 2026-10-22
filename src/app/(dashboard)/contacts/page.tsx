@@ -1,15 +1,19 @@
-export default function ContactsPage() {
-  return (
-    <div className="flex flex-col h-full gap-6 p-8">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900">Contacts</h2>
-        <p className="text-sm text-slate-500 mt-1">Manage all your contacts and accounts.</p>
-      </div>
-      <div className="flex-1 flex items-center justify-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-        <div className="text-center">
-          <p className="text-sm font-medium text-slate-500">Contacts module coming soon...</p>
-        </div>
-      </div>
-    </div>
-  );
+import { ContactsView } from "@/components/leads/ContactsView";
+import { getLeads } from "@/actions/leads";
+import { getAuthenticatedUser } from "@/lib/auth";
+import { redirect } from "next/navigation";
+
+export default async function ContactsPage() {
+  const [user, res] = await Promise.all([
+    getAuthenticatedUser(),
+    getLeads(),
+  ]);
+
+  if (!user) {
+    redirect("/sign-in");
+  }
+
+  const leads = res.success && res.leads ? res.leads : [];
+
+  return <ContactsView initialLeads={leads} />;
 }

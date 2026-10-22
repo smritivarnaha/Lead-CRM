@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { revalidateTag } from "next/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,10 @@ export async function POST(request: Request) {
       data: { leadId, content: content.trim(), authorName },
     });
 
+    try {
+      (revalidateTag as any)("activity_cache", { expire: 0 });
+    } catch (e) {}
+
     return NextResponse.json({ success: true, note });
   } catch (e) {
     console.error("[NOTES POST]", e);
@@ -61,6 +66,9 @@ export async function DELETE(request: Request) {
     if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
     await prisma.note.delete({ where: { id } });
+    try {
+      (revalidateTag as any)("activity_cache", { expire: 0 });
+    } catch (e) {}
     return NextResponse.json({ success: true });
   } catch (e) {
     console.error("[NOTES DELETE]", e);

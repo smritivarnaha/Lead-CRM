@@ -6,6 +6,7 @@ import { Clock, ChevronDown, Phone, Mail, CheckCircle2, ArrowRight, XCircle } fr
 import { toast } from "sonner";
 import { updateLeadFollowup, updateLeadStatus, bulkDeleteLeads } from "@/actions/leads";
 import { LeadDetailsModal } from "./LeadDetailsModal";
+import { useActiveProfile } from "@/components/providers/ActiveProfileProvider";
 
 const STAGE_STYLE: Record<string, any> = {
   NEW:         { label: "New Lead",         ring: "border-blue-500",   fill: "bg-transparent", text: "text-blue-500" },
@@ -85,6 +86,7 @@ function FollowupTimeSelector({ lead, onUpdate }: { lead: any, onUpdate: (leadId
 }
 
 export function FollowupsView({ initialLeads }: { initialLeads: any[] }) {
+  const { activeWebsiteId } = useActiveProfile();
   const [leads, setLeads] = useState(initialLeads);
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
   const [selectedLead, setSelectedLead] = useState<any | null>(null);
@@ -92,8 +94,12 @@ export function FollowupsView({ initialLeads }: { initialLeads: any[] }) {
   const borderClass = "border-[#E8E4F3]";
   const trHeightClass = "h-[46px]";
 
+  const visibleLeads = activeWebsiteId
+    ? leads.filter((l) => l.websiteId === activeWebsiteId)
+    : leads;
+
   // Sort leads: Overdue first, then upcoming, then no follow-up date
-  const sortedLeads = [...leads].sort((a, b) => {
+  const sortedLeads = [...visibleLeads].sort((a, b) => {
     if (!a.followUpAt && !b.followUpAt) return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     if (!a.followUpAt) return 1;
     if (!b.followUpAt) return -1;

@@ -1,24 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { getWebsitesList } from "@/actions/websites";
+import { useState, useEffect, useRef } from "react";
 import { getLeads } from "@/actions/leads";
 import { useUser } from "@clerk/nextjs";
+import { useActiveProfile } from "@/components/providers/ActiveProfileProvider";
 import { 
-  BarChart3, 
   TrendingUp, 
   Users, 
   Target, 
   DollarSign, 
-  Flame, 
-  Globe, 
-  Calendar, 
-  ChevronDown, 
   RefreshCw,
   Award,
   MousePointerClick
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
   AreaChart,
@@ -33,28 +27,40 @@ import {
   Cell,
   BarChart,
   Bar,
-  Legend,
 } from "recharts";
 
 export default function AnalyticsPage() {
   const { user } = useUser();
-  const [websites, setWebsites] = useState<any[]>([]);
+  const { websites, activeWebsiteId, setActiveWebsiteId } = useActiveProfile();
   const [allLeads, setAllLeads] = useState<any[]>([]);
   const [filteredLeads, setFilteredLeads] = useState<any[]>([]);
-  const [selectedSiteId, setSelectedSiteId] = useState<string>("all");
+  const [selectedSiteId, setSelectedSiteId] = useState<string>(activeWebsiteId || "all");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [timeRange, setTimeRange] = useState<"7d" | "30d" | "all">("7d");
+  const hasFetchedRef = useRef(false);
 
   const role = user?.publicMetadata?.role as string | undefined;
   const userWebsiteId = user?.publicMetadata?.websiteId as string | undefined;
   const isClient = role === "CLIENT" && !!userWebsiteId;
 
+  // Sync with Header active profile selector in 0ms
+  useEffect(() => {
+    if (isClient && userWebsiteId) {
+      setSelectedSiteId(userWebsiteId);
+    } else {
+      setSelectedSiteId(activeWebsiteId || "all");
+    }
+  }, [activeWebsiteId, isClient, userWebsiteId]);
+
   useEffect(() => {
     setMounted(true);
-    fetchData(false);
-  }, [isClient, userWebsiteId]);
+    if (!hasFetchedRef.current) {
+      hasFetchedRef.current = true;
+      fetchData(false);
+    }
+  }, []);
 
   const fetchData = async (silent = false) => {
     if (!silent) {
@@ -63,28 +69,9 @@ export default function AnalyticsPage() {
       setRefreshing(true);
     }
     try {
-      const [webRes, leadRes] = await Promise.all([
-        getWebsitesList(),
-        getLeads()
-      ]);
-
-      if (webRes.success && webRes.websites) {
-        if (isClient) {
-          setWebsites(webRes.websites.filter((w: any) => w.id === userWebsiteId));
-          setSelectedSiteId(userWebsiteId || "all");
-        } else {
-          setWebsites(webRes.websites);
-        }
-      }
-
+      const leadRes = await getLeads();
       if (leadRes.success && leadRes.leads) {
         setAllLeads(leadRes.leads);
-        // Initial filtering
-        if (isClient && userWebsiteId) {
-          setFilteredLeads(leadRes.leads.filter((l: any) => l.websiteId === userWebsiteId));
-        } else {
-          setFilteredLeads(leadRes.leads);
-        }
       }
     } catch (e) {
       console.error(e);
@@ -95,14 +82,14 @@ export default function AnalyticsPage() {
     }
   };
 
-  // Handle filtering by website
+  // Instant 0ms client-side filtering by website and time range
   useEffect(() => {
     let tempLeads = allLeads;
-    if (selectedSiteId !== "all") {
-      tempLeads = allLeads.filter((l) => l.websiteId === selectedSiteId);
+    const effectiveSiteId = isClient && userWebsiteId ? userWebsiteId : selectedSiteId;
+    if (effectiveSiteId !== "all") {
+      tempLeads = allLeads.filter((l) => l.websiteId === effectiveSiteId);
     }
 
-    // Filter by time range if necessary
     const now = new Date();
     if (timeRange === "7d") {
       const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -113,15 +100,15 @@ export default function AnalyticsPage() {
     }
 
     setFilteredLeads(tempLeads);
-  }, [selectedSiteId, allLeads, timeRange]);
+  }, [selectedSiteId, allLeads, timeRange, isClient, userWebsiteId]);
 
   // Real-time Calculations
   const totalLeads = filteredLeads.length;
   const convertedLeads = filteredLeads.filter(l => l.status === "CONVERTED").length;
   const conversionRate = totalLeads > 0 ? Math.round((convertedLeads / totalLeads) * 100) : 0;
-  const estimatedPipelineValue = totalLeads * 1000; // Average lead value estimate
+  const estimatedPipelineValue = totalLeads * 1000;
 
-  // 1. Last 7 Days Area Chart
+  // 1. Trend Area Chart
   const getTrendData = () => {
     const days = timeRange === "7d" ? 7 : timeRange === "30d" ? 30 : 15;
     return Array.from({ length: days }).map((_, i) => {
@@ -200,7 +187,6 @@ export default function AnalyticsPage() {
     const pageCounts: Record<string, { url: string; count: number; conversions: number }> = {};
     filteredLeads.forEach(l => {
       let url = l.pageUrl || "Direct Submission / Other";
-      // Clean up URL parameters for aggregation
       try {
         if (url !== "Direct Submission / Other") {
           const parsed = new URL(url);
@@ -221,14 +207,6 @@ export default function AnalyticsPage() {
       .slice(0, 5);
   };
 
-  if (loading) {
-    return (
-      <div className="flex-1 p-8 bg-[#FAFAFA] flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-
   const trendData = getTrendData();
   const tempData = getTempData();
   const stageData = getStageData();
@@ -236,7 +214,7 @@ export default function AnalyticsPage() {
   const topPages = getTopPages();
 
   return (
-    <div className="flex-1 p-6 sm:p-8 bg-[#FAFAFA] overflow-y-auto space-y-8 animate-in fade-in duration-300">
+    <div className="flex-1 p-6 sm:p-8 bg-[#FAFAFA] overflow-y-auto space-y-8">
       
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -246,7 +224,24 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Toolbar */}
-        <div className="flex items-center gap-3 self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
+          {!isClient && websites.length > 0 && (
+            <select
+              value={selectedSiteId}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSelectedSiteId(val);
+                setActiveWebsiteId(val === "all" ? null : val);
+              }}
+              className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 shadow-sm outline-none focus:border-indigo-500 cursor-pointer"
+            >
+              <option value="all">All Websites ({websites.length})</option>
+              {websites.map((w) => (
+                <option key={w.id} value={w.id}>{w.name}</option>
+              ))}
+            </select>
+          )}
+
           {/* Time range selector */}
           <div className="bg-white border border-slate-200 rounded-xl p-1 shadow-sm flex items-center gap-0.5">
             <button
@@ -274,7 +269,7 @@ export default function AnalyticsPage() {
             className="p-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl shadow-sm text-slate-500 hover:text-slate-800 transition-colors"
             title="Refresh Data"
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+            <RefreshCw className={`w-4 h-4 ${refreshing || loading ? "animate-spin" : ""}`} />
           </button>
         </div>
       </div>
@@ -291,7 +286,7 @@ export default function AnalyticsPage() {
               <Users className="w-5 h-5" />
             </div>
           </div>
-          <h3 className="text-3xl font-extrabold text-slate-950 tracking-tight">{totalLeads}</h3>
+          <h3 className="text-3xl font-extrabold text-slate-950 tracking-tight">{loading ? "—" : totalLeads}</h3>
           <div className="flex items-center gap-1.5 mt-2.5 text-xs text-indigo-600 font-semibold">
             <TrendingUp className="w-3.5 h-3.5" />
             <span>Active Leads Tracked</span>
@@ -307,7 +302,7 @@ export default function AnalyticsPage() {
               <Award className="w-5 h-5" />
             </div>
           </div>
-          <h3 className="text-3xl font-extrabold text-slate-950 tracking-tight">{convertedLeads}</h3>
+          <h3 className="text-3xl font-extrabold text-slate-950 tracking-tight">{loading ? "—" : convertedLeads}</h3>
           <div className="flex items-center gap-1.5 mt-2.5 text-xs text-emerald-600 font-semibold">
             <TrendingUp className="w-3.5 h-3.5" />
             <span>Success Targets Met</span>
@@ -323,7 +318,7 @@ export default function AnalyticsPage() {
               <Target className="w-5 h-5" />
             </div>
           </div>
-          <h3 className="text-3xl font-extrabold text-slate-950 tracking-tight">{conversionRate}%</h3>
+          <h3 className="text-3xl font-extrabold text-slate-950 tracking-tight">{loading ? "—" : `${conversionRate}%`}</h3>
           <div className="flex items-center gap-1.5 mt-2.5 text-xs text-purple-600 font-semibold">
             <TrendingUp className="w-3.5 h-3.5" />
             <span>Visitor-to-Lead Ratio</span>
@@ -340,7 +335,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
           <h3 className="text-3xl font-extrabold text-slate-950 tracking-tight">
-            ${estimatedPipelineValue.toLocaleString()}
+            {loading ? "—" : `$${estimatedPipelineValue.toLocaleString()}`}
           </h3>
           <div className="flex items-center gap-1.5 mt-2.5 text-xs text-amber-600 font-semibold">
             <TrendingUp className="w-3.5 h-3.5" />
@@ -363,7 +358,7 @@ export default function AnalyticsPage() {
           </div>
           
           <div className="h-72 w-full">
-            {mounted ? (
+            {mounted && !loading ? (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
@@ -396,7 +391,7 @@ export default function AnalyticsPage() {
           </div>
 
           <div className="h-56 w-full flex items-center justify-center relative">
-            {mounted ? (
+            {mounted && !loading ? (
               totalLeads > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -427,7 +422,7 @@ export default function AnalyticsPage() {
 
             {/* Total count overlay */}
             <div className="absolute flex flex-col items-center justify-center">
-              <span className="text-2xl font-extrabold text-slate-950">{totalLeads}</span>
+              <span className="text-2xl font-extrabold text-slate-950">{loading ? "—" : totalLeads}</span>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Leads</span>
             </div>
           </div>
@@ -455,7 +450,7 @@ export default function AnalyticsPage() {
           </div>
           
           <div className="h-64 w-full">
-            {mounted ? (
+            {mounted && !loading ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stageData} layout="vertical" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" horizontal={false} />
@@ -485,7 +480,7 @@ export default function AnalyticsPage() {
           </div>
 
           <div className="h-64 w-full">
-            {mounted ? (
+            {mounted && !loading ? (
               sourceData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={sourceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -548,7 +543,7 @@ export default function AnalyticsPage() {
               ) : (
                 <tr>
                   <td colSpan={4} className="px-6 py-10 text-center text-slate-400 font-semibold">
-                    No page data collected yet
+                    {loading ? "Loading page metrics..." : "No page data collected yet"}
                   </td>
                 </tr>
               )}

@@ -2,67 +2,72 @@
 
 import prisma from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/auth";
-import { cookies } from "next/headers";
-import { revalidateTag } from "next/cache";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { cache } from "react";
+
+const LEAD_SELECT_FIELDS = {
+  id: true,
+  websiteId: true,
+  fullName: true,
+  email: true,
+  phone: true,
+  city: true,
+  state: true,
+  message: true,
+  source: true,
+  pageUrl: true,
+  formName: true,
+  utmSource: true,
+  utmMedium: true,
+  utmCampaign: true,
+  utmContent: true,
+  utmTerm: true,
+  status: true,
+  priority: true,
+  temperature: true,
+  score: true,
+  createdAt: true,
+  followUpAt: true,
+  rawFields: true,
+  emailSent: true,
+  smsSent: true,
+  pushSent: true,
+  callNotes: true,
+  website: { select: { id: true, name: true, domain: true } },
+};
+
+const getCachedLeads = unstable_cache(
+  async (websiteId: string | null) => {
+    const leads = await prisma.lead.findMany({
+      where: websiteId ? { websiteId } : {},
+      orderBy: { createdAt: "desc" },
+      take: 200,
+      select: LEAD_SELECT_FIELDS,
+    });
+    return JSON.parse(JSON.stringify(leads));
+  },
+  ["leads_list_cache"],
+  { revalidate: 20, tags: ["leads_cache"] }
+);
+
+function invalidateLeadCaches() {
+  try {
+    (revalidateTag as any)("leads_cache", { expire: 0 });
+    (revalidateTag as any)("websites_stats", { expire: 0 });
+    (revalidateTag as any)("activity_cache", { expire: 0 });
+  } catch (e) {}
+}
 
 export const getLeads = cache(async () => {
   try {
     const user = await getAuthenticatedUser();
     if (!user) return { success: false, error: "Unauthorized" };
 
-    const role = user.role;
-    const isClient = role === "CLIENT" && !!user.websiteId;
-    
-    // Read the active profile cookie set by the frontend dropdown
-    const cookieStore = await cookies();
-    const activeWebsiteCookie = cookieStore.get("leadflow_active_website_id")?.value;
-    
-    // Determine which website to filter by
-    let filterWebsiteId = undefined;
-    if (isClient) {
-      filterWebsiteId = user.websiteId as string;
-    } else if (activeWebsiteCookie && activeWebsiteCookie !== "all") {
-      filterWebsiteId = activeWebsiteCookie;
-    }
+    const isClient = user.role === "CLIENT" && !!user.websiteId;
+    const filterWebsiteId = isClient ? (user.websiteId as string) : null;
 
-    const leads = await prisma.lead.findMany({
-      where: filterWebsiteId ? { websiteId: filterWebsiteId } : {},
-      orderBy: { createdAt: "desc" },
-      take: 200,
-      select: {
-        id: true,
-        websiteId: true,
-        fullName: true,
-        email: true,
-        phone: true,
-        city: true,
-        state: true,
-        message: true,
-        source: true,
-        pageUrl: true,
-        formName: true,
-        utmSource: true,
-        utmMedium: true,
-        utmCampaign: true,
-        utmContent: true,
-        utmTerm: true,
-        status: true,
-        priority: true,
-        temperature: true,
-        score: true,
-        createdAt: true,
-        followUpAt: true,
-        rawFields: true,
-        emailSent: true,
-        smsSent: true,
-        pushSent: true,
-        callNotes: true,
-        website: { select: { id: true, name: true, domain: true } },
-      },
-    });
-
-    return { success: true, leads: JSON.parse(JSON.stringify(leads)) };
+    const leads = await getCachedLeads(filterWebsiteId);
+    return { success: true, leads };
   } catch (error: any) {
     if (error?.digest === "DYNAMIC_SERVER_USAGE") throw error;
     console.error("Error fetching leads:", error);
@@ -75,43 +80,13 @@ export const getLeadsByWebsite = cache(async (websiteId: string) => {
     const user = await getAuthenticatedUser();
     if (!user) return { success: false, error: "Unauthorized" };
 
-    const leads = await prisma.lead.findMany({
-      where: { websiteId },
-      orderBy: { createdAt: "desc" },
-      take: 200,
-      select: {
-        id: true,
-        websiteId: true,
-        fullName: true,
-        email: true,
-        phone: true,
-        city: true,
-        state: true,
-        message: true,
-        source: true,
-        pageUrl: true,
-        formName: true,
-        utmSource: true,
-        utmMedium: true,
-        utmCampaign: true,
-        utmContent: true,
-        utmTerm: true,
-        status: true,
-        priority: true,
-        temperature: true,
-        score: true,
-        createdAt: true,
-        followUpAt: true,
-        rawFields: true,
-        emailSent: true,
-        smsSent: true,
-        pushSent: true,
-        callNotes: true,
-        website: { select: { id: true, name: true, domain: true } },
-      },
-    });
+    // Security check for CLIENT users
+    if (user.role === "CLIENT" && user.websiteId && user.websiteId !== websiteId) {
+      return { success: false, error: "Forbidden" };
+    }
 
-    return { success: true, leads: JSON.parse(JSON.stringify(leads)) };
+    const leads = await getCachedLeads(websiteId);
+    return { success: true, leads };
   } catch (error: any) {
     if (error?.digest === "DYNAMIC_SERVER_USAGE") throw error;
     console.error("Error fetching leads by website:", error);
@@ -129,7 +104,7 @@ export async function updateLeadStatus(leadId: string, status: string) {
       data: { status },
     });
 
-    (revalidateTag as any)("websites_stats", { expire: 0 });
+    invalidateLeadCaches();
     return { success: true, lead: JSON.parse(JSON.stringify(updatedLead)) };
   } catch (error) {
     console.error("Error updating lead:", error);
@@ -147,6 +122,7 @@ export async function updateLeadPriority(leadId: string, priority: string) {
       data: { priority },
     });
 
+    invalidateLeadCaches();
     return { success: true, lead: JSON.parse(JSON.stringify(updatedLead)) };
   } catch (error) {
     console.error("Error updating priority:", error);
@@ -160,7 +136,7 @@ export async function deleteLead(leadId: string) {
     if (!user) return { success: false, error: "Unauthorized" };
 
     await prisma.lead.delete({ where: { id: leadId } });
-    (revalidateTag as any)("websites_stats", { expire: 0 });
+    invalidateLeadCaches();
     return { success: true };
   } catch (error) {
     console.error("Error deleting lead:", error);
@@ -176,12 +152,11 @@ export async function bulkDeleteLeads(leadIds: string[]) {
     const result = await prisma.lead.deleteMany({
       where: {
         id: { in: leadIds },
-        // Ensure CLIENT users can only delete leads for their website
         ...(user.role === "CLIENT" && user.websiteId ? { websiteId: user.websiteId } : {})
       }
     });
 
-    (revalidateTag as any)("websites_stats", { expire: 0 });
+    invalidateLeadCaches();
     return { success: true, count: result.count };
   } catch (error) {
     console.error("Error bulk deleting leads:", error);
@@ -203,7 +178,7 @@ export async function logCallAction(leadId: string, status: string, callNotes?: 
       data: dataToUpdate,
     });
 
-    (revalidateTag as any)("websites_stats", { expire: 0 });
+    invalidateLeadCaches();
     return { success: true, lead: JSON.parse(JSON.stringify(updatedLead)) };
   } catch (error) {
     console.error("Error logging call:", error);
@@ -221,6 +196,7 @@ export async function updateLeadFollowup(leadId: string, followUpAt: Date | null
       data: { followUpAt },
     });
 
+    invalidateLeadCaches();
     return { success: true, lead: JSON.parse(JSON.stringify(updatedLead)) };
   } catch (error) {
     console.error("Error updating followup date:", error);

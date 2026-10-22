@@ -8,14 +8,17 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { getWebsites } from "@/actions/websites";
 import IntegrationTab from "@/components/IntegrationTab";
+import { useActiveProfile } from "@/components/providers/ActiveProfileProvider";
 
 export default function ClientSettingsPage() {
   const params = useParams();
   const router = useRouter();
   const websiteId = params.websiteId as string;
+  const { websites: contextWebsites, setWebsites } = useActiveProfile();
+  const initialFound = contextWebsites.find((w: any) => w.id === websiteId) || null;
 
-  const [site, setSite] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [site, setSite] = useState<any>(initialFound);
+  const [loading, setLoading] = useState(!initialFound);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"general" | "admin_email" | "auto_reply" | "integration">("general");
 
@@ -53,6 +56,15 @@ export default function ClientSettingsPage() {
   const [adminCta, setAdminCta] = useState<string>("Open Lead in CRM");
 
   useEffect(() => {
+    if (initialFound) {
+      setSite(initialFound);
+      const alertData = parseAdminAlertData(initialFound);
+      setAdminSubject(alertData.subject);
+      setAdminNotice(alertData.notice);
+      setAdminMessage(alertData.message);
+      setAdminCta(alertData.cta);
+      setLoading(false);
+    }
     getWebsites().then(res => {
       if (res.success && res.websites) {
         const found = res.websites.find((w: any) => w.id === websiteId);

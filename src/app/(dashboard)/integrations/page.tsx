@@ -1,21 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getIntegrationsData } from "@/actions/websites";
 import { useUser } from "@clerk/nextjs";
+import { useActiveProfile } from "@/components/providers/ActiveProfileProvider";
 import { 
   Link2, 
   Globe, 
-  CheckCircle2, 
-  AlertCircle, 
-  Clock, 
   Search, 
   ExternalLink,
-  ChevronRight,
   RefreshCw,
   Settings,
   SendHorizontal
 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { SVGIcons } from "@/components/IntegrationTab";
@@ -38,42 +36,52 @@ type WebsiteStatus = {
 
 export default function IntegrationsPage() {
   const { user } = useUser();
-  const [websites, setWebsites] = useState<any[]>([]);
-  const [allLeads, setAllLeads] = useState<any[]>([]);
-  const [websiteStatuses, setWebsiteStatuses] = useState<WebsiteStatus[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { websites: contextWebsites } = useActiveProfile();
+  const [websiteStatuses, setWebsiteStatuses] = useState<WebsiteStatus[]>(() =>
+    (contextWebsites || []).map((site: any) => ({
+      id: site.id,
+      name: site.name,
+      domain: site.domain,
+      logoUrl: site.logoUrl || null,
+      status: (site.stats?.total || 0) > 0 ? "idle" : "pending",
+      totalLeads: site.stats?.total || 0,
+      lastActive: null,
+      activeIntegrations: {
+        wordpress: false,
+        sheets: false,
+        html: (site.stats?.total || 0) > 0,
+        webhook: false,
+      },
+    }))
+  );
   const [refreshing, setRefreshing] = useState(false);
   const [pingingId, setPingingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const hasFetchedRef = useRef(false);
 
   const role = user?.publicMetadata?.role as string | undefined;
   const userWebsiteId = user?.publicMetadata?.websiteId as string | undefined;
   const isClient = role === "CLIENT" && !!userWebsiteId;
 
   useEffect(() => {
-    fetchData(false);
-  }, [isClient, userWebsiteId]);
+    if (!hasFetchedRef.current) {
+      hasFetchedRef.current = true;
+      fetchData(true);
+    }
+  }, []);
 
   const fetchData = async (silent = false) => {
-    if (!silent) {
-      setLoading(true);
-    } else {
-      setRefreshing(true);
-    }
+    setRefreshing(true);
     try {
       const res = await getIntegrationsData();
       if (!res.success) {
-        toast.error(res.error || "Failed to load integrations status.");
+        if (!silent) toast.error(res.error || "Failed to load integrations status.");
         return;
       }
 
       const sites = res.websites || [];
       const leads = res.leads || [];
 
-      setWebsites(sites);
-      setAllLeads(leads);
-
-      // Compute integration status for each site
       const computedStatuses: WebsiteStatus[] = sites.map((site: any) => {
         const siteLeads = leads.filter((l: any) => l.websiteId === site.id);
         const totalLeads = siteLeads.length;
@@ -93,12 +101,10 @@ export default function IntegrationsPage() {
           const latestLead = sortedLeads[0];
           lastActive = latestLead.createdAt;
 
-          // Check if latest lead was in the last 24 hours
           const latestTime = new Date(latestLead.createdAt).getTime();
           const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
           status = latestTime >= oneDayAgo ? "live" : "idle";
 
-          // Detect active integration types based on lead sources
           siteLeads.forEach((l: any) => {
             const src = (l.source || "").toLowerCase();
             if (src.includes("wordpress") || src.includes("wp")) activeIntegrations.wordpress = true;
@@ -107,9 +113,8 @@ export default function IntegrationsPage() {
             else if (src.includes("webhook") || src.includes("api") || src.includes("ping") || src.includes("test")) activeIntegrations.webhook = true;
           });
 
-          // Fallback if source didn't match cleanly: mark at least one active based on website
           if (!Object.values(activeIntegrations).some(Boolean)) {
-            activeIntegrations.html = true; // Default fallback
+            activeIntegrations.html = true;
           }
         }
 
@@ -128,14 +133,12 @@ export default function IntegrationsPage() {
       setWebsiteStatuses(computedStatuses);
     } catch (e) {
       console.error(e);
-      toast.error("Failed to load integrations status.");
+      if (!silent) toast.error("Failed to load integrations status.");
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
   };
 
-  // Trigger test webhook ping
   const triggerPing = async (siteId: string) => {
     setPingingId(siteId);
     try {
@@ -155,7 +158,6 @@ export default function IntegrationsPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         toast.success("Test ping sent! A new lead 'CRM Integration Test Ping' has been successfully logged into the pipeline.");
-        // Refetch immediately in background to update status dots to live
         fetchData(true);
       } else {
         toast.error("Ping failed: " + (data.error || "Unexpected response"));
@@ -168,23 +170,14 @@ export default function IntegrationsPage() {
     }
   };
 
-  // Filter list by search term
   const filteredStatuses = websiteStatuses.filter(
     (ws) =>
       ws.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ws.domain.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) {
-    return (
-      <div className="flex-1 p-8 bg-[#FAFAFA] flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-
   return (
-    <div className="flex-1 p-6 sm:p-8 bg-[#FAFAFA] overflow-y-auto space-y-8 animate-in fade-in duration-300">
+    <div className="flex-1 p-6 sm:p-8 bg-[#FAFAFA] overflow-y-auto space-y-8">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -194,7 +187,7 @@ export default function IntegrationsPage() {
         </div>
 
         <button 
-          onClick={() => fetchData(true)} 
+          onClick={() => fetchData(false)} 
           className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl shadow-sm transition-colors self-start sm:self-auto"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} /> Refresh Status
@@ -224,13 +217,13 @@ export default function IntegrationsPage() {
             <table className="w-full text-left border-collapse text-sm">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold text-[11px] uppercase tracking-wider font-sans">
-                  <th className="px-6 py-4.5">Client / Website</th>
-                  <th className="px-6 py-4.5 text-center">WordPress</th>
-                  <th className="px-6 py-4.5 text-center">Google Sheets</th>
-                  <th className="px-6 py-4.5 text-center">HTML Form</th>
-                  <th className="px-6 py-4.5 text-center">Webhook API</th>
-                  <th className="px-6 py-4.5 text-center">Traffic Status</th>
-                  <th className="px-6 py-4.5 text-right">Actions</th>
+                  <th className="px-6 py-4">Client / Website</th>
+                  <th className="px-6 py-4 text-center">WordPress</th>
+                  <th className="px-6 py-4 text-center">Google Sheets</th>
+                  <th className="px-6 py-4 text-center">HTML Form</th>
+                  <th className="px-6 py-4 text-center">Webhook API</th>
+                  <th className="px-6 py-4 text-center">Traffic Status</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-sans">
@@ -354,7 +347,6 @@ export default function IntegrationsPage() {
                     {/* Action Column */}
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {/* Ping / Connection Check Button */}
                         <Button
                           disabled={pingingId !== null}
                           onClick={() => triggerPing(ws.id)}
@@ -364,10 +356,9 @@ export default function IntegrationsPage() {
                           {pingingId === ws.id ? "Pinging..." : "Send Ping"}
                         </Button>
                         
-                        {/* Configure Link */}
-                        <a href={isClient ? `/settings` : `/client/${ws.id}/settings`} className="p-2 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-600 hover:text-slate-900 rounded-xl transition-all" title="Configure Integration">
+                        <Link href={isClient ? `/settings` : `/client/${ws.id}/settings`} prefetch={true} className="p-2 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-600 hover:text-slate-900 rounded-xl transition-all" title="Configure Integration">
                           <Settings className="w-4 h-4" />
-                        </a>
+                        </Link>
                       </div>
                     </td>
 
