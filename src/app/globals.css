@@ -181,10 +181,14 @@
 ::-webkit-scrollbar-thumb { background: #D4CAFF; border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: #7C3AED; }
 
-.scrollbar-hide::-webkit-scrollbar {
+.scrollbar-hide::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar,
+.hide-scrollbar::-webkit-scrollbar {
     display: none;
 }
-.scrollbar-hide {
+.scrollbar-hide,
+.no-scrollbar,
+.hide-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
 }

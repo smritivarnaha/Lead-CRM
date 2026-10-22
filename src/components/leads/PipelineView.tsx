@@ -249,10 +249,10 @@ function StageSelector({ lead, stageConfig, handleStatusChange, isMobile = false
             : "bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300 px-3 py-1.5 rounded-md shadow-sm"
         }`}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <div className={`h-2.5 w-2.5 rounded-full border-2 ${stageConfig.ring} ${stageConfig.fill} shrink-0`} />
           <span className={`font-semibold ${isMobile ? "text-[14px] text-slate-800" : "text-[12px] text-slate-700 truncate"}`}>
-            {stageConfig.label === "New" ? "Take Action" : stageConfig.label}
+            {lead.status === "NEW" ? "Take Action" : stageConfig.label}
           </span>
         </div>
         <ChevronDown className={`text-slate-400 group-hover:text-slate-600 shrink-0 ${isMobile ? "h-4 w-4" : "h-3.5 w-3.5"}`} />
@@ -844,37 +844,37 @@ export function PipelineView({
                         className="rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED]" 
                       />
                     </th>
-                    <th className={`w-[75px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer`}>
-                      <div className="flex items-center justify-between">DATE/TIME<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
+                    <th className={`w-[105px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer whitespace-nowrap`}>
+                      <div className="flex items-center justify-between gap-1">DATE/TIME<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB] shrink-0" strokeWidth={2} /></div>
                     </th>
                     {cols.name && (
-                      <th className={`w-[170px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer`}>
-                        <div className="flex items-center justify-between">NAME<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
+                      <th className={`w-[180px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer whitespace-nowrap`}>
+                        <div className="flex items-center justify-between gap-1">NAME<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB] shrink-0" strokeWidth={2} /></div>
                       </th>
                     )}
                     {cols.phone && (
-                      <th className={`w-[110px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer`}>
-                        <div className="flex items-center justify-between">PHONE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
+                      <th className={`w-[120px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer whitespace-nowrap`}>
+                        <div className="flex items-center justify-between gap-1">PHONE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB] shrink-0" strokeWidth={2} /></div>
                       </th>
                     )}
                     {cols.email && (
-                      <th className={`w-[160px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer hidden lg:table-cell`}>
-                        <div className="flex items-center justify-between">EMAIL<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
+                      <th className={`w-[165px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer hidden lg:table-cell whitespace-nowrap`}>
+                        <div className="flex items-center justify-between gap-1">EMAIL<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB] shrink-0" strokeWidth={2} /></div>
                       </th>
                     )}
                     {cols.timeInStage && (
-                      <th className={`w-[170px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer hidden lg:table-cell`}>
-                        <div className="flex items-center justify-between">TIMER<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
+                      <th className={`w-[165px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer hidden lg:table-cell whitespace-nowrap`}>
+                        <div className="flex items-center justify-between gap-1">TIMER<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB] shrink-0" strokeWidth={2} /></div>
                       </th>
                     )}
                     {cols.closeDate && (
-                      <th className={`w-[90px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer`}>
-                        <div className="flex items-center justify-between">CLOSE DATE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
+                      <th className={`w-[115px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer whitespace-nowrap`}>
+                        <div className="flex items-center justify-between gap-1">CLOSE DATE<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB] shrink-0" strokeWidth={2} /></div>
                       </th>
                     )}
                     {cols.stage && (
-                      <th className={`w-[170px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer`}>
-                        <div className="flex items-center justify-between">ACTION<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB]" strokeWidth={2} /></div>
+                      <th className={`w-[170px] px-4 py-0 border-r ${borderClass} hover:bg-[#F3F0FF] cursor-pointer whitespace-nowrap`}>
+                        <div className="flex items-center justify-between gap-1">ACTION<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB] shrink-0" strokeWidth={2} /></div>
                       </th>
                     )}
                     <th className={`w-[100px] px-0 py-0 ${borderClass}`}>

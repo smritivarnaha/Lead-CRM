@@ -2,7 +2,22 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus, BellRing, Menu, LayoutDashboard, Users, Globe, BarChart3, Briefcase, Activity, Settings } from "lucide-react";
+import {
+  Plus,
+  BellRing,
+  Menu,
+  LayoutDashboard,
+  Users,
+  Globe,
+  BarChart3,
+  Briefcase,
+  Activity,
+  Settings,
+  CalendarClock,
+  Mail,
+  Link2,
+  MessageSquare,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -10,13 +25,18 @@ import { UserButton, useUser } from "@clerk/nextjs";
 import { useActiveProfile } from "@/components/providers/ActiveProfileProvider";
 
 const navItems = [
-  { name: "Dashboard",    href: "/",           icon: LayoutDashboard },
-  { name: "Lead Pipeline",href: "/leads",       icon: Users },
-  { name: "Websites",     href: "/websites",    icon: Globe },
-  { name: "Analytics",    href: "/analytics",   icon: BarChart3 },
-  { name: "Workspaces",   href: "/workspaces",  icon: Briefcase },
-  { name: "Activity",     href: "/activity",    icon: Activity },
-  { name: "Settings",     href: "/settings",    icon: Settings },
+  { name: "Dashboard",       href: "/",              icon: LayoutDashboard },
+  { name: "Lead Pipeline",   href: "/leads",         icon: Users },
+  { name: "Followups",       href: "/followups",     icon: CalendarClock },
+  { name: "Email Campaigns", href: "/email",         icon: Mail },
+  { name: "Client Alerts",   href: "/alerts",        icon: MessageSquare },
+  { name: "Websites",        href: "/websites",      icon: Globe },
+  { name: "Analytics",       href: "/analytics",     icon: BarChart3 },
+  { name: "Integrations",    href: "/integrations",  icon: Link2 },
+  { name: "Workspaces",      href: "/workspaces",    icon: Briefcase },
+  { name: "Activity",        href: "/activity",      icon: Activity },
+  { name: "Settings",        href: "/settings",      icon: Settings },
+  { name: "Team",            href: "/settings/team", icon: Users },
 ];
 
 export function Header() {
@@ -26,6 +46,7 @@ export function Header() {
   const { websites, activeWebsiteId, setActiveWebsiteId } = useActiveProfile();
   const role = user?.publicMetadata?.role as string | undefined;
   const isClient = role === "CLIENT";
+  const isSuperAdmin = role === "SUPER_ADMIN" || !role;
   
   // "idle" = no lead yet, "success" = push sent to mobile, "error" = push failed/nobody subscribed
   const [pushStatus, setPushStatus] = useState<"idle" | "success" | "error">("idle");
@@ -53,13 +74,13 @@ export function Header() {
 
   return (
     <header
-      className="flex h-[60px] items-center border-b bg-white px-4 md:px-8"
+      className="flex h-[60px] items-center border-b bg-white px-4 md:px-6"
       style={{ borderColor: "#E8E4F3", flexShrink: 0 }}
     >
       <div className="flex h-full w-full items-center justify-between">
         
-        {/* Left side: Mobile Hamburger & Logo & Desktop Links */}
-        <div className="flex h-full items-center gap-4 md:gap-8">
+        {/* Left side: Mobile Hamburger & Logo */}
+        <div className="flex h-full items-center gap-3">
           {/* Hamburger Menu (Mobile Only) */}
           <div className="md:hidden flex items-center">
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
@@ -84,13 +105,21 @@ export function Header() {
                       if (
                         isClient &&
                         (item.name === "Websites" ||
-                          item.name === "Workspaces")
-                      )
+                          item.name === "Workspaces" ||
+                          item.name === "Team")
+                      ) {
                         return false;
+                      }
+                      if (item.name === "Team" && !isSuperAdmin) return false;
                       return true;
                     })
                     .map((item) => {
-                      const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+                      const isActive =
+                        item.href === "/"
+                          ? pathname === "/"
+                          : item.href === "/settings"
+                          ? pathname === "/settings"
+                          : pathname.startsWith(item.href);
                       return (
                         <Link
                           key={item.name}
@@ -105,7 +134,7 @@ export function Header() {
                         </Link>
                       );
                     })}
-                  <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-start">
+                  <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-start px-2">
                     <UserButton showName />
                   </div>
                 </div>
@@ -113,16 +142,28 @@ export function Header() {
             </Sheet>
           </div>
 
-          <Link href="/" className="flex h-full items-center text-[15px] md:text-[14px] font-bold text-slate-900">
+          <Link href="/" className="md:hidden flex h-full items-center gap-2 text-[15px] font-bold text-slate-900">
+            <div
+              className="flex h-6 w-6 items-center justify-center rounded-md text-white text-[11px] font-bold flex-shrink-0"
+              style={{ background: "linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%)" }}
+            >
+              LF
+            </div>
             LeadFlow
           </Link>
         </div>
 
         {/* Right side: Push Status Indicator & Settings */}
         <div className="flex items-center gap-2 md:gap-4">
-          <div className="hidden md:flex h-full items-center cursor-pointer mr-2">
-            <Plus className="h-4 w-4 text-slate-400 hover:text-slate-600 transition-colors" />
-          </div>
+          {!isClient && (
+            <Link
+              href="/websites"
+              title="Add or Manage Websites"
+              className="hidden md:flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+            </Link>
+          )}
 
           <Tooltip>
             <TooltipTrigger className="flex items-center gap-2 px-2.5 md:px-3 py-1.5 rounded-full bg-slate-50 border border-slate-100 cursor-default transition-all duration-300">
@@ -154,7 +195,7 @@ export function Header() {
           {!isClient ? (
             <div className="hidden sm:block">
               <select
-                className="text-[11px] font-semibold text-slate-700 bg-[#F7F5FF] border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500 transition-all cursor-pointer max-w-[120px] truncate"
+                className="text-[11px] font-semibold text-slate-700 bg-[#F7F5FF] border border-slate-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500 transition-all cursor-pointer max-w-[150px] truncate"
                 value={activeWebsiteId || "all"}
                 onChange={(e) => {
                   setActiveWebsiteId(e.target.value === "all" ? null : e.target.value);
@@ -168,7 +209,7 @@ export function Header() {
               </select>
             </div>
           ) : (
-            <div className="hidden sm:flex items-center gap-1.5 px-2 py-1.5 bg-indigo-50 border border-indigo-100 rounded-lg text-[11px] font-bold text-indigo-700 max-w-[120px]">
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-50 border border-indigo-100 rounded-lg text-[11px] font-bold text-indigo-700 max-w-[150px]">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
               <span className="truncate">{websites.find(w => w.id === activeWebsiteId)?.name || "Client"}</span>
             </div>

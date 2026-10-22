@@ -1,23 +1,35 @@
 "use client";
 
-import React, { useState } from "react";
-import { format, formatDistanceToNow, addDays, addHours, isPast } from "date-fns";
-import { Clock, Calendar, ChevronDown, Phone, Mail, CheckCircle2, ArrowRight, XCircle } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { format, formatDistanceToNow, addHours, isPast } from "date-fns";
+import { Clock, ChevronDown, Phone, Mail, CheckCircle2, ArrowRight, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { updateLeadFollowup, updateLeadStatus, bulkDeleteLeads } from "@/actions/leads";
 import { LeadDetailsModal } from "./LeadDetailsModal";
 
 const STAGE_STYLE: Record<string, any> = {
-  NEW:         { label: "New Lead",      ring: "border-blue-500",   fill: "bg-transparent", text: "text-blue-500" },
-  CONTACTED:   { label: "Contacted",     ring: "border-amber-500",  fill: "bg-transparent", text: "text-amber-500" }, 
-  BUSY:        { label: "Busy / No Answer", ring: "border-slate-500", fill: "bg-transparent", text: "text-slate-500" },
-  FOLLOW_UP:   { label: "Follow Up Later", ring: "border-orange-500", fill: "bg-transparent", text: "text-orange-500" },
-  CONVERTED:   { label: "Converted",     ring: "border-green-500",  fill: "bg-green-500", text: "text-green-500" },
-  LOST:        { label: "Junk / Lost",   ring: "border-red-500",    fill: "bg-red-500", text: "text-red-500" },
+  NEW:         { label: "New Lead",         ring: "border-blue-500",   fill: "bg-transparent", text: "text-blue-500" },
+  CONTACTED:   { label: "Contacted",        ring: "border-amber-500",  fill: "bg-transparent", text: "text-amber-500" }, 
+  BUSY:        { label: "Busy / No Answer", ring: "border-slate-500",  fill: "bg-transparent", text: "text-slate-500" },
+  FOLLOW_UP:   { label: "Follow Up Later",  ring: "border-orange-500", fill: "bg-transparent", text: "text-orange-500" },
+  CONVERTED:   { label: "Converted",        ring: "border-green-500",  fill: "bg-green-500",   text: "text-green-500" },
+  LOST:        { label: "Junk / Lost",      ring: "border-red-500",    fill: "bg-red-500",     text: "text-red-500" },
 };
 
 function FollowupTimeSelector({ lead, onUpdate }: { lead: any, onUpdate: (leadId: string, date: Date | null) => void }) {
   const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
 
   const handleSetTime = async (hours: number) => {
     setIsOpen(false);
@@ -38,7 +50,7 @@ function FollowupTimeSelector({ lead, onUpdate }: { lead: any, onUpdate: (leadId
   const isOverdue = lead.followUpAt && isPast(new Date(lead.followUpAt));
 
   return (
-    <div className="relative">
+    <div className="relative" ref={ref}>
       <button 
         type="button"
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsOpen(!isOpen); }}
@@ -127,7 +139,7 @@ export function FollowupsView({ initialLeads }: { initialLeads: any[] }) {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto flex flex-col gap-6">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[#1A1523] tracking-tight">Active Follow-ups</h1>
@@ -216,7 +228,7 @@ export function FollowupsView({ initialLeads }: { initialLeads: any[] }) {
                         <FollowupTimeSelector lead={lead} onUpdate={handleUpdateFollowup} />
                       </td>
                       <td className={`px-4 py-0 ${borderClass}`}>
-                        <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-center gap-2 opacity-100 sm:opacity-80 sm:group-hover:opacity-100 transition-opacity">
                           <button 
                             type="button"
                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleMarkResolved(lead.id, "CONVERTED"); }}

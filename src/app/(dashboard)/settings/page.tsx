@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Bell, BellRing, BellOff, Smartphone, X, Link as LinkIcon, Download, Copy, Code2, Image as ImageIcon, Mail, Globe, CheckCircle2, Sparkles, Clock, Save } from "lucide-react";
+import { Bell, BellRing, BellOff, Smartphone, X, Link as LinkIcon, Download, Copy, Code2, Image as ImageIcon, Mail, Globe, CheckCircle2, Sparkles, Clock, Save, ShieldCheck, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import IntegrationTab from "@/components/IntegrationTab";
 import { getWebsites } from "@/actions/websites";
@@ -112,9 +112,9 @@ export default function SettingsPage() {
       const data = await res.json();
       if (data.success) {
         setClientWebsite(data.website);
-        toast.success("Customer Auto-Reply settings saved!");
+        toast.success("Settings saved!");
       } else {
-        toast.error("Failed to save auto-reply settings.");
+        toast.error("Failed to save settings.");
       }
     } catch (e) {
       console.error(e);
@@ -516,7 +516,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2 sm:gap-4 border-b border-slate-200 pb-1">
+      <div className="flex overflow-x-auto no-scrollbar gap-2 sm:gap-4 border-b border-slate-200 pb-1">
         {isClient && (
           <button 
             onClick={() => setActiveTab("general")}
@@ -535,7 +535,13 @@ export default function SettingsPage() {
           onClick={() => setActiveTab("sms")}
           className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "sms" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
         >
-          Lead Alerts
+          Lead Alerts (SMS)
+        </button>
+        <button 
+          onClick={() => setActiveTab("admin-email")}
+          className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "admin-email" ? "border-emerald-600 text-emerald-700 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+        >
+          Admin Email (Instant Lead Alerts)
         </button>
         <button 
           onClick={() => setActiveTab("customer-reply")}
@@ -583,7 +589,7 @@ export default function SettingsPage() {
         </button>
       </div>
 
-      <div className="max-w-4xl">
+      <div className="max-w-5xl">
         {/* ─── PUSH NOTIFICATIONS TAB ─── */}
         {activeTab === "push" && (
           <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden mb-6">
@@ -783,17 +789,25 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* ─── LEAD ALERTS TAB ─── */}
+        {/* ─── LEAD ALERTS (SMS) TAB ─── */}
         {activeTab === "sms" && (
           <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden h-fit mb-6">
-            <div className="p-5 border-b border-slate-100 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
-                <BellRing className="h-5 w-5 text-indigo-600" />
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+                  <BellRing className="h-5 w-5 text-indigo-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-900">Lead Alerts (SMS & Global Templates)</h3>
+                  <p className="text-xs text-slate-500">Configure phone SMS alerts and global provider settings</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-slate-900">Lead Alerts</h3>
-                <p className="text-xs text-slate-500">Configure phone and email for instant lead updates</p>
-              </div>
+              <button
+                onClick={() => setActiveTab("admin-email")}
+                className="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors"
+              >
+                Customize Admin Email →
+              </button>
             </div>
 
             <div className="p-5 flex flex-col gap-5 text-left">
@@ -855,7 +869,7 @@ export default function SettingsPage() {
               )}
 
               {/* Email Alerts Toggle */}
-              <div className="flex items-center justify-between bg-slate-50 p-4 rounded-lg border border-slate-100 mt-4">
+              <div className="flex items-center justify-between bg-slate-50 p-4 rounded-lg border border-slate-100 mt-2">
                 <div>
                   <h4 className="text-sm font-semibold text-slate-900">Enable Email Alerts</h4>
                   <p className="text-xs text-slate-500 mt-0.5">Receive full lead data via Email instantly</p>
@@ -887,168 +901,314 @@ export default function SettingsPage() {
               </div>
 
               {clientWebsite?.emailAlertsEnabled && (
-                <>
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium text-slate-700">Email Address</label>
-                    <input 
-                      type="email" 
-                      multiple
-                      value={clientWebsite?.adminEmail || ""} 
-                      onChange={(e) => setClientWebsite({...clientWebsite, adminEmail: e.target.value})}
-                      onBlur={(e) => {
-                        fetch(`/api/websites/${clientWebsite?.id}`, {
-                          method: "PATCH",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ adminEmail: e.target.value }),
-                        });
-                      }}
-                      placeholder="admin@example.com, sales@example.com"
-                      className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
-                    />
-                    <p className="text-xs text-slate-500">The email address(es) to receive lead notifications.</p>
-                  </div>
-
-                  {!isClient && (
-                    <>
-                      <div className="flex flex-col gap-2 mt-4">
-                        <label className="text-sm font-medium text-slate-700">Global Email Alert Template</label>
-                        <textarea 
-                          value={settings?.emailAlertTemplate || ""} 
-                          onChange={(e) => setSettings({...settings, emailAlertTemplate: e.target.value})}
-                          onBlur={(e) => saveSettings("emailAlertTemplate", e.target.value)}
-                          rows={5}
-                          placeholder="You have a new lead..."
-                          className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors resize-none font-mono"
-                        />
-                        <p className="text-xs text-slate-500">Variables available: {"{{name}}, {{email}}, {{phone}}, {{message}}, {{source}}, {{url}}"}</p>
-                      </div>
-
-                      <div className="flex flex-col gap-3 mt-4">
-                        <div className="flex flex-col">
-                          <label className="text-sm font-medium text-slate-700">Email Design Theme</label>
-                          <p className="text-xs text-slate-500 mt-1">Choose a beautiful layout for your lead notification emails. All themes include mobile responsiveness and spam-safe HTML.</p>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-2">
-                          {EMAIL_THEMES.map((theme) => (
-                            <div 
-                              key={theme.id}
-                              onClick={() => {
-                                setSettings({...settings, emailDesignTheme: theme.id});
-                                saveSettings("emailDesignTheme", theme.id);
-                              }}
-                              className={`cursor-pointer rounded-xl p-4 transition-all duration-200 border bg-white ${settings?.emailDesignTheme === theme.id ? 'border-indigo-600 ring-1 ring-indigo-600 shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'}`}
-                            >
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="text-sm font-semibold text-slate-900">{theme.name}</div>
-                                {settings?.emailDesignTheme === theme.id && (
-                                  <div className="h-4 w-4 rounded-full bg-indigo-600 flex items-center justify-center">
-                                    <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                  </div>
-                                )}
-                              </div>
-                              <div className="text-[11px] text-slate-500 leading-snug mb-3 min-h-[32px]">{theme.description}</div>
-                              
-                              {/* Simple visual mock */}
-                              <div className="h-20 rounded-md border border-slate-100 flex flex-col overflow-hidden pointer-events-none" aria-hidden="true">
-                                <div className={`h-5 w-full ${
-                                  theme.id === 'modern_minimal' ? 'bg-white border-b border-slate-100' :
-                                theme.id === 'corporate_blue' ? 'bg-blue-800' :
-                                theme.id === 'healthcare_trust' ? 'bg-teal-700' :
-                                theme.id === 'urgent_alert' ? 'bg-red-500' :
-                                theme.id === 'dark_mode_sleek' ? 'bg-gray-800' :
-                                theme.id === 'playful_startup' ? 'bg-violet-600' :
-                                theme.id === 'classic_crm' ? 'bg-slate-200' :
-                                theme.id === 'elegant_serif' ? 'bg-stone-100 border-b border-stone-200' :
-                                theme.id === 'tech_neon' ? 'bg-black' :
-                                'bg-pink-100'
-                              }`}></div>
-                              <div className={`flex-1 p-2 flex flex-col gap-1.5 ${
-                                theme.id === 'dark_mode_sleek' || theme.id === 'tech_neon' ? 'bg-gray-900' : 'bg-slate-50'
-                              }`}>
-                                <div className={`h-1.5 w-3/4 rounded ${theme.id === 'dark_mode_sleek' || theme.id === 'tech_neon' ? 'bg-gray-700' : 'bg-slate-200'}`}></div>
-                                <div className={`h-1.5 w-1/2 rounded ${theme.id === 'dark_mode_sleek' || theme.id === 'tech_neon' ? 'bg-gray-700' : 'bg-slate-200'}`}></div>
-                                <div className={`mt-auto h-1 w-full rounded ${theme.id === 'dark_mode_sleek' || theme.id === 'tech_neon' ? 'bg-gray-800' : 'bg-slate-200'}`}></div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-                </>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-slate-700">Email Address(es)</label>
+                  <input 
+                    type="text" 
+                    value={clientWebsite?.adminEmail || ""} 
+                    onChange={(e) => setClientWebsite({...clientWebsite, adminEmail: e.target.value})}
+                    onBlur={(e) => {
+                      fetch(`/api/websites/${clientWebsite?.id}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ adminEmail: e.target.value }),
+                      });
+                    }}
+                    placeholder="admin@example.com, sales@example.com"
+                    className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
+                  />
+                  <p className="text-xs text-slate-500">Comma-separated email address(es) to receive lead notifications.</p>
+                </div>
               )}
 
-                <div className="h-px bg-slate-100 my-2" />
+              <div className="h-px bg-slate-100 my-2" />
 
-                {/* Global SMS Settings (Admin Only) */}
-                {!isClient && (
-                  <div className="flex flex-col gap-5 mt-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="text-sm font-semibold text-slate-900">Global SMS Provider Settings</h4>
-                        <p className="text-xs text-slate-500 mt-0.5">Configure the Fast2SMS API key and message template for all profiles</p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                      <label className="text-sm font-medium text-slate-700">Fast2SMS API Key</label>
-                      <input 
-                        type="password" 
-                        value={settings?.fast2smsApiKey || ""} 
-                        onChange={(e) => setSettings({...settings, fast2smsApiKey: e.target.value})}
-                        onBlur={(e) => saveSettings("fast2smsApiKey", e.target.value)}
-                        placeholder="Enter your Fast2SMS API Key"
-                        className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
-                      />
-                      <p className="text-xs text-slate-500">Sign up on Fast2SMS.com to get your key.</p>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                      <label className="text-sm font-medium text-slate-700">Global SMS Alert Template</label>
-                      <textarea 
-                        value={settings?.smsTemplate || ""} 
-                        onChange={(e) => setSettings({...settings, smsTemplate: e.target.value})}
-                        onBlur={(e) => saveSettings("smsTemplate", e.target.value)}
-                        rows={3}
-                        placeholder="🔥 New Lead: {{name}} has submitted a form!"
-                        className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors resize-none font-mono"
-                      />
-                      <p className="text-xs text-slate-500">Variables available: {"{{name}}, {{source}}"}</p>
+              {/* Global SMS Settings (Admin Only) */}
+              {!isClient && (
+                <div className="flex flex-col gap-5 mt-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-900">Global SMS Provider Settings</h4>
+                      <p className="text-xs text-slate-500 mt-0.5">Configure the Fast2SMS API key and message template for all profiles</p>
                     </div>
                   </div>
-                )}
 
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-slate-700">Fast2SMS API Key</label>
+                    <input 
+                      type="password" 
+                      value={settings?.fast2smsApiKey || ""} 
+                      onChange={(e) => setSettings({...settings, fast2smsApiKey: e.target.value})}
+                      onBlur={(e) => saveSettings("fast2smsApiKey", e.target.value)}
+                      placeholder="Enter your Fast2SMS API Key"
+                      className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors"
+                    />
+                    <p className="text-xs text-slate-500">Sign up on Fast2SMS.com to get your key.</p>
+                  </div>
 
-                <div className="flex flex-col sm:flex-row gap-3 mt-2 pt-4 border-t border-slate-100">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-slate-700">Global SMS Alert Template</label>
+                    <textarea 
+                      value={settings?.smsTemplate || ""} 
+                      onChange={(e) => setSettings({...settings, smsTemplate: e.target.value})}
+                      onBlur={(e) => saveSettings("smsTemplate", e.target.value)}
+                      rows={3}
+                      placeholder="🔥 New Lead: {{name}} has submitted a form!"
+                      className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-indigo-500 transition-colors resize-none font-mono"
+                    />
+                    <p className="text-xs text-slate-500">Variables available: {"{{name}}, {{source}}"}</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row gap-3 mt-2 pt-4 border-t border-slate-100">
+                <button
+                  onClick={() => {
+                    saveSettings("fast2smsApiKey", settings?.fast2smsApiKey);
+                    saveSettings("adminPhone", settings?.adminPhone);
+                    saveSettings("smsTemplate", settings?.smsTemplate);
+                    toast.success("Alert Settings saved successfully!");
+                  }}
+                  disabled={isSaving}
+                  className="flex-1 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50"
+                >
+                  {isSaving ? "Saving..." : "Save Alert Settings"}
+                </button>
+                {settings?.smsAutoReplyEnabled && (
                   <button
-                    onClick={() => {
-                      saveSettings("fast2smsApiKey", settings?.fast2smsApiKey);
-                      saveSettings("adminPhone", settings?.adminPhone);
-                      saveSettings("smsTemplate", settings?.smsTemplate);
-                      saveSettings("adminEmail", settings?.adminEmail);
-                      saveSettings("emailAlertTemplate", settings?.emailAlertTemplate);
-                      toast.success("Alert Settings saved successfully!");
-                    }}
-                    disabled={isSaving}
-                    className="flex-1 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50"
+                    onClick={handleTestSms}
+                    disabled={isTestingSms || isSaving}
+                    className="flex-1 py-2.5 px-4 bg-white border border-indigo-200 hover:bg-indigo-50 text-indigo-700 text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50"
                   >
-                    {isSaving ? "Saving..." : "Save Alert Settings"}
+                    {isTestingSms ? "Sending..." : "Test SMS"}
                   </button>
-                  {settings?.smsAutoReplyEnabled && (
-                    <button
-                      onClick={handleTestSms}
-                      disabled={isTestingSms || isSaving}
-                      className="flex-1 py-2.5 px-4 bg-white border border-indigo-200 hover:bg-indigo-50 text-indigo-700 text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50"
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ─── ADMIN EMAIL (INSTANT LEAD ALERTS) TAB ─── */}
+        {activeTab === "admin-email" && (
+          <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden mb-6">
+            <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-900">Admin / Client Instant Lead Alert Email</h3>
+                  <p className="text-xs text-slate-500">Customize the Rankved Healthcare Martech branded email sent to you or your client when a new lead arrives</p>
+                </div>
+              </div>
+              {clientWebsite && (
+                <span className="text-xs font-bold px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg shrink-0 self-start sm:self-auto">
+                  {clientWebsite.name}
+                </span>
+              )}
+            </div>
+
+            <div className="p-5 flex flex-col gap-6">
+              {/* Toggle Card */}
+              <div className="flex items-center justify-between bg-emerald-50/50 border border-emerald-100 rounded-xl p-4">
+                <div className="space-y-0.5">
+                  <h4 className="font-semibold text-slate-900 text-sm">Enable Instant Admin / Client Email Alerts</h4>
+                  <p className="text-xs text-slate-500">
+                    When enabled, full lead details are sent immediately with Rankved Healthcare Martech branding.
+                  </p>
+                </div>
+                <Switch 
+                  checked={clientWebsite?.emailAlertsEnabled ?? false} 
+                  onCheckedChange={(checked) => {
+                    setClientWebsite({ ...clientWebsite, emailAlertsEnabled: checked });
+                    handleSaveWebsiteAutoReply({ emailAlertsEnabled: checked });
+                  }}
+                />
+              </div>
+
+              {/* Form & Live Preview Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                {/* Configuration Inputs */}
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-700">Recipient Email Address(es)</label>
+                    <input 
+                      type="text"
+                      value={clientWebsite?.adminEmail || ""}
+                      onChange={(e) => setClientWebsite({ ...clientWebsite, adminEmail: e.target.value })}
+                      onBlur={(e) => handleSaveWebsiteAutoReply({ adminEmail: e.target.value })}
+                      placeholder="client@clinic.com, admin@rankved.com"
+                      className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-emerald-500 font-medium"
+                    />
+                    <p className="text-[11px] text-slate-400">Supports multiple comma-separated email addresses.</p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-slate-700">Email Subject Line</label>
+                      <span className="text-[11px] text-slate-400">Supports {`{{name}}`}, {`{{website}}`}, {`{{source}}`}</span>
+                    </div>
+                    <input 
+                      type="text"
+                      value={clientWebsite?.adminEmailSubject || `New Patient / Lead Enquiry: {{name}} via {{website}}`}
+                      onChange={(e) => setClientWebsite({ ...clientWebsite, adminEmailSubject: e.target.value })}
+                      onBlur={(e) => handleSaveWebsiteAutoReply({ adminEmailSubject: e.target.value })}
+                      className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-emerald-500 font-medium"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-slate-700">Source Website Notice Banner</label>
+                      <span className="text-[11px] text-slate-400">Supports {`{{website}}`}, {`{{domain}}`}, {`{{source}}`}</span>
+                    </div>
+                    <input 
+                      type="text"
+                      value={clientWebsite?.adminEmailSourceNote || `Note: You received this lead directly from your official website ({{website}} - {{domain}}).`}
+                      onChange={(e) => setClientWebsite({ ...clientWebsite, adminEmailSourceNote: e.target.value })}
+                      onBlur={(e) => handleSaveWebsiteAutoReply({ adminEmailSourceNote: e.target.value })}
+                      className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-slate-700">Introductory Message Body</label>
+                      <span className="text-[11px] text-slate-400">Supports {`{{name}}`}, {`{{website}}`}</span>
+                    </div>
+                    <textarea 
+                      rows={4}
+                      value={clientWebsite?.adminEmailMessage || `Hello Team,\n\nA new enquiry has been captured and verified by Rankved Healthcare Martech from {{website}}. Please review the complete submission details below and connect with {{name}} at the earliest for maximum conversion.`}
+                      onChange={(e) => setClientWebsite({ ...clientWebsite, adminEmailMessage: e.target.value })}
+                      onBlur={(e) => handleSaveWebsiteAutoReply({ adminEmailMessage: e.target.value })}
+                      className="w-full text-sm rounded-lg border border-slate-200 p-3 outline-none focus:border-emerald-500 leading-relaxed resize-none font-sans"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-700">CTA Button Text</label>
+                      <input 
+                        type="text"
+                        value={clientWebsite?.adminEmailCtaLabel || "Open Lead in Rankved CRM →"}
+                        onChange={(e) => setClientWebsite({ ...clientWebsite, adminEmailCtaLabel: e.target.value })}
+                        onBlur={(e) => handleSaveWebsiteAutoReply({ adminEmailCtaLabel: e.target.value })}
+                        className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-700">CTA Button Link</label>
+                      <input 
+                        type="text"
+                        value={clientWebsite?.adminEmailCtaUrl || "https://crm.rankved.com/leads"}
+                        onChange={(e) => setClientWebsite({ ...clientWebsite, adminEmailCtaUrl: e.target.value })}
+                        onBlur={(e) => handleSaveWebsiteAutoReply({ adminEmailCtaUrl: e.target.value })}
+                        className="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <Button 
+                      disabled={isSaving} 
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+                      onClick={() => {
+                        handleSaveWebsiteAutoReply({
+                          emailAlertsEnabled: clientWebsite?.emailAlertsEnabled,
+                          adminEmail: clientWebsite?.adminEmail,
+                          adminEmailSubject: clientWebsite?.adminEmailSubject,
+                          adminEmailSourceNote: clientWebsite?.adminEmailSourceNote,
+                          adminEmailMessage: clientWebsite?.adminEmailMessage,
+                          adminEmailCtaLabel: clientWebsite?.adminEmailCtaLabel,
+                          adminEmailCtaUrl: clientWebsite?.adminEmailCtaUrl,
+                        });
+                      }}
                     >
-                      {isTestingSms ? "Sending..." : "Test SMS"}
-                    </button>
-                  )}
+                      <Save className="w-4 h-4 mr-2" /> Save Admin Email Settings
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Live Preview Box */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-600" /> Rankved Healthcare Martech Live Preview
+                    </span>
+                    <span className="text-[11px] text-slate-400">Updates live</span>
+                  </div>
+
+                  <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                    {/* Rankved Header */}
+                    <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-white">
+                      <div className="flex items-center gap-2.5">
+                        <img 
+                          src="https://rankved.com/wp-content/uploads/2025/04/Rankved-Logo-Official-Black.avif" 
+                          alt="Rankved" 
+                          className="h-7 w-auto object-contain"
+                        />
+                        <div className="border-l border-slate-200 pl-2.5">
+                          <div className="text-[11px] font-extrabold text-slate-900 uppercase tracking-wider">Rankved Healthcare Martech</div>
+                          <div className="text-[10px] text-emerald-600 font-semibold">Verified Lead Dispatch System</div>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full">
+                        INSTANT ALERT
+                      </span>
+                    </div>
+
+                    {/* Source Website Notice Banner */}
+                    <div className="bg-indigo-50/80 border-b border-indigo-100 px-4 py-2.5 text-[11px] font-semibold text-indigo-900 flex items-center gap-2">
+                      <Globe className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                      <span>
+                        {(clientWebsite?.adminEmailSourceNote || "Note: You received this lead directly from your official website ({{website}} - {{domain}}).")
+                          .replace(/{{website}}/g, clientWebsite?.name || "Your Website")
+                          .replace(/{{domain}}/g, clientWebsite?.domain || "yourwebsite.com")
+                          .replace(/{{source}}/g, "Appointment Form")}
+                      </span>
+                    </div>
+
+                    {/* Body */}
+                    <div className="p-4 space-y-3.5 text-xs text-slate-700 leading-relaxed">
+                      <div className="whitespace-pre-line text-slate-800 font-medium">
+                        {(clientWebsite?.adminEmailMessage || "Hello Team,\n\nA new enquiry has been captured and verified by Rankved Healthcare Martech from {{website}}. Please review the complete submission details below and connect with {{name}} at the earliest for maximum conversion.")
+                          .replace(/{{name}}/g, "Aarav Sharma")
+                          .replace(/{{website}}/g, clientWebsite?.name || "Your Website")
+                          .replace(/{{domain}}/g, clientWebsite?.domain || "yourwebsite.com")
+                          .replace(/{{source}}/g, "Appointment Form")}
+                      </div>
+
+                      {/* Lead Table Preview */}
+                      <div className="border border-slate-200 rounded-lg overflow-hidden text-[11px]">
+                        <div className="bg-slate-50 px-3 py-1.5 font-bold text-slate-700 border-b border-slate-200 uppercase tracking-wider text-[10px]">
+                          Lead Details ({clientWebsite?.name || "Website"})
+                        </div>
+                        <div className="divide-y divide-slate-100">
+                          <div className="flex justify-between px-3 py-1.5"><span className="text-slate-500">Patient / Lead Name</span><span className="font-bold text-slate-900">Aarav Sharma</span></div>
+                          <div className="flex justify-between px-3 py-1.5"><span className="text-slate-500">Phone Number</span><span className="font-bold text-emerald-700">+91 98765 43210</span></div>
+                          <div className="flex justify-between px-3 py-1.5"><span className="text-slate-500">Email Address</span><span className="font-medium text-slate-800">aarav.sharma@example.com</span></div>
+                          <div className="flex justify-between px-3 py-1.5"><span className="text-slate-500">Department / Query</span><span className="font-medium text-slate-800">Cardiology Consultation</span></div>
+                          <div className="flex justify-between px-3 py-1.5"><span className="text-slate-500">Source Website</span><span className="font-semibold text-indigo-700">{clientWebsite?.name || "Your Website"} ({clientWebsite?.domain || "domain.com"})</span></div>
+                        </div>
+                      </div>
+
+                      {/* CTA Button Preview */}
+                      <div className="pt-1 text-center">
+                        <span className="inline-flex items-center gap-1.5 bg-slate-900 text-white text-[11px] font-bold px-4 py-2 rounded-lg shadow-sm">
+                          {clientWebsite?.adminEmailCtaLabel || "Open Lead in Rankved CRM →"}
+                          <ExternalLink className="w-3 h-3" />
+                        </span>
+                      </div>
+
+                      <div className="text-center pt-2 border-t border-slate-100 text-[10px] text-slate-400">
+                        Powered by <strong>Rankved Healthcare Martech</strong> · Automated Lead Intelligence & Dispatch
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
+          </div>
         )}
 
         {/* ─── CUSTOMER AUTO-REPLY TAB ─── */}

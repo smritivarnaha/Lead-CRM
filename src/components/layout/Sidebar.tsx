@@ -21,18 +21,18 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { name: "Dashboard",    href: "/",           icon: LayoutDashboard },
-  { name: "Lead Pipeline",href: "/leads",       icon: Users },
-  { name: "Followups",    href: "/followups",   icon: CalendarClock },
-  { name: "Email Campaigns",href: "/email",     icon: Mail },
-  { name: "Client Alerts",    href: "/alerts",      icon: MessageSquare },
-  { name: "Websites",     href: "/websites",    icon: Globe },
-  { name: "Analytics",    href: "/analytics",   icon: BarChart3 },
-  { name: "Integrations", href: "/integrations",icon: Link2 },
-  { name: "Workspaces",   href: "/workspaces",  icon: Briefcase },
-  { name: "Activity",     href: "/activity",    icon: Activity },
-  { name: "Settings",     href: "/settings",    icon: Settings },
-  { name: "Team",         href: "/settings/team",icon: Users },
+  { name: "Dashboard",       href: "/",              icon: LayoutDashboard },
+  { name: "Lead Pipeline",   href: "/leads",         icon: Users },
+  { name: "Followups",       href: "/followups",     icon: CalendarClock },
+  { name: "Email Campaigns", href: "/email",         icon: Mail },
+  { name: "Client Alerts",   href: "/alerts",        icon: MessageSquare },
+  { name: "Websites",        href: "/websites",      icon: Globe },
+  { name: "Analytics",       href: "/analytics",     icon: BarChart3 },
+  { name: "Integrations",    href: "/integrations",  icon: Link2 },
+  { name: "Workspaces",      href: "/workspaces",    icon: Briefcase },
+  { name: "Activity",        href: "/activity",      icon: Activity },
+  { name: "Settings",        href: "/settings",      icon: Settings },
+  { name: "Team",            href: "/settings/team", icon: Users },
 ];
 
 export function Sidebar() {
@@ -99,6 +99,8 @@ export function Sidebar() {
           const isActive =
             item.href === "/"
               ? pathname === "/"
+              : item.href === "/settings"
+              ? pathname === "/settings"
               : pathname.startsWith(item.href);
           return (
             <Link

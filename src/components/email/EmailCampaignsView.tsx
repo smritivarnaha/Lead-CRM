@@ -8,12 +8,13 @@ import { EmailTemplatesTab } from "./EmailTemplatesTab";
 import { EmailAutomationsTab } from "./EmailAutomationsTab";
 
 const STAGE_STYLE: Record<string, { label: string; ring: string; fill: string; text?: string }> = {
-  NEW:         { label: "New Lead",      ring: "border-blue-500",   fill: "bg-transparent", text: "text-blue-500" },
-  CONTACTED:   { label: "Contacted",     ring: "border-amber-500",  fill: "bg-transparent", text: "text-amber-500" }, 
-  NO_RESPONSE: { label: "No Response",   ring: "border-red-500",    fill: "bg-transparent", text: "text-red-500" },
-  FOLLOW_UP:   { label: "Follow Up Later",ring: "border-orange-500", fill: "bg-transparent", text: "text-orange-500" },
-  CONVERTED:   { label: "Converted",     ring: "border-emerald-500",fill: "bg-emerald-500", text: "text-emerald-500" },
-  LOST:        { label: "Junk / Lost",   ring: "border-red-500",    fill: "bg-red-500",     text: "text-red-500" },
+  NEW:         { label: "New Lead",        ring: "border-blue-500",    fill: "bg-transparent", text: "text-blue-500" },
+  CONTACTED:   { label: "Contacted",       ring: "border-amber-500",   fill: "bg-transparent", text: "text-amber-500" }, 
+  BUSY:        { label: "Busy / No Answer",ring: "border-slate-500",   fill: "bg-transparent", text: "text-slate-500" },
+  NO_RESPONSE: { label: "No Response",     ring: "border-red-500",     fill: "bg-transparent", text: "text-red-500" },
+  FOLLOW_UP:   { label: "Follow Up Later", ring: "border-orange-500",  fill: "bg-transparent", text: "text-orange-500" },
+  CONVERTED:   { label: "Converted",       ring: "border-emerald-500", fill: "bg-emerald-500", text: "text-emerald-500" },
+  LOST:        { label: "Junk / Lost",     ring: "border-red-500",     fill: "bg-red-500",     text: "text-red-500" },
 };
 
 export function EmailCampaignsView({ initialLeads }: { initialLeads: any[] }) {
@@ -58,37 +59,37 @@ export function EmailCampaignsView({ initialLeads }: { initialLeads: any[] }) {
   const trHeightClass = "h-[46px]";
 
   const renderTabs = () => (
-    <div className="flex items-center gap-1 bg-slate-100/50 p-1 rounded-xl w-fit border border-slate-200/50">
+    <div className="flex items-center gap-1 bg-slate-100/50 p-1 rounded-xl w-fit max-w-full overflow-x-auto no-scrollbar border border-slate-200/50">
       <button 
         onClick={() => setActiveTab("leads")}
-        className={`px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-all ${activeTab === "leads" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"}`}
+        className={`px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-all whitespace-nowrap shrink-0 ${activeTab === "leads" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"}`}
       >
         Leads Directory
       </button>
       <button 
         onClick={() => setActiveTab("sent")}
-        className={`px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-all flex items-center gap-2 ${activeTab === "sent" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"}`}
+        className={`px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-all flex items-center gap-2 whitespace-nowrap shrink-0 ${activeTab === "sent" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"}`}
       >
         Sent Broadcasts
         <span className="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-md text-[10px]">{sentCampaigns.length}</span>
       </button>
       <button 
         onClick={() => setActiveTab("drafts")}
-        className={`px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-all flex items-center gap-2 ${activeTab === "drafts" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"}`}
+        className={`px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-all flex items-center gap-2 whitespace-nowrap shrink-0 ${activeTab === "drafts" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"}`}
       >
         Drafts
         <span className="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-md text-[10px]">{draftCampaigns.length}</span>
       </button>
-      <div className="w-px h-6 bg-slate-200 mx-1"></div>
+      <div className="w-px h-6 bg-slate-200 mx-1 shrink-0"></div>
       <button 
         onClick={() => setActiveTab("templates")}
-        className={`px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-all flex items-center gap-2 ${activeTab === "templates" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"}`}
+        className={`px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-all flex items-center gap-2 whitespace-nowrap shrink-0 ${activeTab === "templates" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"}`}
       >
         Templates & Design
       </button>
       <button 
         onClick={() => setActiveTab("automations")}
-        className={`px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-all flex items-center gap-2 ${activeTab === "automations" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"}`}
+        className={`px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-all flex items-center gap-2 whitespace-nowrap shrink-0 ${activeTab === "automations" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"}`}
       >
         Automations
       </button>
@@ -112,7 +113,7 @@ export function EmailCampaignsView({ initialLeads }: { initialLeads: any[] }) {
           <tbody className="text-[12.5px] divide-y divide-[#E8E4F3]">
             {items.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-5 py-16 text-center text-slate-500">
+                <td colSpan={type === "sent" ? 6 : 4} className="px-5 py-16 text-center text-slate-500">
                   {type === "sent" ? <Send className="h-10 w-10 text-indigo-200 mx-auto mb-3" /> : <FileText className="h-10 w-10 text-slate-200 mx-auto mb-3" />}
                   <p className="text-[15px] font-medium text-slate-700">No {type} campaigns</p>
                   <p className="text-[13px] mt-1">You haven't {type === "sent" ? "sent any email broadcasts" : "saved any drafts"} yet.</p>
@@ -173,7 +174,7 @@ export function EmailCampaignsView({ initialLeads }: { initialLeads: any[] }) {
   );
 
   return (
-    <div className="p-6 max-w-7xl mx-auto flex flex-col gap-6 relative w-full h-full">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto flex flex-col gap-6 relative w-full h-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[#1A1523] tracking-tight">Email Campaigns</h1>

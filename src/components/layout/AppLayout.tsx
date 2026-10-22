@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { supabase } from "@/lib/supabase";
@@ -19,6 +20,25 @@ export function AppLayout({
   initialWebsites?: any[];
 }) {
   const { user } = useUser();
+  const pathname = usePathname();
+
+  // Pipeline views manage their own full-bleed edge-to-edge height and scroll
+  const isFullBleed =
+    pathname === "/leads" ||
+    (pathname.startsWith("/client/") && !pathname.endsWith("/settings"));
+
+  // Pages that manage their own inner container padding
+  const hasOwnPadding =
+    isFullBleed ||
+    pathname === "/" ||
+    pathname.startsWith("/followups") ||
+    pathname.startsWith("/email") ||
+    pathname.startsWith("/alerts") ||
+    pathname.startsWith("/analytics") ||
+    pathname.startsWith("/integrations") ||
+    pathname.startsWith("/workspaces") ||
+    pathname.startsWith("/activity") ||
+    (pathname.startsWith("/client/") && pathname.endsWith("/settings"));
 
   useEffect(() => {
     if (!user) return;
@@ -64,8 +84,8 @@ export function AppLayout({
         <Sidebar />
         <div className="flex flex-1 flex-col overflow-hidden relative">
           <Header />
-          <main className="flex-1 overflow-y-auto bg-slate-50 pb-20 md:pb-0">
-            <div className="p-4 md:p-8 h-full">
+          <main className={`flex-1 bg-slate-50 pb-20 md:pb-0 ${isFullBleed ? "overflow-hidden" : "overflow-y-auto"}`}>
+            <div className={isFullBleed ? "h-full w-full overflow-hidden" : hasOwnPadding ? "min-h-full w-full" : "p-4 md:p-8 min-h-full"}>
               {children}
             </div>
           </main>
