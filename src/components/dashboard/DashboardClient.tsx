@@ -1,8 +1,28 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Building2, Download, ExternalLink, Image as ImageIcon, Smartphone, Bell, BellOff, BellRing, ArrowRight, Settings, Mail } from "lucide-react";
+import { 
+  Building2, 
+  Download, 
+  ExternalLink, 
+  Image as ImageIcon, 
+  Smartphone, 
+  ArrowRight, 
+  Settings, 
+  Mail, 
+  Users, 
+  Sparkles, 
+  BellRing, 
+  Globe, 
+  HelpCircle, 
+  X, 
+  Layers,
+  CheckCircle2,
+  TrendingUp,
+  AlertCircle
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -16,8 +36,10 @@ interface DashboardClientProps {
 }
 
 export function DashboardClient({ initialWebsites, role, userWebsiteId }: DashboardClientProps) {
-  const { setWebsites, activeWebsiteId } = useActiveProfile();
+  const router = useRouter();
+  const { setWebsites, activeWebsiteId, setActiveWebsiteId } = useActiveProfile();
   const [sites, setSites] = useState<any[]>(initialWebsites || []);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     if (initialWebsites && initialWebsites.length > 0) {
@@ -25,19 +47,41 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
     }
   }, [initialWebsites]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const dismissed = localStorage.getItem("leadflow_onboarding_dismissed");
+      if (!dismissed) {
+        setShowOnboarding(true);
+      }
+    }
+  }, []);
+
+  const dismissOnboarding = () => {
+    setShowOnboarding(false);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("leadflow_onboarding_dismissed", "true");
+    }
+  };
+
   // Filter websites if an active profile is selected, otherwise show all
   const displayWebsites = activeWebsiteId
     ? sites.filter((w) => w.id === activeWebsiteId)
     : sites;
   
   const [configuringSite, setConfiguringSite] = useState<any | null>(null);
+  const [modalInitialTab, setModalInitialTab] = useState<"general" | "admin_email" | "auto_reply" | "integration">("general");
   const [savingId, setSavingId] = useState<string | null>(null);
   const [pushStatus, setPushStatus] = useState<"loading" | "subscribed" | "unsubscribed" | "unsupported">("loading");
   const [isProcessingPush, setIsProcessingPush] = useState(false);
 
   const isClient = role === "CLIENT" && !!userWebsiteId;
 
-  // Add push checking
+  // Compute global KPI summary metrics across visible websites
+  const totalLeadsAll = displayWebsites.reduce((sum, s) => sum + (s.stats?.total || 0), 0);
+  const newThisWeekAll = displayWebsites.reduce((sum, s) => sum + (s.stats?.newThisWeek || 0), 0);
+  const unreadAll = displayWebsites.reduce((sum, s) => sum + (s.stats?.unread || 0), 0);
+  const activeAlertsCount = displayWebsites.filter(s => (s.emailAlertsEnabled !== false && s.adminEmail) || (s.smsAlertsEnabled !== false && s.adminPhone)).length;
+
   useEffect(() => {
     checkPushStatus();
   }, []);
@@ -54,61 +98,6 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
       else setPushStatus("unsubscribed");
     } catch (e) {
       setPushStatus("unsupported");
-    }
-  };
-
-  const urlBase64ToUint8Array = (base64String: string) => {
-    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-    const rawData = window.atob(base64);
-    return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
-  };
-
-  const togglePush = async () => {
-    if (pushStatus === "unsupported") {
-      toast.error("Push not supported on this device/browser.");
-      return;
-    }
-    setIsProcessingPush(true);
-    try {
-      const sw = await navigator.serviceWorker.ready;
-      if (pushStatus === "subscribed") {
-        const sub = await sw.pushManager.getSubscription();
-        if (sub) {
-          await sub.unsubscribe();
-          await fetch("/api/push/subscribe", {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ endpoint: sub.endpoint }),
-          });
-        }
-        setPushStatus("unsubscribed");
-        toast.success("Push notifications disabled.");
-      } else {
-        const permission = await Notification.requestPermission();
-        if (permission !== "granted") {
-          toast.error("Notification permission denied.");
-          setIsProcessingPush(false);
-          return;
-        }
-        const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
-        const subscription = await sw.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-        });
-        await fetch("/api/push/subscribe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(subscription.toJSON()),
-        });
-        setPushStatus("subscribed");
-        toast.success("Push notifications enabled!");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to toggle push notifications.");
-    } finally {
-      setIsProcessingPush(false);
     }
   };
 
@@ -151,7 +140,7 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
         const canvas = document.createElement("canvas");
         let width = img.width;
         let height = img.height;
-        const maxSize = 72; // For badge
+        const maxSize = 72;
         if (width > height) {
           if (width > maxSize) {
             height = Math.round((height * maxSize) / width);
@@ -177,18 +166,195 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
     reader.readAsDataURL(file);
   };
 
+  const openSiteModal = (site: any, tab: "general" | "admin_email" | "auto_reply" | "integration") => {
+    setModalInitialTab(tab);
+    setConfiguringSite(site);
+  };
+
   return (
-    <div className="flex-1 p-4 md:p-8 bg-[#FAFAFA] overflow-y-auto">
-      <div className="max-w-6xl mx-auto space-y-4 md:space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-[#1A1523] tracking-tight">
-            {isClient ? "Your Dashboard" : "Client Dashboard"}
-          </h1>
-          <p className="text-[#6B7280] mt-1 text-sm">
-            {isClient ? "Manage your leads and CRM pipeline." : "Overview of all active client CRM pipelines and settings."}
-          </p>
+    <div className="flex-1 p-4 md:p-8 bg-[#FAFAFA]">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Top Header Row with Quick Actions */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#1A1523] tracking-tight">
+              {isClient ? "Your CRM Dashboard" : "Client Command Center"}
+            </h1>
+            <p className="text-[#6B7280] mt-1 text-sm">
+              {isClient
+                ? "Monitor incoming leads, configure instant alerts, and manage your pipeline."
+                : "Overview of all connected client websites, live lead counters, and alert configurations."}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setShowOnboarding(!showOnboarding)}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                showOnboarding
+                  ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
+              <span>{showOnboarding ? "Hide Guide" : "How It Works"}</span>
+            </button>
+            <Link
+              href="/leads"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#7C3AED] hover:bg-[#6D28D9] text-white shadow-xs transition-all"
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>View All Leads</span>
+            </Link>
+          </div>
         </div>
 
+        {/* New User Onboarding / Feature Discovery Banner */}
+        {showOnboarding && (
+          <div className="bg-gradient-to-r from-[#F7F5FF] via-white to-indigo-50/50 border border-[#DDD6FE] rounded-2xl p-5 shadow-xs relative animate-in fade-in duration-200">
+            <button
+              type="button"
+              onClick={dismissOnboarding}
+              className="absolute top-3.5 right-3.5 p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+              title="Dismiss guide"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-2 mb-3">
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-[#7C3AED] bg-[#EDE9FE] px-2.5 py-0.5 rounded-full">
+                <Sparkles className="w-3 h-3" /> Quick Start Workflow
+              </span>
+              <span className="text-xs text-slate-500 hidden sm:inline">
+                4 simple steps to get maximum conversions from your CRM
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div
+                onClick={() => sites[0] ? openSiteModal(sites[0], "integration") : router.push("/websites")}
+                className="bg-white/90 hover:bg-white border border-slate-200/80 hover:border-indigo-300 rounded-xl p-3.5 cursor-pointer transition-all group"
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[11px] font-bold text-indigo-600 uppercase">Step 1</span>
+                  <Layers className="w-4 h-4 text-indigo-500 group-hover:translate-x-0.5 transition-transform" />
+                </div>
+                <h4 className="text-xs font-bold text-slate-900">Connect Website Form</h4>
+                <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                  Install the WP Plugin, Google Sheet script, or HTML webhook snippet to capture leads live.
+                </p>
+              </div>
+
+              <div
+                onClick={() => sites[0] ? openSiteModal(sites[0], "admin_email") : router.push("/settings")}
+                className="bg-white/90 hover:bg-white border border-slate-200/80 hover:border-emerald-300 rounded-xl p-3.5 cursor-pointer transition-all group"
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[11px] font-bold text-emerald-600 uppercase">Step 2</span>
+                  <Mail className="w-4 h-4 text-emerald-500 group-hover:translate-x-0.5 transition-transform" />
+                </div>
+                <h4 className="text-xs font-bold text-slate-900">Branded Admin & Visitor Emails</h4>
+                <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                  Customize Rankved Healthcare Martech instant lead alerts & visitor thank-you auto-replies.
+                </p>
+              </div>
+
+              <div
+                onClick={() => router.push("/leads")}
+                className="bg-white/90 hover:bg-white border border-slate-200/80 hover:border-purple-300 rounded-xl p-3.5 cursor-pointer transition-all group"
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[11px] font-bold text-purple-600 uppercase">Step 3</span>
+                  <Users className="w-4 h-4 text-purple-500 group-hover:translate-x-0.5 transition-transform" />
+                </div>
+                <h4 className="text-xs font-bold text-slate-900">Work Leads & WhatsApp</h4>
+                <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                  Click any lead to open the Command Drawer — Call, WhatsApp in 1 click, update status, or add notes.
+                </p>
+              </div>
+
+              <div
+                onClick={() => router.push("/followups")}
+                className="bg-white/90 hover:bg-white border border-slate-200/80 hover:border-amber-300 rounded-xl p-3.5 cursor-pointer transition-all group"
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[11px] font-bold text-amber-600 uppercase">Step 4</span>
+                  <BellRing className="w-4 h-4 text-amber-500 group-hover:translate-x-0.5 transition-transform" />
+                </div>
+                <h4 className="text-xs font-bold text-slate-900">Follow-up & Convert</h4>
+                <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                  Snooze callbacks (+1 hr, Tomorrow, +3 days) and track your team's conversion rate.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Top Global KPI Strip */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <Link
+            href="/leads"
+            className="bg-white border border-slate-200/80 hover:border-indigo-200 rounded-2xl p-4 shadow-2xs transition-all flex items-center justify-between"
+          >
+            <div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Leads</span>
+              <div className="text-2xl font-extrabold text-slate-900 mt-1">{totalLeadsAll}</div>
+              <span className="text-[11px] text-slate-500">Across {displayWebsites.length} {displayWebsites.length === 1 ? "website" : "websites"}</span>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+              <Users className="w-5 h-5" />
+            </div>
+          </Link>
+
+          <Link
+            href="/leads"
+            className="bg-white border border-slate-200/80 hover:border-emerald-200 rounded-2xl p-4 shadow-2xs transition-all flex items-center justify-between"
+          >
+            <div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">New This Week</span>
+              <div className="text-2xl font-extrabold text-emerald-600 mt-1">+{newThisWeekAll}</div>
+              <span className="text-[11px] text-slate-500">Last 7 days</span>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+          </Link>
+
+          <Link
+            href="/leads?stage=NEW"
+            className="bg-white border border-slate-200/80 hover:border-rose-200 rounded-2xl p-4 shadow-2xs transition-all flex items-center justify-between"
+          >
+            <div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Action Needed</span>
+              <div className={`text-2xl font-extrabold mt-1 ${unreadAll > 0 ? "text-rose-600" : "text-slate-900"}`}>
+                {unreadAll}
+              </div>
+              <span className="text-[11px] text-slate-500">Uncontacted new leads</span>
+            </div>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${unreadAll > 0 ? "bg-rose-50 text-rose-600" : "bg-slate-50 text-slate-400"}`}>
+              <AlertCircle className="w-5 h-5" />
+            </div>
+          </Link>
+
+          <Link
+            href="/settings"
+            className="bg-white border border-slate-200/80 hover:border-purple-200 rounded-2xl p-4 shadow-2xs transition-all flex items-center justify-between"
+          >
+            <div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Active Alerts</span>
+              <div className="text-2xl font-extrabold text-purple-600 mt-1">
+                {activeAlertsCount}/{displayWebsites.length}
+              </div>
+              <span className="text-[11px] text-slate-500">Profiles with Email/SMS on</span>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+          </Link>
+        </div>
+
+        {/* Client Website Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {displayWebsites.map((site: any) => (
             <div 
@@ -200,7 +366,7 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
                 {/* Header: Logo, Brand Name, Domain & Settings Button */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    {/* Compact Logo (42x42) */}
+                    {/* Compact Logo */}
                     <div className="relative shrink-0">
                       <div className="w-10 h-10 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center justify-center overflow-hidden p-1 shadow-2xs">
                         {site.logoUrl ? (
@@ -258,7 +424,7 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
                   {/* Settings Button */}
                   <button 
                     type="button"
-                    onClick={() => setConfiguringSite(site)}
+                    onClick={() => openSiteModal(site, "general")}
                     className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors shrink-0 cursor-pointer"
                     title="Website Settings & Integration"
                   >
@@ -287,27 +453,56 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
                   </div>
                 </div>
 
-                {/* Compact Alert Status Row */}
-                <div className="flex items-center justify-between mt-3 text-[11px] text-slate-500 pt-2.5 border-t border-slate-100">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10.5px] font-semibold ${
-                      site.smsAlertsEnabled !== false && site.adminPhone ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-400'
-                    }`} title={site.adminPhone ? `SMS: ${site.adminPhone}` : 'SMS Inactive'}>
+                {/* Direct Quick-Configure Pills (Each opens its exact tab!) */}
+                <div className="flex items-center justify-between gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => openSiteModal(site, "general")}
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10.5px] font-semibold transition-colors cursor-pointer ${
+                        site.smsAlertsEnabled !== false && site.adminPhone
+                          ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                          : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                      }`}
+                      title="Configure SMS Alert Phone Number"
+                    >
                       <Smartphone className="w-2.5 h-2.5" /> SMS
-                    </span>
-                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10.5px] font-semibold ${
-                      site.emailAlertsEnabled !== false && site.adminEmail ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-400'
-                    }`} title={site.adminEmail ? `Email: ${site.adminEmail}` : 'Email Inactive'}>
-                      <Mail className="w-2.5 h-2.5" /> Email
-                    </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => openSiteModal(site, "admin_email")}
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10.5px] font-semibold transition-colors cursor-pointer ${
+                        site.emailAlertsEnabled !== false && site.adminEmail
+                          ? "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                          : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                      }`}
+                      title="Customize Rankved Admin Alert Email"
+                    >
+                      <Mail className="w-2.5 h-2.5" /> Admin Email
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => openSiteModal(site, "auto_reply")}
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10.5px] font-semibold transition-colors cursor-pointer ${
+                        site.customerAutoReplyEnabled
+                          ? "bg-purple-50 text-purple-700 hover:bg-purple-100"
+                          : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                      }`}
+                      title="Customize Visitor Auto-Reply Email"
+                    >
+                      <Sparkles className="w-2.5 h-2.5" /> Auto-Reply
+                    </button>
                   </div>
 
                   <button 
                     type="button"
-                    onClick={() => setConfiguringSite(site)}
-                    className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer"
+                    onClick={() => openSiteModal(site, "integration")}
+                    className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer shrink-0"
+                    title="WP Plugin, Google Sheets & Webhook Setup"
                   >
-                    Configure
+                    Connect →
                   </button>
                 </div>
               </div>
@@ -318,7 +513,7 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
                   href={`/client/${site.id}`}
                   className="w-full inline-flex items-center justify-center gap-2 bg-[#1A1523] hover:bg-indigo-600 text-white text-xs font-semibold py-2 px-4 rounded-xl shadow-xs transition-colors"
                 >
-                  <span>Open Pipeline</span>
+                  <span>Open Pipeline ({site.stats?.total || 0})</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
@@ -368,6 +563,7 @@ export function DashboardClient({ initialWebsites, role, userWebsiteId }: Dashbo
         <WebsiteSettingsModal 
           site={configuringSite} 
           isOpen={!!configuringSite} 
+          initialTab={modalInitialTab}
           onClose={() => setConfiguringSite(null)} 
           onUpdate={(updated) => {
             setSites(prev => prev.map(w => w.id === updated.id ? { ...w, ...updated } : w));

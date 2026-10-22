@@ -11,7 +11,6 @@ import {
   Sparkles, 
   Settings, 
   Layers, 
-  Check, 
   ExternalLink,
   Globe
 } from "lucide-react";
@@ -23,14 +22,21 @@ import IntegrationTab from "@/components/IntegrationTab";
 interface WebsiteSettingsModalProps {
   site: any;
   isOpen: boolean;
+  initialTab?: "general" | "admin_email" | "auto_reply" | "integration";
   onClose: () => void;
   onUpdate?: (updatedSite: any) => void;
 }
 
-export function WebsiteSettingsModal({ site, isOpen, onClose, onUpdate }: WebsiteSettingsModalProps) {
+export function WebsiteSettingsModal({ site, isOpen, initialTab = "general", onClose, onUpdate }: WebsiteSettingsModalProps) {
   const [currentSite, setCurrentSite] = useState<any>(site);
-  const [activeTab, setActiveTab] = useState<"general" | "admin_email" | "auto_reply" | "integration">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "admin_email" | "auto_reply" | "integration">(initialTab);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [isOpen, initialTab]);
 
   const parseAdminAlertData = (siteData: any) => {
     let subject = `🔔 New Lead: {{name}} - {{company}}`;
@@ -227,20 +233,20 @@ export function WebsiteSettingsModal({ site, isOpen, onClose, onUpdate }: Websit
           <button 
             type="button"
             onClick={() => setActiveTab("general")}
-            className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-semibold transition-colors border-b-2 cursor-pointer ${
+            className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-semibold transition-colors border-b-2 cursor-pointer whitespace-nowrap ${
               activeTab === "general" 
                 ? "border-indigo-600 text-indigo-700 font-bold" 
                 : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
             <Settings className="w-4 h-4" />
-            <span>General Alerts</span>
+            <span>General & SMS</span>
           </button>
 
           <button 
             type="button"
             onClick={() => setActiveTab("admin_email")}
-            className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-semibold transition-colors border-b-2 cursor-pointer ${
+            className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-semibold transition-colors border-b-2 cursor-pointer whitespace-nowrap ${
               activeTab === "admin_email" 
                 ? "border-indigo-600 text-indigo-700 font-bold" 
                 : "border-transparent text-slate-500 hover:text-slate-800"
@@ -253,7 +259,7 @@ export function WebsiteSettingsModal({ site, isOpen, onClose, onUpdate }: Websit
           <button 
             type="button"
             onClick={() => setActiveTab("auto_reply")}
-            className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-semibold transition-colors border-b-2 cursor-pointer ${
+            className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-semibold transition-colors border-b-2 cursor-pointer whitespace-nowrap ${
               activeTab === "auto_reply" 
                 ? "border-indigo-600 text-indigo-700 font-bold" 
                 : "border-transparent text-slate-500 hover:text-slate-800"
@@ -266,7 +272,7 @@ export function WebsiteSettingsModal({ site, isOpen, onClose, onUpdate }: Websit
           <button 
             type="button"
             onClick={() => setActiveTab("integration")}
-            className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-semibold transition-colors border-b-2 cursor-pointer ${
+            className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-semibold transition-colors border-b-2 cursor-pointer whitespace-nowrap ${
               activeTab === "integration" 
                 ? "border-indigo-600 text-indigo-700 font-bold" 
                 : "border-transparent text-slate-500 hover:text-slate-800"

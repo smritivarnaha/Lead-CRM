@@ -5,14 +5,12 @@ import { getLeads, getLeadsByWebsite, updateLeadStatus, logCallAction, bulkDelet
 import { getWebsitesList } from "@/actions/websites";
 import { LeadDetailsModal } from "@/components/leads/LeadDetailsModal";
 import { CallLogModal } from "@/components/leads/CallLogModal";
+import { useActiveProfile } from "@/components/providers/ActiveProfileProvider";
 import {
   Filter,
-  ArrowRightToLine,
   ChevronDown,
   Columns3,
   AlignJustify,
-  Layers,
-  MoreHorizontal,
   LayoutGrid,
   Mail,
   Phone,
@@ -24,8 +22,10 @@ import {
   ArrowRight,
   BellRing,
   Users,
-  Globe,
-  Sparkles
+  Search,
+  X,
+  Download,
+  MessageCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { KanbanBoard } from "./KanbanBoard";
@@ -43,6 +43,17 @@ function formatLeadTime(dateStr: string) {
   const d = new Date(dateStr);
   if (isNaN(d.getTime())) return "";
   return TIME_FORMATTER.format(d);
+}
+
+function formatWhatsAppUrl(phone: string | null | undefined, name?: string, siteName?: string) {
+  if (!phone) return null;
+  let digits = phone.replace(/\D/g, "");
+  if (digits.length === 10) {
+    digits = "91" + digits;
+  }
+  if (digits.length < 10) return null;
+  const greeting = `Hi ${name || "there"}, thank you for reaching out${siteName ? ` to ${siteName}` : ""}. How can we help you today?`;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(greeting)}`;
 }
 
 type Lead = {
@@ -66,19 +77,12 @@ type Lead = {
 };
 
 const STAGE_STYLE: Record<string, { label: string; ring: string; fill: string; icon: any }> = {
-  NEW:         { label: "New Lead",      ring: "border-blue-500",   fill: "bg-transparent",  icon: HelpCircle },
-  CONTACTED:   { label: "Contacted",     ring: "border-amber-500",  fill: "bg-transparent",  icon: Clock }, 
-  BUSY:        { label: "Busy / No Answer", ring: "border-slate-500", fill: "bg-transparent", icon: HelpCircle },
-  FOLLOW_UP:   { label: "Follow Up Later", ring: "border-orange-500", fill: "bg-transparent",  icon: ArrowRight },
-  CONVERTED:   { label: "Converted",     ring: "border-green-500",  fill: "bg-green-500",    icon: CheckCircle2 },
-  LOST:        { label: "Junk / Lost",   ring: "border-red-500",    fill: "bg-red-500",      icon: XCircle },
-};
-
-// ─── HEAT/OHS CONFIG ───
-const HEAT_STYLE: Record<string, { dot: string }> = {
-  HOT:  { dot: "bg-[#10B981]" }, 
-  WARM: { dot: "bg-[#F59E0B]" }, 
-  COLD: { dot: "bg-[#EF4444]" }, 
+  NEW:         { label: "New Lead",        ring: "border-blue-500",   fill: "bg-transparent", icon: HelpCircle },
+  CONTACTED:   { label: "Contacted",       ring: "border-amber-500",  fill: "bg-transparent", icon: Clock }, 
+  BUSY:        { label: "Busy / No Answer",ring: "border-slate-500",  fill: "bg-transparent", icon: HelpCircle },
+  FOLLOW_UP:   { label: "Follow Up Later", ring: "border-orange-500", fill: "bg-transparent", icon: ArrowRight },
+  CONVERTED:   { label: "Converted",       ring: "border-green-500",  fill: "bg-green-500",   icon: CheckCircle2 },
+  LOST:        { label: "Junk / Lost",     ring: "border-red-500",    fill: "bg-red-500",     icon: XCircle },
 };
 
 // ─── PROJECT TABS COLOR PALETTES ───
@@ -186,13 +190,6 @@ function getProjectTheme(name: string, index: number = 0): ProjectTheme {
   }
   const idx = Math.abs(hash) % FALLBACK_PALETTES.length;
   return FALLBACK_PALETTES[idx];
-}
-
-function getScore(lead: Lead) {
-  if (lead.score) return lead.score;
-  if (lead.temperature === "HOT") return 88;
-  if (lead.temperature === "WARM") return 56;
-  return 24;
 }
 
 // --- Custom Stage / Action Selector Component ---
@@ -315,7 +312,7 @@ function StageSelector({ lead, stageConfig, handleStatusChange, isMobile = false
     </div>
   );
 }
-// ------------------------------------------------
+
 // Custom Toolbar Dropdown Component
 function ToolbarDropdown({ label, icon: Icon, children, isActive = false, indicator = false }: { label: React.ReactNode, icon: any, children: React.ReactNode, isActive?: boolean, indicator?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -340,14 +337,18 @@ function ToolbarDropdown({ label, icon: Icon, children, isActive = false, indica
           e.stopPropagation();
           setIsOpen(!isOpen);
         }}
-        className={`flex items-center gap-1.5 py-1 px-2 rounded transition-colors outline-none ${isActive ? 'bg-[#F7F5FF] text-[#1A1523] font-semibold' : 'text-[#6B7280] hover:text-[#1A1523] hover:bg-slate-50'}`}
+        className={`flex items-center gap-1.5 py-1.5 px-2.5 rounded-lg border transition-colors outline-none cursor-pointer ${
+          isActive
+            ? "bg-[#F7F5FF] text-[#7C3AED] border-[#DDD6FE] font-semibold"
+            : "bg-white text-[#6B7280] border-slate-200/80 hover:text-[#1A1523] hover:bg-slate-50"
+        }`}
       >
-        <Icon className="h-4 w-4" strokeWidth={1.75} /> 
+        <Icon className="h-3.5 w-3.5" strokeWidth={1.75} /> 
         {label}
-        {indicator && <span className="flex h-2 w-2 rounded-full bg-[#7C3AED] ml-1"></span>}
+        {indicator && <span className="flex h-2 w-2 rounded-full bg-[#7C3AED] ml-0.5"></span>}
       </button>
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 min-w-[12rem] bg-white border border-slate-200 rounded-lg shadow-xl z-50 py-1" onClick={(e) => e.stopPropagation()}>
+        <div className="absolute top-full right-0 mt-1 min-w-[12rem] bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1" onClick={(e) => e.stopPropagation()}>
           {children}
         </div>
       )}
@@ -403,7 +404,6 @@ function BulkStatusDropdown({ selectedLeadIds, handleStatusChange, setSelectedLe
     </div>
   );
 }
-// ------------------------------------------------
 
 function LiveTimer({ createdAt, status, nowMs }: { createdAt: string, status: string, nowMs: number }) {
   if (status === "CONTACTED" || status === "CONVERTED") {
@@ -437,14 +437,23 @@ export function PipelineView({
   initialLeads?: Lead[];
   initialWebsites?: any[];
 }) {
+  const { activeWebsiteId, setActiveWebsiteId } = useActiveProfile();
   const [leads, setLeads] = useState<Lead[]>(initialLeads || []);
   const [websites, setWebsites] = useState<any[]>(initialWebsites || []);
-  const [selectedWebsiteTab, setSelectedWebsiteTab] = useState<string>(websiteId || "all");
+  const [selectedWebsiteTab, setSelectedWebsiteTab] = useState<string>(websiteId || activeWebsiteId || "all");
   const [loading, setLoading] = useState(!initialLeads);
   const [inspectLead, setInspectLead] = useState<Lead | null>(null);
   const [callLogLead, setCallLogLead] = useState<Lead | null>(null);
   const [nowMs, setNowMs] = useState<number>(() => Date.now());
+  const [searchQuery, setSearchQuery] = useState<string>("");
   
+  // Sync with Header active profile selector if not locked to a specific websiteId route
+  useEffect(() => {
+    if (!websiteId) {
+      setSelectedWebsiteTab(activeWebsiteId || "all");
+    }
+  }, [activeWebsiteId, websiteId]);
+
   // Single shared 60-second timer for all LiveTimer cells
   useEffect(() => {
     const interval = setInterval(() => setNowMs(Date.now()), 60000);
@@ -470,6 +479,17 @@ export function PipelineView({
   // Toolbar States
   const [rowHeight, setRowHeight] = useState<"compact" | "standard" | "comfortable">("standard");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+
+  // Read ?q= and ?stage= URL params on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get("q");
+      const stage = params.get("stage");
+      if (q) setSearchQuery(q);
+      if (stage) setStatusFilter(stage);
+    }
+  }, []);
 
   // Fetch websites if not provided
   useEffect(() => {
@@ -539,6 +559,7 @@ export function PipelineView({
   };
 
   const filteredLeads = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
     return leads.filter(lead => {
       // 1. Website / Project Tab Filter
       if (selectedWebsiteTab !== "all") {
@@ -555,14 +576,55 @@ export function PipelineView({
 
       // 2. Status / Stage Filter
       if (statusFilter === "HOT") {
-        return lead.temperature === "HOT";
+        if (lead.temperature !== "HOT") return false;
       } else if (statusFilter) {
-        return lead.status === statusFilter;
+        if (lead.status !== statusFilter) return false;
+      }
+
+      // 3. Real-time Search Filter
+      if (q) {
+        const hay = [
+          lead.fullName,
+          lead.phone,
+          lead.email,
+          lead.source,
+          lead.website?.name,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!hay.includes(q)) return false;
       }
 
       return true;
     });
-  }, [leads, selectedWebsiteTab, statusFilter]);
+  }, [leads, selectedWebsiteTab, statusFilter, searchQuery]);
+
+  const handleExportCsv = () => {
+    if (filteredLeads.length === 0) {
+      toast.error("No leads to export.");
+      return;
+    }
+    const headers = ["Name", "Phone", "Email", "Status", "Website", "Source", "Received At"];
+    const rows = filteredLeads.map((l) => [
+      `"${(l.fullName || "").replace(/"/g, '""')}"`,
+      `"${(l.phone || "").replace(/"/g, '""')}"`,
+      `"${(l.email || "").replace(/"/g, '""')}"`,
+      `"${l.status || ""}"`,
+      `"${(l.website?.name || "").replace(/"/g, '""')}"`,
+      `"${(l.source || "Website Form").replace(/"/g, '""')}"`,
+      `"${new Date(l.createdAt).toLocaleString()}"`,
+    ]);
+    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `leads-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${filteredLeads.length} leads to CSV`);
+  };
 
   const upcomingFollowUps = useMemo(() => {
     const today = new Date();
@@ -589,7 +651,6 @@ export function PipelineView({
         const matchingLead = leads.find(l => l.id === leadId);
         if (matchingLead) {
           setInspectLead(matchingLead);
-          // Preserve other parameters but remove leadId
           searchParams.delete("leadId");
           const queryStr = searchParams.toString();
           const newUrl = window.location.pathname + (queryStr ? `?${queryStr}` : "");
@@ -601,18 +662,18 @@ export function PipelineView({
 
   const handleStatusChange = async (leadId: string, newStatus: string) => {
     try {
-      // Optimistic update
       setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
+      if (inspectLead && inspectLead.id === leadId) {
+        setInspectLead(prev => prev ? { ...prev, status: newStatus } : null);
+      }
       const res = await updateLeadStatus(leadId, newStatus);
       if (res.success) {
         toast.success("Lead status updated to " + (STAGE_STYLE[newStatus]?.label || newStatus));
       } else {
         toast.error("Failed to update status. Please do a hard refresh (Ctrl+R).");
-        // Revert optimistic update
-        setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: prev.find(p => p.id === leadId)?.status || newStatus } : l));
       }
     } catch (e) {
-      toast.error("Network sync failed. Please do a hard refresh (Ctrl+R) to get the latest app version.");
+      toast.error("Network sync failed. Please do a hard refresh (Ctrl+R).");
     }
   };
 
@@ -622,9 +683,7 @@ export function PipelineView({
     setCallLogLead(null);
     
     try {
-      // Optimistic update
       setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status } : l));
-      
       const res = await logCallAction(leadId, status, notes, followUpAt);
       if (res.success) {
         toast.success("Call logged successfully!");
@@ -633,7 +692,7 @@ export function PipelineView({
         toast.error("Failed to log call. Please do a hard refresh (Ctrl+R).");
       }
     } catch (e) {
-      toast.error("Network sync failed. Please do a hard refresh (Ctrl+R) to get the latest app version.");
+      toast.error("Network sync failed. Please do a hard refresh (Ctrl+R).");
     }
   };
 
@@ -657,16 +716,16 @@ export function PipelineView({
     <div className="flex flex-col h-full w-full bg-white relative overflow-hidden">
       {/* ─── FOLLOW UPS BANNER ─── */}
       {upcomingFollowUps.length > 0 && (
-        <div className="bg-orange-50 border-b border-orange-200 px-4 sm:px-8 py-3 flex items-start sm:items-center justify-between flex-col sm:flex-row gap-3">
+        <div className="bg-orange-50 border-b border-orange-200 px-4 sm:px-6 py-2.5 flex items-start sm:items-center justify-between flex-col sm:flex-row gap-3">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 flex-shrink-0">
               <Clock className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="text-[14px] font-bold text-orange-900 leading-tight">
+              <h3 className="text-[13.5px] font-bold text-orange-900 leading-tight">
                 {upcomingFollowUps.length} {upcomingFollowUps.length === 1 ? 'lead needs' : 'leads need'} follow-up today
               </h3>
-              <p className="text-[12px] text-orange-700">Don't lose these gems! Give them a quick call.</p>
+              <p className="text-[11.5px] text-orange-700">Connect with them now for maximum conversion.</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto pb-1 sm:pb-0">
@@ -696,15 +755,17 @@ export function PipelineView({
 
       {/* ─── TOOLBAR & DYNAMIC PROJECT TABS ─── */}
       <div 
-        className="flex flex-col xl:flex-row xl:items-center justify-between px-4 sm:px-6 py-2.5 bg-white border-b gap-3 xl:gap-0"
+        className="flex flex-col xl:flex-row xl:items-center justify-between px-4 sm:px-6 py-2.5 bg-white border-b gap-3"
         style={{ borderColor: "#E8E4F3", flexShrink: 0 }}
       >
         {/* Left Side: Dynamic Project / Website Tabs Bar */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5 max-w-full xl:max-w-[70%]">
-          {/* All Opportunities Tab */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5 max-w-full xl:max-w-[55%]">
           <button
             type="button"
-            onClick={() => setSelectedWebsiteTab("all")}
+            onClick={() => {
+              setSelectedWebsiteTab("all");
+              if (!websiteId) setActiveWebsiteId(null);
+            }}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12.5px] font-semibold transition-all shrink-0 border cursor-pointer ${
               selectedWebsiteTab === "all"
                 ? ALL_OPPORTUNITIES_THEME.active
@@ -712,7 +773,7 @@ export function PipelineView({
             }`}
           >
             <Users className="h-3.5 w-3.5 shrink-0" />
-            <span className="whitespace-nowrap">All opportunities</span>
+            <span className="whitespace-nowrap">All Profiles</span>
             <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold leading-none ${
               selectedWebsiteTab === "all" ? ALL_OPPORTUNITIES_THEME.badgeActive : ALL_OPPORTUNITIES_THEME.badgeInactive
             }`}>
@@ -720,7 +781,6 @@ export function PipelineView({
             </span>
           </button>
 
-          {/* Dynamic Tabs for Each Project/Website */}
           {projectTabs.map((site, idx) => {
             const isSelected = selectedWebsiteTab === site.id || selectedWebsiteTab.toLowerCase() === site.name.toLowerCase();
             const theme = getProjectTheme(site.name, idx);
@@ -728,7 +788,10 @@ export function PipelineView({
               <button
                 key={site.id}
                 type="button"
-                onClick={() => setSelectedWebsiteTab(site.id)}
+                onClick={() => {
+                  setSelectedWebsiteTab(site.id);
+                  if (!websiteId) setActiveWebsiteId(site.id);
+                }}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12.5px] font-semibold transition-all shrink-0 border cursor-pointer ${
                   isSelected ? theme.active : theme.inactive
                 }`}
@@ -755,19 +818,44 @@ export function PipelineView({
           })}
         </div>
 
-        {/* Right Side: Quick Stage Filter, Fields, Filters, Row Height, Layout */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-[13px] font-medium text-[#6B7280]">
-          {/* Quick Stage Filter */}
+        {/* Right Side: Instant Search Input + Unified Stage Filter + Fields + Row Height + Layout + CSV Export */}
+        <div className="flex flex-wrap items-center gap-2 text-[12.5px] font-medium text-[#6B7280]">
+          {/* Real-time Search Input */}
+          <div className="relative flex items-center min-w-[190px] sm:min-w-[220px] flex-1 sm:flex-initial">
+            <Search className="h-3.5 w-3.5 text-[#9CA3AF] absolute left-2.5 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search name, phone, email..."
+              className="w-full rounded-lg bg-[#F7F5FF] border border-[#E8E4F3] pl-8 pr-7 py-1.5 text-[12.5px] text-[#1A1523] placeholder:text-[#9CA3AF] outline-none focus:border-[#7C3AED] focus:bg-white transition-all"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2 text-[#9CA3AF] hover:text-[#1A1523]"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Unified Stage & Quick Filter Dropdown */}
           <ToolbarDropdown 
-            label={statusFilter ? STAGE_STYLE[statusFilter]?.label || "Filtered" : "Stage"} 
+            label={statusFilter === "HOT" ? "🔥 Hot Leads" : statusFilter ? STAGE_STYLE[statusFilter]?.label || "Filtered" : "Stage: All"} 
             icon={Filter}
             isActive={!!statusFilter}
+            indicator={!!statusFilter}
           >
             <button className={`w-full text-left px-3 py-1.5 text-[13px] hover:bg-slate-50 ${!statusFilter ? "font-bold text-[#7C3AED] bg-[#F7F5FF]" : "text-slate-700"}`} onClick={() => setStatusFilter(null)}>
-              All Stages
+              All Leads ({leads.length})
+            </button>
+            <button className={`w-full text-left px-3 py-1.5 text-[13px] hover:bg-slate-50 ${statusFilter === "HOT" ? "font-bold text-emerald-700 bg-emerald-50" : "text-slate-700"}`} onClick={() => setStatusFilter("HOT")}>
+              🔥 Hot Leads Only
             </button>
             <div className="h-px bg-slate-100 my-1" />
-            <div className="px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Filter By Stage</div>
+            <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Filter By Pipeline Stage</div>
             {Object.entries(STAGE_STYLE).map(([key, config]) => (
               <button 
                 key={key} 
@@ -779,9 +867,10 @@ export function PipelineView({
               </button>
             ))}
           </ToolbarDropdown>
+
           {/* Workable Fields Dropdown */}
-          <ToolbarDropdown label="Fields" icon={Columns3}>
-            <div className="px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Visible Columns</div>
+          <ToolbarDropdown label="Columns" icon={Columns3}>
+            <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Visible Columns</div>
             <div className="h-px bg-slate-100 my-1" />
             <label className="flex items-center px-3 py-1.5 text-[13px] text-slate-700 hover:bg-slate-50 cursor-pointer">
               <input type="checkbox" className="mr-2 rounded-sm border-[#D1D5DB] text-[#7C3AED] focus:ring-[#7C3AED]" checked={cols.name} onChange={(e) => setCols(p => ({...p, name: e.target.checked}))} /> Name
@@ -803,24 +892,26 @@ export function PipelineView({
             </label>
           </ToolbarDropdown>
 
-          <ToolbarDropdown label="Filters" icon={Filter} indicator={!!statusFilter}>
-            <div className="px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Quick Filters</div>
-            <button className="w-full text-left px-3 py-1.5 text-[13px] text-slate-700 hover:bg-slate-50" onClick={() => setStatusFilter("NEW")}>Show New Leads</button>
-            <button className="w-full text-left px-3 py-1.5 text-[13px] text-slate-700 hover:bg-slate-50" onClick={() => setStatusFilter("HOT")}>Show Hot Leads</button>
-            <div className="h-px bg-slate-100 my-1" />
-            <button className="w-full text-left px-3 py-1.5 text-[13px] text-slate-700 hover:bg-slate-50" onClick={() => setStatusFilter(null)}>Clear all filters</button>
-          </ToolbarDropdown>
-
-          <ToolbarDropdown label="Row height" icon={AlignJustify}>
+          <ToolbarDropdown label="Density" icon={AlignJustify}>
             <button className={`w-full text-left px-3 py-1.5 text-[13px] hover:bg-slate-50 ${rowHeight === 'compact' ? 'font-medium text-indigo-600 bg-indigo-50/50' : 'text-slate-700'}`} onClick={() => setRowHeight('compact')}>Compact</button>
             <button className={`w-full text-left px-3 py-1.5 text-[13px] hover:bg-slate-50 ${rowHeight === 'standard' ? 'font-medium text-indigo-600 bg-indigo-50/50' : 'text-slate-700'}`} onClick={() => setRowHeight('standard')}>Standard</button>
             <button className={`w-full text-left px-3 py-1.5 text-[13px] hover:bg-slate-50 ${rowHeight === 'comfortable' ? 'font-medium text-indigo-600 bg-indigo-50/50' : 'text-slate-700'}`} onClick={() => setRowHeight('comfortable')}>Comfortable</button>
           </ToolbarDropdown>
 
-          <ToolbarDropdown label="Layout" icon={LayoutGrid}>
+          <ToolbarDropdown label={viewMode === "kanban" ? "Kanban" : "Table"} icon={LayoutGrid} isActive={viewMode === "kanban"}>
             <button className={`w-full text-left px-3 py-1.5 text-[13px] hover:bg-slate-50 ${viewMode === 'table' ? 'font-medium text-indigo-600 bg-indigo-50/50' : 'text-slate-700'}`} onClick={() => setViewMode('table')}>Table View</button>
             <button className={`w-full text-left px-3 py-1.5 text-[13px] hover:bg-slate-50 ${viewMode === 'kanban' ? 'font-medium text-indigo-600 bg-indigo-50/50' : 'text-slate-700'}`} onClick={() => setViewMode('kanban')}>Kanban Board</button>
           </ToolbarDropdown>
+
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            className="flex items-center gap-1.5 py-1.5 px-2.5 rounded-lg border border-slate-200/80 bg-white text-[#6B7280] hover:text-[#1A1523] hover:bg-slate-50 transition-colors cursor-pointer"
+            title="Export filtered leads to CSV"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Export</span>
+          </button>
         </div>
       </div>
 
@@ -877,8 +968,8 @@ export function PipelineView({
                         <div className="flex items-center justify-between gap-1">ACTION<ChevronDown className="h-3.5 w-3.5 text-[#D1D5DB] shrink-0" strokeWidth={2} /></div>
                       </th>
                     )}
-                    <th className={`w-[100px] px-0 py-0 ${borderClass}`}>
-                      <div className="flex items-center justify-center">ACTIONS</div>
+                    <th className={`w-[125px] px-0 py-0 ${borderClass}`}>
+                      <div className="flex items-center justify-center">CONNECT</div>
                     </th>
                   </tr>
                 </thead>
@@ -888,7 +979,24 @@ export function PipelineView({
                   {loading ? (
                     <tr><td colSpan={9} className="text-center py-12 text-[#9CA3AF]">Loading data...</td></tr>
                   ) : filteredLeads.length === 0 ? (
-                    <tr><td colSpan={9} className="text-center py-12 text-[#9CA3AF]">No leads found.</td></tr>
+                    <tr>
+                      <td colSpan={9} className="text-center py-14 text-[#9CA3AF]">
+                        <p className="text-sm font-semibold text-slate-600">No leads match your current filter</p>
+                        {(searchQuery || statusFilter || selectedWebsiteTab !== "all") && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSearchQuery("");
+                              setStatusFilter(null);
+                              setSelectedWebsiteTab("all");
+                            }}
+                            className="mt-2 text-xs font-semibold text-[#7C3AED] hover:underline cursor-pointer"
+                          >
+                            Reset all filters
+                          </button>
+                        )}
+                      </td>
+                    </tr>
                   ) : filteredLeads.map((lead) => {
                     const stage = STAGE_STYLE[lead.status] || STAGE_STYLE.NEW;
                     const colors = ["#FEE2E2", "#FEF3C7", "#D1FAE5", "#DBEAFE", "#EDE9FE"];
@@ -897,6 +1005,7 @@ export function PipelineView({
                     const logoBg = colors[idx];
                     const dateText = formatLeadDate(lead.createdAt);
                     const timeText = formatLeadTime(lead.createdAt);
+                    const waUrl = formatWhatsAppUrl(lead.phone, lead.fullName, lead.website?.name);
                     
                     const trHeightClass = rowHeight === "compact" ? "h-[40px]" : rowHeight === "comfortable" ? "h-[68px]" : "h-[50px]";
                     
@@ -933,7 +1042,7 @@ export function PipelineView({
                                   {lead.fullName}
                                 </div>
                                 <div className="text-[11px] text-[#6B7280] truncate leading-tight mt-0.5 flex items-center gap-1">
-                                  <span>{lead.source || "Website Form"}</span>
+                                  <span>{lead.website?.name || lead.source || "Website Form"}</span>
                                   {(lead.emailSent || lead.smsSent || lead.pushSent) && (
                                     <>
                                       <span className="text-gray-300">•</span>
@@ -978,8 +1087,22 @@ export function PipelineView({
                             <StageSelector lead={lead} stageConfig={stage} handleStatusChange={handleStatusChange} />
                           </td>
                         )}
-                        <td className="px-4 py-0">
+                        <td className="px-2 py-0">
                           <div className="flex items-center justify-center gap-1">
+                            {lead.phone ? (
+                              <a href={`tel:${lead.phone}`} onClick={() => setCallLogLead(lead)} className="w-7 h-7 rounded-lg bg-white border border-[#E8E4F3] hover:bg-indigo-50 hover:border-indigo-500 hover:text-indigo-600 flex items-center justify-center transition-all text-[#6B7280] shadow-sm" title="Call & Log">
+                                <Phone className="h-3 w-3" />
+                              </a>
+                            ) : (
+                              <div className="w-7 h-7 rounded-lg border border-transparent flex items-center justify-center text-gray-200"><Phone className="h-3 w-3" /></div>
+                            )}
+                            {waUrl ? (
+                              <a href={waUrl} target="_blank" rel="noreferrer" className="w-7 h-7 rounded-lg bg-white border border-[#E8E4F3] hover:bg-emerald-50 hover:border-emerald-500 hover:text-emerald-600 flex items-center justify-center transition-all text-[#6B7280] shadow-sm" title="WhatsApp Message">
+                                <MessageCircle className="h-3.5 w-3.5" />
+                              </a>
+                            ) : (
+                              <div className="w-7 h-7 rounded-lg border border-transparent flex items-center justify-center text-gray-200"><MessageCircle className="h-3.5 w-3.5" /></div>
+                            )}
                             {lead.email ? (
                               <a href={`mailto:${lead.email}`} className="w-7 h-7 rounded-lg bg-white border border-[#E8E4F3] hover:bg-[#F3F0FF] hover:border-[#7C3AED] hover:text-[#7C3AED] flex items-center justify-center transition-all text-[#6B7280] shadow-sm" title="Send Email">
                                 <Mail className="h-3 w-3" />
@@ -987,14 +1110,7 @@ export function PipelineView({
                             ) : (
                               <div className="w-7 h-7 rounded-lg border border-transparent flex items-center justify-center text-gray-200"><Mail className="h-3 w-3" /></div>
                             )}
-                            {lead.phone ? (
-                              <a href={`tel:${lead.phone}`} onClick={() => setCallLogLead(lead)} className="w-7 h-7 rounded-lg bg-white border border-[#E8E4F3] hover:bg-[#ECFDF5] hover:border-[#10B981] hover:text-[#10B981] flex items-center justify-center transition-all text-[#6B7280] shadow-sm" title="Call Contact">
-                                <Phone className="h-3 w-3" />
-                              </a>
-                            ) : (
-                              <div className="w-7 h-7 rounded-lg border border-transparent flex items-center justify-center text-gray-200"><Phone className="h-3 w-3" /></div>
-                            )}
-                            <button onClick={() => setInspectLead(lead)} className="w-7 h-7 rounded-lg bg-white border border-[#E8E4F3] hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 flex items-center justify-center transition-all text-[#6B7280] shadow-sm" title="View Full Details">
+                            <button onClick={() => setInspectLead(lead)} className="w-7 h-7 rounded-lg bg-white border border-[#E8E4F3] hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 flex items-center justify-center transition-all text-[#6B7280] shadow-sm cursor-pointer" title="Open Lead Command Drawer">
                               <Eye className="h-3.5 w-3.5" />
                             </button>
                           </div>
@@ -1020,6 +1136,7 @@ export function PipelineView({
                 const logoBg = colors[idx];
                 const dateText = formatLeadDate(lead.createdAt);
                 const timeText = formatLeadTime(lead.createdAt);
+                const waUrl = formatWhatsAppUrl(lead.phone, lead.fullName, lead.website?.name);
                 
                 return (
                   <div key={lead.id} className="bg-white border border-[#E8E4F3] rounded-xl p-4 shadow-sm flex flex-col gap-3">
@@ -1031,9 +1148,8 @@ export function PipelineView({
                         <div className="min-w-0">
                           <div className="font-bold text-[#1A1523] truncate text-[14.5px]">{lead.fullName}</div>
                           <div className="text-[12px] text-slate-500 truncate mt-0.5">{lead.phone || lead.email || "No contact info"}</div>
-                          {/* Mobile Date/Time display */}
                           <div className="text-[10.5px] text-[#7C3AED] font-semibold mt-1">
-                            Submitted: {dateText} at {timeText}
+                            {lead.website?.name ? `${lead.website.name} • ` : ""}{dateText} at {timeText}
                           </div>
                           <div className="mt-1.5 bg-slate-50 border border-slate-100 rounded-md p-2">
                             <LiveTimer createdAt={lead.createdAt} status={lead.status} nowMs={nowMs} />
@@ -1052,26 +1168,35 @@ export function PipelineView({
                       <StageSelector lead={lead} stageConfig={stage} handleStatusChange={handleStatusChange} isMobile={true} />
                     </div>
 
-                    {/* Responsive Grid for all options */}
-                    <div className="grid grid-cols-3 gap-2 pt-1">
-                      <button onClick={() => setInspectLead(lead)} className="flex items-center justify-center gap-1.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-slate-700 text-[12px] font-bold transition-colors">
+                    {/* Responsive 4-button Grid for Mobile: View, Call, WhatsApp, Email */}
+                    <div className="grid grid-cols-4 gap-1.5 pt-1">
+                      <button onClick={() => setInspectLead(lead)} className="flex items-center justify-center gap-1 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-slate-700 text-[11.5px] font-bold transition-colors">
                         <Eye className="h-3.5 w-3.5" /> View
                       </button>
                       {lead.phone ? (
-                        <a href={`tel:${lead.phone}`} onClick={() => setCallLogLead(lead)} className="flex items-center justify-center gap-1.5 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-emerald-700 text-[12px] font-bold transition-colors">
+                        <a href={`tel:${lead.phone}`} onClick={() => setCallLogLead(lead)} className="flex items-center justify-center gap-1 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-indigo-700 text-[11.5px] font-bold transition-colors">
                            <Phone className="h-3.5 w-3.5" /> Call
                         </a>
                       ) : (
-                        <div className="flex items-center justify-center gap-1.5 py-2 bg-slate-50/50 border border-slate-100 rounded-lg text-slate-300 text-[12px] font-bold cursor-not-allowed">
+                        <div className="flex items-center justify-center gap-1 py-2 bg-slate-50/50 border border-slate-100 rounded-lg text-slate-300 text-[11.5px] font-bold cursor-not-allowed">
                            <Phone className="h-3.5 w-3.5" /> Call
                         </div>
                       )}
+                      {waUrl ? (
+                        <a href={waUrl} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-emerald-700 text-[11.5px] font-bold transition-colors">
+                          <MessageCircle className="h-3.5 w-3.5" /> WA
+                        </a>
+                      ) : (
+                        <div className="flex items-center justify-center gap-1 py-2 bg-slate-50/50 border border-slate-100 rounded-lg text-slate-300 text-[11.5px] font-bold cursor-not-allowed">
+                          <MessageCircle className="h-3.5 w-3.5" /> WA
+                        </div>
+                      )}
                       {lead.email ? (
-                        <a href={`mailto:${lead.email}`} className="flex items-center justify-center gap-1.5 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-indigo-700 text-[12px] font-bold transition-colors">
+                        <a href={`mailto:${lead.email}`} className="flex items-center justify-center gap-1 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg text-purple-700 text-[11.5px] font-bold transition-colors">
                           <Mail className="h-3.5 w-3.5" /> Email
                         </a>
                       ) : (
-                        <div className="flex items-center justify-center gap-1.5 py-2 bg-slate-50/50 border border-slate-100 rounded-lg text-slate-300 text-[12px] font-bold cursor-not-allowed">
+                        <div className="flex items-center justify-center gap-1 py-2 bg-slate-50/50 border border-slate-100 rounded-lg text-slate-300 text-[11.5px] font-bold cursor-not-allowed">
                           <Mail className="h-3.5 w-3.5" /> Email
                         </div>
                       )}
@@ -1079,7 +1204,6 @@ export function PipelineView({
                   </div>
                 );
               })}
-              {/* Spacer for mobile bottom nav */}
               <div className="h-20 w-full flex-shrink-0"></div>
             </div>
           </>
@@ -1095,12 +1219,6 @@ export function PipelineView({
           </div>
           
           <div className="flex items-center gap-0.5 sm:gap-1 text-[13px] font-medium">
-            <button className="flex items-center gap-2 hover:bg-white/10 px-2 sm:px-3 py-1.5 rounded transition-colors text-gray-200 hover:text-white" onClick={() => toast("Bulk Email feature coming soon!")}>
-              <Mail className="h-4 w-4" /> <span className="hidden sm:inline">Email All</span>
-            </button>
-            <button className="flex items-center gap-2 hover:bg-white/10 px-2 sm:px-3 py-1.5 rounded transition-colors text-gray-200 hover:text-white" onClick={() => toast("Bulk SMS feature coming soon!")}>
-              <Phone className="h-4 w-4" /> <span className="hidden sm:inline">SMS All</span>
-            </button>
             <BulkStatusDropdown 
               selectedLeadIds={selectedLeadIds} 
               handleStatusChange={handleStatusChange} 
@@ -1114,7 +1232,11 @@ export function PipelineView({
       )}
 
       {inspectLead && (
-        <LeadDetailsModal lead={inspectLead} onClose={() => setInspectLead(null)} />
+        <LeadDetailsModal
+          lead={inspectLead}
+          onClose={() => setInspectLead(null)}
+          onStatusChange={handleStatusChange}
+        />
       )}
       
       {callLogLead && (

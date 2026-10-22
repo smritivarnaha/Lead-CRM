@@ -1,19 +1,31 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, MapPin, Mail, Phone, Globe, Tag, Clock, StickyNote, Send, Loader2 } from "lucide-react";
+import { X, MapPin, Mail, Phone, Globe, Tag, Clock, StickyNote, Send, Loader2, MessageCircle, CalendarClock, CheckCircle2 } from "lucide-react";
 import { getDeduplicatedFields } from "@/lib/fieldDeduplication";
+import { updateLeadStatus, updateLeadFollowup } from "@/actions/leads";
+import { addHours, format } from "date-fns";
 import { toast } from "sonner";
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; dot: string }> = {
-  NEW:         { label: "New",              bg: "bg-blue-50",   text: "text-blue-700",   dot: "bg-blue-500" },
+  NEW:         { label: "New Lead",         bg: "bg-blue-50",   text: "text-blue-700",   dot: "bg-blue-500" },
   CONTACTED:   { label: "Contacted",        bg: "bg-amber-50",  text: "text-amber-700",  dot: "bg-amber-500" },
   BUSY:        { label: "Busy / No Answer", bg: "bg-slate-100", text: "text-slate-700",  dot: "bg-slate-500" },
   FOLLOW_UP:   { label: "Follow Up",        bg: "bg-orange-50", text: "text-orange-700", dot: "bg-orange-500" },
-  NO_RESPONSE: { label: "No Reply",         bg: "bg-slate-100", text: "text-slate-600",  dot: "bg-slate-400" },
   CONVERTED:   { label: "Converted",        bg: "bg-green-50",  text: "text-green-700",  dot: "bg-green-500" },
-  LOST:        { label: "Lost",             bg: "bg-red-50",    text: "text-red-700",    dot: "bg-red-500" },
+  LOST:        { label: "Junk / Lost",      bg: "bg-red-50",    text: "text-red-700",    dot: "bg-red-500" },
 };
+
+function formatWhatsAppUrl(phone: string | null | undefined, name?: string, siteName?: string) {
+  if (!phone) return null;
+  let digits = phone.replace(/\D/g, "");
+  if (digits.length === 10) {
+    digits = "91" + digits;
+  }
+  if (digits.length < 10) return null;
+  const greeting = `Hi ${name || "there"}, thank you for reaching out${siteName ? ` to ${siteName}` : ""}. How can we help you today?`;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(greeting)}`;
+}
 
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
@@ -28,17 +40,57 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string;
   );
 }
 
-export function LeadDetailsModal({ lead, onClose }: { lead: any; onClose: () => void }) {
+export function LeadDetailsModal({
+  lead,
+  onClose,
+  onStatusChange,
+}: {
+  lead: any;
+  onClose: () => void;
+  onStatusChange?: (leadId: string, newStatus: string) => void;
+}) {
   const [notes, setNotes] = useState<any[]>([]);
   const [noteText, setNoteText] = useState("");
   const [isSavingNote, setIsSavingNote] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState<string>(lead.status || "NEW");
+  const [followUpDate, setFollowUpDate] = useState<string | null>(lead.followUpAt || null);
 
   useEffect(() => {
+    setCurrentStatus(lead.status || "NEW");
+    setFollowUpDate(lead.followUpAt || null);
     fetch(`/api/notes?leadId=${lead.id}`)
       .then(r => r.json())
       .then(d => { if (d.notes) setNotes(d.notes); })
       .catch(() => {});
-  }, [lead.id]);
+  }, [lead.id, lead.status, lead.followUpAt]);
+
+  const handleStatusUpdate = async (newStatus: string) => {
+    setCurrentStatus(newStatus);
+    if (onStatusChange) {
+      onStatusChange(lead.id, newStatus);
+    } else {
+      const res = await updateLeadStatus(lead.id, newStatus);
+      if (res.success) {
+        toast.success(`Status updated to ${STATUS_CONFIG[newStatus]?.label || newStatus}`);
+      } else {
+        toast.error("Failed to update status");
+      }
+    }
+  };
+
+  const handleScheduleFollowup = async (hours: number) => {
+    const nextTime = addHours(new Date(), hours);
+    setFollowUpDate(nextTime.toISOString());
+    setCurrentStatus("FOLLOW_UP");
+    if (onStatusChange) onStatusChange(lead.id, "FOLLOW_UP");
+    toast.success(`Follow-up scheduled for ${format(nextTime, "MMM d, h:mm a")}`);
+    try {
+      await updateLeadFollowup(lead.id, nextTime);
+      await updateLeadStatus(lead.id, "FOLLOW_UP");
+    } catch {
+      toast.error("Failed to schedule follow-up");
+    }
+  };
 
   const handleSaveNote = async () => {
     if (!noteText.trim() || isSavingNote) return;
@@ -72,12 +124,14 @@ export function LeadDetailsModal({ lead, onClose }: { lead: any; onClose: () => 
     .toUpperCase()
     .slice(0, 2);
 
-  const statusCfg = STATUS_CONFIG[lead.status] || {
-    label: lead.status,
+  const statusCfg = STATUS_CONFIG[currentStatus] || {
+    label: currentStatus,
     bg: "bg-slate-50",
     text: "text-slate-700",
     dot: "bg-slate-400",
   };
+
+  const whatsappUrl = formatWhatsAppUrl(lead.phone, lead.fullName, lead.website?.name);
 
   // Parse clean, deduplicated custom and technical fields from rawFields
   const { customFieldsOnly: customFields, technicalFields } = getDeduplicatedFields(lead.rawFields, {
@@ -124,26 +178,127 @@ export function LeadDetailsModal({ lead, onClose }: { lead: any; onClose: () => 
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
           
-          {/* Quick Actions */}
-          {(lead.email || lead.phone) && (
-            <div className="flex gap-2">
-              {lead.email && (
-                <a href={`mailto:${lead.email}`} className="flex-1 flex items-center justify-center gap-2 bg-[#F7F5FF] hover:bg-[#EDE9FE] text-[#7C3AED] text-[13px] font-semibold py-2.5 rounded-lg transition-colors border border-[#E8E4F3]">
-                  <Mail className="h-4 w-4" /> Email
+          {/* Quick Connect Bar: Call, WhatsApp, Email */}
+          {(lead.phone || lead.email) && (
+            <div className="grid grid-cols-3 gap-2">
+              {lead.phone ? (
+                <a
+                  href={`tel:${lead.phone}`}
+                  className="flex items-center justify-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[12.5px] font-bold py-2.5 rounded-xl transition-colors border border-indigo-200/80"
+                >
+                  <Phone className="h-3.5 w-3.5" /> Call
                 </a>
+              ) : (
+                <div className="flex items-center justify-center gap-1.5 bg-slate-50 text-slate-300 text-[12.5px] font-bold py-2.5 rounded-xl border border-slate-100 cursor-not-allowed">
+                  <Phone className="h-3.5 w-3.5" /> Call
+                </div>
               )}
-              {lead.phone && (
-                <a href={`tel:${lead.phone}`} className="flex-1 flex items-center justify-center gap-2 bg-[#F7F5FF] hover:bg-[#EDE9FE] text-[#7C3AED] text-[13px] font-semibold py-2.5 rounded-lg transition-colors border border-[#E8E4F3]">
-                  <Phone className="h-4 w-4" /> Call
+
+              {whatsappUrl ? (
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[12.5px] font-bold py-2.5 rounded-xl transition-colors border border-emerald-200/80"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
                 </a>
+              ) : (
+                <div className="flex items-center justify-center gap-1.5 bg-slate-50 text-slate-300 text-[12.5px] font-bold py-2.5 rounded-xl border border-slate-100 cursor-not-allowed">
+                  <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+                </div>
+              )}
+
+              {lead.email ? (
+                <a
+                  href={`mailto:${lead.email}`}
+                  className="flex items-center justify-center gap-1.5 bg-[#F7F5FF] hover:bg-[#EDE9FE] text-[#7C3AED] text-[12.5px] font-bold py-2.5 rounded-xl transition-colors border border-[#E8E4F3]"
+                >
+                  <Mail className="h-3.5 w-3.5" /> Email
+                </a>
+              ) : (
+                <div className="flex items-center justify-center gap-1.5 bg-slate-50 text-slate-300 text-[12.5px] font-bold py-2.5 rounded-xl border border-slate-100 cursor-not-allowed">
+                  <Mail className="h-3.5 w-3.5" /> Email
+                </div>
               )}
             </div>
           )}
 
+          {/* Interactive Stage Switcher inside Drawer */}
+          <section className="bg-slate-50/70 border border-[#E8E4F3] rounded-xl p-3">
+            <p className="text-[10.5px] font-bold text-[#6B7280] uppercase tracking-wider mb-2">
+              Update Lead Stage
+            </p>
+            <div className="grid grid-cols-3 gap-1.5">
+              {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
+                const active = currentStatus === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => handleStatusUpdate(key)}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all border cursor-pointer truncate ${
+                      active
+                        ? `${cfg.bg} ${cfg.text} border-current shadow-2xs font-bold`
+                        : "bg-white text-slate-600 border-slate-200/80 hover:bg-slate-50"
+                    }`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dot}`} />
+                    <span className="truncate">{cfg.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* Quick Follow-Up Scheduler */}
+          <section className="bg-orange-50/40 border border-orange-200/60 rounded-xl p-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10.5px] font-bold text-orange-800 uppercase tracking-wider flex items-center gap-1.5">
+                <CalendarClock className="w-3.5 h-3.5 text-orange-600" /> Schedule Follow-up
+              </span>
+              {followUpDate && (
+                <span className="text-[11px] font-semibold text-orange-700 bg-orange-100/80 px-2 py-0.5 rounded-full">
+                  {format(new Date(followUpDate), "MMM d, h:mm a")}
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-4 gap-1.5">
+              <button
+                type="button"
+                onClick={() => handleScheduleFollowup(1)}
+                className="py-1.5 px-2 bg-white hover:bg-orange-50 border border-orange-200/80 rounded-lg text-[11px] font-semibold text-slate-700 transition-colors cursor-pointer"
+              >
+                +1 Hour
+              </button>
+              <button
+                type="button"
+                onClick={() => handleScheduleFollowup(24)}
+                className="py-1.5 px-2 bg-white hover:bg-orange-50 border border-orange-200/80 rounded-lg text-[11px] font-semibold text-slate-700 transition-colors cursor-pointer"
+              >
+                Tomorrow
+              </button>
+              <button
+                type="button"
+                onClick={() => handleScheduleFollowup(72)}
+                className="py-1.5 px-2 bg-white hover:bg-orange-50 border border-orange-200/80 rounded-lg text-[11px] font-semibold text-slate-700 transition-colors cursor-pointer"
+              >
+                +3 Days
+              </button>
+              <button
+                type="button"
+                onClick={() => handleScheduleFollowup(168)}
+                className="py-1.5 px-2 bg-white hover:bg-orange-50 border border-orange-200/80 rounded-lg text-[11px] font-semibold text-slate-700 transition-colors cursor-pointer"
+              >
+                +1 Week
+              </button>
+            </div>
+          </section>
+
           <section>
-            <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-2">Details</p>
+            <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-2">Contact & Source Details</p>
             <div className="border border-[#E8E4F3] rounded-xl overflow-hidden shadow-sm">
               <InfoRow icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={lead.email || "—"} />
               <InfoRow icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={lead.phone || "—"} />
@@ -160,7 +315,7 @@ export function LeadDetailsModal({ lead, onClose }: { lead: any; onClose: () => 
 
           {customFields.length > 0 && (
             <section>
-              <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-2">Additional Responses</p>
+              <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-2">Additional Form Responses</p>
               <div className="border border-[#E8E4F3] rounded-xl overflow-hidden shadow-sm">
                 {customFields.map((field, idx) => (
                   <InfoRow key={idx} icon={<StickyNote className="h-3.5 w-3.5" />} label={field.label} value={field.value} />
@@ -190,7 +345,7 @@ export function LeadDetailsModal({ lead, onClose }: { lead: any; onClose: () => 
           )}
 
           <section>
-            <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-2">Notes</p>
+            <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-2">Call & Activity Notes</p>
             <div className="space-y-2">
               <textarea
                 placeholder="Add a note about this lead..."
@@ -209,7 +364,7 @@ export function LeadDetailsModal({ lead, onClose }: { lead: any; onClose: () => 
                   type="button"
                   onClick={handleSaveNote}
                   disabled={!noteText.trim() || isSavingNote}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] disabled:opacity-50 text-white text-[12px] font-semibold transition-colors shadow-sm"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] disabled:opacity-50 text-white text-[12px] font-semibold transition-colors shadow-sm cursor-pointer"
                 >
                   {isSavingNote ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
                   Save Note

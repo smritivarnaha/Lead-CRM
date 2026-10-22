@@ -47,6 +47,14 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("push");
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      if (tabParam) {
+        setActiveTab(tabParam);
+        return;
+      }
+    }
     if (isClient) {
       setActiveTab("general");
     }
@@ -516,77 +524,108 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <div className="flex overflow-x-auto no-scrollbar gap-2 sm:gap-4 border-b border-slate-200 pb-1">
-        {isClient && (
-          <button 
-            onClick={() => setActiveTab("general")}
-            className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "general" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
-          >
-            General Settings
-          </button>
-        )}
-        <button 
-          onClick={() => setActiveTab("push")}
-          className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "push" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
-        >
-          Push Notifications
-        </button>
-        <button 
-          onClick={() => setActiveTab("sms")}
-          className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "sms" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
-        >
-          Lead Alerts (SMS)
-        </button>
-        <button 
-          onClick={() => setActiveTab("admin-email")}
-          className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "admin-email" ? "border-emerald-600 text-emerald-700 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"}`}
-        >
-          Admin Email (Instant Lead Alerts)
-        </button>
-        <button 
-          onClick={() => setActiveTab("customer-reply")}
-          className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "customer-reply" ? "border-purple-600 text-purple-600 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"}`}
-        >
-          Customer Auto-Reply
-        </button>
-        {!isClient && (
-          <button 
-            onClick={() => setActiveTab("email")}
-            className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "email" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
-          >
-            Email Config
-          </button>
-        )}
-        <button 
-          onClick={() => setActiveTab("install")}
-          className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "install" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
-        >
-          App Installation
-        </button>
-        <button 
-          onClick={() => setActiveTab("wordpress")}
-          className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "wordpress" ? "border-[#0073AA] text-[#0073AA]" : "border-transparent text-slate-500 hover:text-slate-700"}`}
-        >
-          WP Plugin Download
-        </button>
-        <button 
-          onClick={() => setActiveTab("sheets")}
-          className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "sheets" ? "border-[#0F9D58] text-[#0F9D58]" : "border-transparent text-slate-500 hover:text-slate-700"}`}
-        >
-          Sheet Config
-        </button>
-        <button 
-          onClick={() => setActiveTab("html")}
-          className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "html" ? "border-[#E34F26] text-[#E34F26]" : "border-transparent text-slate-500 hover:text-slate-700"}`}
-        >
-          Custom HTML Snippet
-        </button>
-        <button 
-          onClick={() => setActiveTab("webhook")}
-          className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === "webhook" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
-        >
-          Direct Webhook
-        </button>
+      {/* Categorized Settings Navigation for Easy Discovery */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
+        {/* Group 1: Alerts & Auto-Replies */}
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1 flex items-center gap-1.5">
+            <BellRing className="w-3 h-3 text-indigo-500" /> Lead Alerts & Auto-Replies
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {isClient && (
+              <button
+                onClick={() => setActiveTab("general")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === "general" ? "bg-indigo-600 text-white shadow-sm" : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/70"}`}
+              >
+                General Profile
+              </button>
+            )}
+            <button
+              onClick={() => setActiveTab("push")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === "push" ? "bg-indigo-600 text-white shadow-sm" : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/70"}`}
+            >
+              Push Notifications
+            </button>
+            <button
+              onClick={() => setActiveTab("sms")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === "sms" ? "bg-indigo-600 text-white shadow-sm" : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/70"}`}
+            >
+              SMS Alerts
+            </button>
+            <button
+              onClick={() => setActiveTab("admin-email")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === "admin-email" ? "bg-emerald-600 text-white shadow-sm" : "bg-emerald-50/60 text-emerald-700 hover:bg-emerald-100/70 border border-emerald-200"}`}
+            >
+              Admin Email Alerts
+            </button>
+            <button
+              onClick={() => setActiveTab("customer-reply")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === "customer-reply" ? "bg-purple-600 text-white shadow-sm" : "bg-purple-50/60 text-purple-700 hover:bg-purple-100/70 border border-purple-200"}`}
+            >
+              Customer Auto-Reply
+            </button>
+          </div>
+        </div>
+
+        <div className="hidden lg:block w-px h-10 bg-slate-200 shrink-0" />
+
+        {/* Group 2: Website Connection Methods */}
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1 flex items-center gap-1.5">
+            <Code2 className="w-3 h-3 text-amber-500" /> Website Connection Methods
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              onClick={() => setActiveTab("html")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === "html" ? "bg-[#E34F26] text-white shadow-sm" : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/70"}`}
+            >
+              JS Auto-Tracker
+            </button>
+            <button
+              onClick={() => setActiveTab("wordpress")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === "wordpress" ? "bg-[#0073AA] text-white shadow-sm" : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/70"}`}
+            >
+              WP Plugin
+            </button>
+            <button
+              onClick={() => setActiveTab("sheets")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === "sheets" ? "bg-[#0F9D58] text-white shadow-sm" : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/70"}`}
+            >
+              Google Sheets
+            </button>
+            <button
+              onClick={() => setActiveTab("webhook")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === "webhook" ? "bg-indigo-600 text-white shadow-sm" : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/70"}`}
+            >
+              Webhook API
+            </button>
+          </div>
+        </div>
+
+        <div className="hidden lg:block w-px h-10 bg-slate-200 shrink-0" />
+
+        {/* Group 3: System & App */}
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1 flex items-center gap-1.5">
+            <Smartphone className="w-3 h-3 text-slate-500" /> System & App
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {!isClient && (
+              <button
+                onClick={() => setActiveTab("email")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === "email" ? "bg-slate-900 text-white shadow-sm" : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/70"}`}
+              >
+                SMTP / Email Config
+              </button>
+            )}
+            <button
+              onClick={() => setActiveTab("install")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === "install" ? "bg-slate-900 text-white shadow-sm" : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/70"}`}
+            >
+              App Install
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="max-w-5xl">
