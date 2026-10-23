@@ -16,6 +16,8 @@ const LEAD_SELECT_FIELDS = {
   message: true,
   source: true,
   pageUrl: true,
+  pageTitle: true,
+  ipAddress: true,
   formName: true,
   utmSource: true,
   utmMedium: true,
@@ -152,8 +154,8 @@ export async function bulkDeleteLeads(leadIds: string[]) {
     const result = await prisma.lead.deleteMany({
       where: {
         id: { in: leadIds },
-        ...(user.role === "CLIENT" && user.websiteId ? { websiteId: user.websiteId } : {})
-      }
+        ...(user.role === "CLIENT" && user.websiteId ? { websiteId: user.websiteId } : {}),
+      },
     });
 
     invalidateLeadCaches();
@@ -164,7 +166,12 @@ export async function bulkDeleteLeads(leadIds: string[]) {
   }
 }
 
-export async function logCallAction(leadId: string, status: string, callNotes?: string, followUpAt?: Date | null) {
+export async function logCallAction(
+  leadId: string,
+  status: string,
+  callNotes?: string,
+  followUpAt?: Date | null
+) {
   try {
     const user = await getAuthenticatedUser();
     if (!user) return { success: false, error: "Unauthorized" };

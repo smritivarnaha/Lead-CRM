@@ -6,14 +6,41 @@ import { getAuthenticatedUser } from "@/lib/auth";
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { cache } from "react";
 
+function enrichWebsiteConfig(site: any) {
+  if (!site) return site;
+  const enriched = { ...site };
+  if (typeof site.apiKey === "string" && site.apiKey.trim().startsWith("{")) {
+    try {
+      const parsed = JSON.parse(site.apiKey);
+      if (parsed.subject || parsed.adminEmailSubject) {
+        enriched.adminEmailSubject = parsed.adminEmailSubject || parsed.subject;
+      }
+      if (parsed.notice || parsed.adminEmailSourceNote) {
+        enriched.adminEmailSourceNote = parsed.adminEmailSourceNote || parsed.notice;
+      }
+      if (parsed.message || parsed.adminEmailMessage) {
+        enriched.adminEmailMessage = parsed.adminEmailMessage || parsed.message;
+      }
+      if (parsed.cta || parsed.adminEmailCtaLabel) {
+        enriched.adminEmailCtaLabel = parsed.adminEmailCtaLabel || parsed.cta;
+      }
+      if (parsed.ctaUrl || parsed.adminEmailCtaUrl) {
+        enriched.adminEmailCtaUrl = parsed.adminEmailCtaUrl || parsed.ctaUrl;
+      }
+    } catch {}
+  }
+  return enriched;
+}
+
 const getCachedWebsitesList = unstable_cache(
   async (isClient: boolean, websiteId?: string | null) => {
-    return prisma.website.findMany({
+    const sites = await prisma.website.findMany({
       where: isClient && websiteId ? { id: websiteId } : undefined,
       orderBy: {
         createdAt: "desc",
       },
     });
+    return sites.map(enrichWebsiteConfig);
   },
   ["websites_list_cache"],
   { revalidate: 60, tags: ["websites_list"] }
@@ -71,14 +98,16 @@ const getCachedWebsitesWithStats = unstable_cache(
     const unreadMap = new Map<string, number>();
     unreadGroups.forEach((g) => unreadMap.set(g.websiteId, g._count.id));
 
-    return websites.map((site) => ({
-      ...site,
-      stats: {
-        total: site._count.leads,
-        newThisWeek: newThisWeekMap.get(site.id) || 0,
-        unread: unreadMap.get(site.id) || 0,
-      },
-    }));
+    return websites.map((site) =>
+      enrichWebsiteConfig({
+        ...site,
+        stats: {
+          total: site._count.leads,
+          newThisWeek: newThisWeekMap.get(site.id) || 0,
+          unread: unreadMap.get(site.id) || 0,
+        },
+      })
+    );
   },
   ["websites_with_stats_cache"],
   { revalidate: 20, tags: ["websites_stats"] }
@@ -87,7 +116,7 @@ const getCachedWebsitesWithStats = unstable_cache(
 export const getWebsites = cache(async () => {
   try {
     const user = await getAuthenticatedUser();
-    
+
     if (!user) {
       return { success: false, error: "Unauthorized" };
     }
@@ -130,56 +159,52 @@ export async function createWebsite(data: { name: string; domain: string }) {
 
     // Ensure the mock workspace exists
     let workspace = await prisma.workspace.findUnique({
-      where: { id: "mock_workspace_id" }
+      where: { id: "mock_workspace_id" },
     });
-    
+
     if (!workspace) {
       workspace = await prisma.workspace.create({
         data: {
           id: "mock_workspace_id",
           name: "Default Workspace",
-        }
+        },
       });
     }
 
     // Generate custom slug-based website ID
     let domainName = data.domain
       .toLowerCase()
-      .replace(/^(https?:\/\/)?(www\.)?/, "") // remove protocol and www
-      .split(".")[0]; // keep only the main name before first dot
-    
-    // Sanitize domainName to keep only alphanumeric and hyphens
+      .replace(/^(https?:\/\/)?(www\.)?/, "")
+      .split(".")[0];
+
     domainName = domainName.replace(/[^a-z0-9-]/g, "");
-    
+
     if (!domainName) {
-      // Fallback to name slug if domain part is empty
-      domainName = data.name
-        .toLowerCase()
-        .replace(/[^a-z0-9-]/g, "");
+      domainName = data.name.toLowerCase().replace(/[^a-z0-9-]/g, "");
     }
-    
+
     if (!domainName) {
       domainName = "site";
     }
-    
+
     let customSiteId = "";
     let isUnique = false;
     let attempts = 0;
-    
+
     while (!isUnique && attempts < 10) {
       const randomNum = Math.floor(1000 + Math.random() * 9000);
       customSiteId = `${domainName}-${randomNum}`;
-      
+
       const existing = await prisma.website.findUnique({
-        where: { id: customSiteId }
+        where: { id: customSiteId },
       });
-      
+
       if (!existing) {
         isUnique = true;
       }
       attempts++;
     }
-    
+
     if (!customSiteId) {
       customSiteId = `${domainName}-${Math.floor(10000 + Math.random() * 90000)}`;
     }
@@ -189,7 +214,7 @@ export async function createWebsite(data: { name: string; domain: string }) {
         id: customSiteId,
         name: data.name,
         domain: data.domain,
-        workspaceId: "mock_workspace_id", 
+        workspaceId: "mock_workspace_id",
       },
     });
 
@@ -207,12 +232,12 @@ export async function createWebsite(data: { name: string; domain: string }) {
   }
 }
 
-export async function createClientLogin(data: { 
-  email: string; 
+export async function createClientLogin(data: {
+  email: string;
   firstName: string;
   lastName: string;
-  websiteId: string; 
-  websiteName: string; 
+  websiteId: string;
+  websiteName: string;
 }) {
   try {
     const user = await getAuthenticatedUser();
@@ -222,14 +247,14 @@ export async function createClientLogin(data: {
 
     // Check if user already exists in Clerk
     const existingUsers = await clerk.users.getUserList({ emailAddress: [data.email] });
-    
+
     if (existingUsers.totalCount > 0) {
       return { success: false, error: `A user with email ${data.email} already exists.` };
     }
 
     // Create the Clerk user with a temporary password
     const tempPassword = `Client@${Math.random().toString(36).slice(2, 10)}!`;
-    
+
     const newClerkUser = await clerk.users.createUser({
       emailAddress: [data.email],
       firstName: data.firstName,
@@ -265,14 +290,16 @@ export async function createClientLogin(data: {
       (revalidateTag as any)("auth_user", { expire: 0 });
     } catch (e) {}
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       tempPassword,
-      message: `Client account created! Share these credentials:\nEmail: ${data.email}\nPassword: ${tempPassword}` 
+      message: `Client account created! Share these credentials:\nEmail: ${data.email}\nPassword: ${tempPassword}`,
     };
   } catch (error: unknown) {
     console.error("Error creating client login:", error);
-    const errMsg = (error as { errors?: Array<{ message: string }> })?.errors?.[0]?.message || "Failed to create client login";
+    const errMsg =
+      (error as { errors?: Array<{ message: string }> })?.errors?.[0]?.message ||
+      "Failed to create client login";
     return { success: false, error: errMsg };
   }
 }
@@ -284,9 +311,9 @@ export async function resetClientPassword(userId: string) {
 
     const clerk = await clerkClient();
     const tempPassword = `Client@${Math.random().toString(36).slice(2, 10)}!`;
-    
+
     await clerk.users.updateUser(userId, {
-      password: tempPassword
+      password: tempPassword,
     });
 
     return { success: true, tempPassword };
@@ -302,13 +329,13 @@ export async function deleteClientLogin(userId: string) {
     if (!user) return { success: false, error: "Unauthorized" };
 
     const clerk = await clerkClient();
-    
+
     // Delete from Clerk
     await clerk.users.deleteUser(userId);
-    
+
     // Delete from Prisma
     await prisma.user.delete({
-      where: { id: userId }
+      where: { id: userId },
     });
 
     revalidatePath("/websites");
@@ -356,7 +383,7 @@ const getCachedIntegrationsData = unstable_cache(
     ]);
 
     return {
-      websites: JSON.parse(JSON.stringify(websites)),
+      websites: JSON.parse(JSON.stringify(websites.map(enrichWebsiteConfig))),
       leads: JSON.parse(JSON.stringify(leads)),
     };
   },

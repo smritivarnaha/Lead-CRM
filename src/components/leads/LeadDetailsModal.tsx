@@ -1,19 +1,32 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, MapPin, Mail, Phone, Globe, Tag, Clock, StickyNote, Send, Loader2, MessageCircle, CalendarClock, CheckCircle2 } from "lucide-react";
+import {
+  X,
+  MapPin,
+  Mail,
+  Phone,
+  Globe,
+  Tag,
+  Clock,
+  StickyNote,
+  Send,
+  Loader2,
+  MessageCircle,
+  CalendarClock,
+} from "lucide-react";
 import { getDeduplicatedFields } from "@/lib/fieldDeduplication";
 import { updateLeadStatus, updateLeadFollowup } from "@/actions/leads";
 import { addHours, format } from "date-fns";
 import { toast } from "sonner";
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; dot: string }> = {
-  NEW:         { label: "New Lead",         bg: "bg-blue-50",   text: "text-blue-700",   dot: "bg-blue-500" },
-  CONTACTED:   { label: "Contacted",        bg: "bg-amber-50",  text: "text-amber-700",  dot: "bg-amber-500" },
-  BUSY:        { label: "Busy / No Answer", bg: "bg-slate-100", text: "text-slate-700",  dot: "bg-slate-500" },
-  FOLLOW_UP:   { label: "Follow Up",        bg: "bg-orange-50", text: "text-orange-700", dot: "bg-orange-500" },
-  CONVERTED:   { label: "Converted",        bg: "bg-green-50",  text: "text-green-700",  dot: "bg-green-500" },
-  LOST:        { label: "Junk / Lost",      bg: "bg-red-50",    text: "text-red-700",    dot: "bg-red-500" },
+  NEW:       { label: "New Lead",         bg: "bg-blue-50",   text: "text-blue-700",   dot: "bg-blue-500" },
+  CONTACTED: { label: "Contacted",        bg: "bg-amber-50",  text: "text-amber-700",  dot: "bg-amber-500" },
+  BUSY:      { label: "Busy / No Answer", bg: "bg-slate-100", text: "text-slate-700",  dot: "bg-slate-500" },
+  FOLLOW_UP: { label: "Follow Up",        bg: "bg-orange-50", text: "text-orange-700", dot: "bg-orange-500" },
+  CONVERTED: { label: "Converted",        bg: "bg-green-50",  text: "text-green-700",  dot: "bg-green-500" },
+  LOST:      { label: "Junk / Lost",      bg: "bg-red-50",    text: "text-red-700",    dot: "bg-red-500" },
 };
 
 function formatWhatsAppUrl(phone: string | null | undefined, name?: string, siteName?: string) {
@@ -23,17 +36,34 @@ function formatWhatsAppUrl(phone: string | null | undefined, name?: string, site
     digits = "91" + digits;
   }
   if (digits.length < 10) return null;
-  const greeting = `Hi ${name || "there"}, thank you for reaching out${siteName ? ` to ${siteName}` : ""}. How can we help you today?`;
+  const greeting = `Hi ${name || "there"}, thank you for reaching out${
+    siteName ? ` to ${siteName}` : ""
+  }. How can we help you today?`;
   return `https://wa.me/${digits}?text=${encodeURIComponent(greeting)}`;
 }
 
-function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function InfoRow({
+  icon,
+  label,
+  value,
+  wrapValue = false,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  wrapValue?: boolean;
+}) {
   return (
-    <div className="flex items-center justify-between px-4 py-2.5 bg-white border-b border-[#F3F0FF] last:border-0 hover:bg-[#F7F5FF] transition-colors">
-      <span className="flex items-center gap-2 text-[12px] text-[#6B7280] font-medium min-w-[80px]">
+    <div className="flex items-start justify-between gap-3 px-4 py-2.5 bg-white border-b border-[#F3F0FF] last:border-0 hover:bg-[#F7F5FF] transition-colors">
+      <span className="flex items-center gap-2 text-[12px] text-[#6B7280] font-medium shrink-0 pt-0.5">
         {icon} {label}
       </span>
-      <span className="text-[13px] font-medium text-right max-w-[60%] truncate text-[#1A1523]" title={value}>
+      <span
+        className={`text-[13px] font-medium text-right max-w-[62%] text-[#1A1523] ${
+          wrapValue ? "break-words whitespace-pre-wrap" : "truncate"
+        }`}
+        title={value}
+      >
         {value}
       </span>
     </div>
@@ -59,8 +89,10 @@ export function LeadDetailsModal({
     setCurrentStatus(lead.status || "NEW");
     setFollowUpDate(lead.followUpAt || null);
     fetch(`/api/notes?leadId=${lead.id}`)
-      .then(r => r.json())
-      .then(d => { if (d.notes) setNotes(d.notes); })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.notes) setNotes(d.notes);
+      })
       .catch(() => {});
   }, [lead.id, lead.status, lead.followUpAt]);
 
@@ -103,7 +135,7 @@ export function LeadDetailsModal({
       });
       const data = await res.json();
       if (data.success && data.note) {
-        setNotes(prev => [data.note, ...prev]);
+        setNotes((prev) => [data.note, ...prev]);
         setNoteText("");
         toast.success("Note saved");
       } else {
@@ -143,11 +175,28 @@ export function LeadDetailsModal({
     state: lead.state,
   });
 
+  // Resolve IP Address and Page URL with fallback to technicalFields for older leads
+  const fallbackIp = technicalFields.find((f) =>
+    ["ipaddress", "ip_address", "ip", "client_ip"].includes(f.key.toLowerCase())
+  )?.value;
+  const fallbackPageUrl = technicalFields.find((f) =>
+    ["pageurl", "page_url"].includes(f.key.toLowerCase())
+  )?.value;
+
+  const resolvedIp = lead.ipAddress || fallbackIp || "—";
+  const resolvedPageUrl = lead.pageUrl || fallbackPageUrl || "—";
+
+  // Filter out technical fields that are already displayed in Contact & Source Details
+  const uniqueTechnicalFields = technicalFields.filter((f) => {
+    const k = f.key.toLowerCase().replace(/[\s_\-]+/g, "");
+    return !["ipaddress", "ip", "clientip", "remoteaddr", "pageurl", "source", "siteurl", "sitedomain"].includes(k);
+  });
+
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[100] flex justify-end" onClick={onClose}>
-      <div 
+      <div
         className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col relative"
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
         style={{ animation: "slideLeft 0.2s cubic-bezier(0.32,0.72,0,1)" }}
       >
         {/* Header */}
@@ -165,7 +214,9 @@ export function LeadDetailsModal({
             <div className="min-w-0">
               <h2 className="text-lg font-bold text-[#1A1523] truncate">{lead.fullName}</h2>
               <div className="flex items-center gap-2 mt-1">
-                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border border-[#E8E4F3] ${statusCfg.bg} ${statusCfg.text}`}>
+                <span
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border border-[#E8E4F3] ${statusCfg.bg} ${statusCfg.text}`}
+                >
                   <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot}`} />
                   {statusCfg.label}
                 </span>
@@ -179,7 +230,6 @@ export function LeadDetailsModal({
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
-          
           {/* Quick Connect Bar: Call, WhatsApp, Email */}
           {(lead.phone || lead.email) && (
             <div className="grid grid-cols-3 gap-2">
@@ -298,38 +348,64 @@ export function LeadDetailsModal({
           </section>
 
           <section>
-            <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-2">Contact & Source Details</p>
+            <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-2">
+              Contact & Source Details
+            </p>
             <div className="border border-[#E8E4F3] rounded-xl overflow-hidden shadow-sm">
               <InfoRow icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={lead.email || "—"} />
               <InfoRow icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={lead.phone || "—"} />
               {(lead.city || lead.state) && (
-                <InfoRow icon={<MapPin className="h-3.5 w-3.5" />} label="Location" value={[lead.city, lead.state].filter(Boolean).join(", ")} />
+                <InfoRow
+                  icon={<MapPin className="h-3.5 w-3.5" />}
+                  label="Location"
+                  value={[lead.city, lead.state].filter(Boolean).join(", ")}
+                />
               )}
               <InfoRow icon={<Globe className="h-3.5 w-3.5" />} label="Website" value={lead.website?.name || "—"} />
-              <InfoRow icon={<Globe className="h-3.5 w-3.5" />} label="Page URL" value={lead.pageUrl || "—"} />
+              <InfoRow icon={<Globe className="h-3.5 w-3.5" />} label="Page URL" value={resolvedPageUrl} />
               <InfoRow icon={<Tag className="h-3.5 w-3.5" />} label="Source" value={lead.source || "—"} />
-              <InfoRow icon={<MapPin className="h-3.5 w-3.5" />} label="IP Address" value={lead.ipAddress || "—"} />
-              <InfoRow icon={<Clock className="h-3.5 w-3.5" />} label="Received" value={new Date(lead.createdAt).toLocaleString()} />
+              <InfoRow icon={<MapPin className="h-3.5 w-3.5" />} label="IP Address" value={resolvedIp} />
+              <InfoRow
+                icon={<Clock className="h-3.5 w-3.5" />}
+                label="Received"
+                value={new Date(lead.createdAt).toLocaleString()}
+              />
             </div>
           </section>
 
           {customFields.length > 0 && (
             <section>
-              <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-2">Additional Form Responses</p>
+              <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-2">
+                Additional Form Responses ({customFields.length})
+              </p>
               <div className="border border-[#E8E4F3] rounded-xl overflow-hidden shadow-sm">
                 {customFields.map((field, idx) => (
-                  <InfoRow key={idx} icon={<StickyNote className="h-3.5 w-3.5" />} label={field.label} value={field.value} />
+                  <InfoRow
+                    key={idx}
+                    icon={<StickyNote className="h-3.5 w-3.5" />}
+                    label={field.label}
+                    value={field.value}
+                    wrapValue={true}
+                  />
                 ))}
               </div>
             </section>
           )}
 
-          {technicalFields.length > 0 && (
+          {uniqueTechnicalFields.length > 0 && (
             <section>
-              <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-2">Technical & Tracking</p>
+              <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-2">
+                Technical & Tracking
+              </p>
               <div className="border border-[#E8E4F3] rounded-xl overflow-hidden shadow-sm">
-                {technicalFields.map((field, idx) => (
-                  <InfoRow key={idx} icon={<Globe className="h-3.5 w-3.5" />} label={field.label} value={field.value} />
+                {uniqueTechnicalFields.map((field, idx) => (
+                  <InfoRow
+                    key={idx}
+                    icon={<Globe className="h-3.5 w-3.5" />}
+                    label={field.label}
+                    value={field.value}
+                    wrapValue={true}
+                  />
                 ))}
               </div>
             </section>
@@ -337,9 +413,9 @@ export function LeadDetailsModal({
 
           {lead.message && (
             <section>
-              <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-2">Message</p>
+              <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-2">Message / Query</p>
               <div className="p-3.5 bg-[#F7F5FF] border border-[#E8E4F3] rounded-xl">
-                <p className="text-[13px] text-[#1A1523] leading-relaxed">{lead.message}</p>
+                <p className="text-[13px] text-[#1A1523] leading-relaxed whitespace-pre-wrap">{lead.message}</p>
               </div>
             </section>
           )}
@@ -350,8 +426,8 @@ export function LeadDetailsModal({
               <textarea
                 placeholder="Add a note about this lead..."
                 value={noteText}
-                onChange={e => setNoteText(e.target.value)}
-                onKeyDown={e => {
+                onChange={(e) => setNoteText(e.target.value)}
+                onKeyDown={(e) => {
                   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                     e.preventDefault();
                     handleSaveNote();
@@ -371,7 +447,7 @@ export function LeadDetailsModal({
                 </button>
               </div>
             </div>
-            {notes.map(note => (
+            {notes.map((note) => (
               <div key={note.id} className="mt-3 p-3 bg-white border border-[#E8E4F3] rounded-xl shadow-sm">
                 <p className="text-[13px] text-[#1A1523] whitespace-pre-wrap">{note.content}</p>
                 <div className="flex items-center justify-between mt-1.5">
